@@ -10,11 +10,6 @@ const Sidebar: React.FC = () => {
                     <FiHome />
                 </div>
             </Link>
-            <Link href="/" passHref>
-                <div className="text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
-                    <FiCircle />
-                </div>
-            </Link>
             <Link href="/pengaduan" passHref>
                 <div className="text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
                     <FiMessageSquare />

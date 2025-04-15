@@ -1,152 +1,84 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Message from "./components/message";
+import Profile from "./components/profile";
 import axios from "axios";
-import { io } from "socket.io-client";
-import { FaPaperPlane } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-const socket = io(`${API_URL}`);
 
-interface Message {
-    message: string;
+interface Data {
+    _id: string;
     senderName: string;
-    from: string;
+    senderPhone: string;
+    senderEmail: string;
+    senderAddress: string;
+    senderStatus: string;
 }
-
-interface ParamsType {
-    from: string;
-}
-
 
 export default function ChatPage() {
-    const params = useParams() as Record<string, string>;
-    const from = params.from;
+    const params = useParams() as { from?: string };
+    const from = params?.from;
+    if (!from) return null; // atau loading state
 
-
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [newMessage, setNewMessage] = useState("");
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [isScrolledUp, setIsScrolledUp] = useState(false);
-
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const chatContainerRef = useRef<HTMLDivElement | null>(null);
+    const [data, setData] = useState<Data[]>([]);
+    const [activeTab, setActiveTab] = useState<"message" | "profile">("message");
 
     useEffect(() => {
-        if (from) {
-            axios
-                .get<Message[]>(`${API_URL}/chat/${from}`)
-                .then((res) => setMessages(res.data))
-                .catch((err) => console.error(err));
-        }
-
-        const handleNewMessage = (msg: Message) => {
-            console.log("📩 Pesan baru diterima dari WebSocket:", msg);
-            if (msg.from === from) {
-                setMessages((prevMessages) => [...prevMessages, msg]);
-
-                if (isScrolledUp) {
-                    setUnreadCount((prev) => prev + 1);
-                } else {
-                    scrollToBottom();
-                }
-            }
-        };
-
-        socket.on("newMessage", handleNewMessage);
-        return () => {
-            socket.off("newMessage", handleNewMessage);
-        };
-    }, [from, isScrolledUp]);
-
-    const scrollToBottom = () => {
-        setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            setUnreadCount(0);
-        }, 100);
-    };
-
-    const handleScroll = () => {
-        if (chatContainerRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-            const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
-            setIsScrolledUp(!atBottom);
-            if (atBottom) {
-                setUnreadCount(0);
-            }
-        }
-    };
-
-    const sendMessage = () => {
-        if (!newMessage.trim()) return;
-
         axios
-            .post(`${API_URL}/chat/send/${from}`, { message: newMessage })
-            .then(() => {
-                setNewMessage("");
-                scrollToBottom();
+            .get(`${API_URL}/chat`)
+            .then((res) => {
+                // Pastikan isi dari res.data itu array
+                const responseData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+                setData(responseData);
+                console.log("✅ res.data:", res.data);
             })
-            .catch((err) => console.error(err));
-    };
+            .catch((err) => {
+                console.error(err);
+                setData([]); // fallback safe
+            });
+    }, []);
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            sendMessage();
-        }
-    };
+    const selectedUser = data.find((item) => item._id === from);
 
     return (
-        <div className="w-full h-screen flex flex-col bg-[#EFEAE2]">
-            <div className="p-4 bg-[#075E54] text-white font-bold flex items-center shadow-md">
-                <div className="ml-2">Chat dengan {from}</div>
-            </div>
-
-            <div
-                className="flex-1 overflow-y-auto p-4 space-y-3 relative"
-                ref={chatContainerRef}
-                onScroll={handleScroll}
-            >
-                {messages.length === 0 ? (
-                    <p className="text-gray-500 text-center">Belum ada pesan.</p>
-                ) : (
-                    messages.map((msg, index) => (
-                        <div
-                            key={index}
-                            className={`flex ${msg.senderName === "Admin" ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Admin" ? "bg-[#128C7E]" : "bg-[#25D366]"
-                                    }`}
-                            >
-                                <p>{msg.message}</p>
-                            </div>
-                        </div>
-                    ))
-                )}
-                <div ref={messagesEndRef} className="pb-20" />
-            </div>
-
-            {unreadCount > 0 && (
-                <div
-                    className="absolute bottom-16 left-1/2 transform -translate-x-1/2 bg-[#128C7E] text-white px-4 py-2 rounded-full cursor-pointer z-10"
-                    onClick={scrollToBottom}
-                >
-                    {unreadCount} Pesan Baru
+        <div className="w-full h-screen flex flex-col bg-white">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-100">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-300" />
+                    <div>
+                        <p className="font-semibold text-gray-800">{selectedUser?.senderName}</p>
+                        <p className="text-sm text-gray-500">{selectedUser?._id}</p>
+                    </div>
                 </div>
-            )}
+                <div className="flex gap-4">
+                    {/* Flag untuk Situasi */}
+                    <div className="bg-gray-200 text-sm rounded-full px-4 py-1">Berpengawasan</div>
+                    {/* Flag untuk Status */}
+                    <div className="bg-gray-200 text-sm rounded-full px-4 py-1">Verifikasi</div>
+                </div>
+            </div>
 
-            <div className="p-4 bg-white flex items-center border-t fixed bottom-0 w-full">
-                <input
-                    type="text"
-                    className="flex-grow max-w-[90%] p-3 border rounded-full focus:outline-none text-gray-800"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Ketik pesan..."
-                    onKeyDown={handleKeyPress}
-                />
-                <button onClick={sendMessage} className="ml-3 bg-[#128C7E] text-white p-3 rounded-full flex-shrink-0">
-                    <FaPaperPlane size={20} />
+            {/* Tabs */}
+            <div className="flex border-b px-6 bg-white">
+                <button
+                    className={`py-2 px-4 font-medium ${activeTab === "message" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
+                    onClick={() => setActiveTab("message")}
+                >
+                    Message
                 </button>
+                <button
+                    className={`py-2 px-4 font-medium ${activeTab === "profile" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
+                    onClick={() => setActiveTab("profile")}
+                >
+                    Profile
+                </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+                {activeTab === "message" ? <Message from={from} /> : <Profile from={from} />}
             </div>
         </div>
     );

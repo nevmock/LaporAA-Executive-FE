@@ -29,8 +29,8 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-white p-6 border-r overflow-y-auto shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900">Daftar Laporan</h2>
+    <div className="w-full h-screen bg-white p-6 overflow-y-auto">
+      <h2 className="text-2xl font-bold mb-6 text-gray-900">Daftar Pengaduan</h2>
       {Array.isArray(data) && data.length > 0 ? (
         data.map((chat) => (
           <Link
