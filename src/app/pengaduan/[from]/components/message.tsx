@@ -12,7 +12,9 @@ interface MessageItem {
     message: string;
     senderName: string;
     from: string;
+    timestamp: string;
 }
+
 
 export default function Message({ from }: { from: string }) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
@@ -70,6 +72,38 @@ export default function Message({ from }: { from: string }) {
             .catch((err) => console.error(err));
     };
 
+    const formatDate = (rawDate?: string): string => {
+        if (!rawDate) return "-";
+        const date = new Date(rawDate);
+        if (isNaN(date.getTime())) return "-";
+
+        const now = new Date();
+        const isSameDay = date.toDateString() === now.toDateString();
+
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = date.toDateString() === yesterday.toDateString();
+
+        const time = date.toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+            timeZone: "Asia/Jakarta",
+        });
+
+        if (isSameDay) return `Hari ini, ${time}`;
+        if (isYesterday) return `Kemarin, ${time}`;
+
+        const formattedDate = date.toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            timeZone: "Asia/Jakarta",
+        });
+
+        return `${formattedDate}, ${time}`;
+    };
+
     return (
         <div className="flex flex-col h-full">
             <div
@@ -90,6 +124,9 @@ export default function Message({ from }: { from: string }) {
                                     }`}
                             >
                                 <p>{msg.message}</p>
+                                <p className="text-xs text-gray-200 mt-1">
+                                    {formatDate(msg.timestamp)}
+                                </p>
                             </div>
                         </div>
                     ))
