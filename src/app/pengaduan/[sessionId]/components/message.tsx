@@ -9,14 +9,14 @@ const socket = io(`${API_URL}`);
 
 interface MessageItem {
     _id: string;
+    sessionId: string;
     message: string;
     senderName: string;
     from: string;
     timestamp: string;
 }
 
-
-export default function Message({ from }: { from: string }) {
+export default function Message({ from }: { from: string }) { // Ganti sessionId menjadi from
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
@@ -26,14 +26,14 @@ export default function Message({ from }: { from: string }) {
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        if (from) {
-            axios.get(`${API_URL}/chat/${from}`)
+        if (from) { // Gunakan from sebagai identifikasi
+            axios.get(`${API_URL}/chat/${from}`) // Ganti sessionId dengan from
                 .then((res) => setMessages(res.data))
                 .catch((err) => console.error(err));
         }
 
         const handleNewMessage = (msg: MessageItem) => {
-            if (msg.from === from) {
+            if (msg.from === from) { // Periksa apakah pesan baru berasal dari from yang sama
                 setMessages((prev) => [...prev, msg]);
                 if (isScrolledUp) setUnreadCount((prev) => prev + 1);
                 else scrollToBottom();
@@ -64,7 +64,7 @@ export default function Message({ from }: { from: string }) {
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
-        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage })
+        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage }) // Ganti sessionId dengan from
             .then(() => {
                 setNewMessage("");
                 scrollToBottom();
@@ -117,10 +117,10 @@ export default function Message({ from }: { from: string }) {
                     messages.map((msg, index) => (
                         <div
                             key={index}
-                            className={`flex ${msg.senderName === "Admin" ? "justify-end" : "justify-start"}`}
+                            className={`flex ${msg.senderName === "Bot" ? "justify-end" : "justify-start"}`}
                         >
                             <div
-                                className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Admin" ? "bg-[#128C7E]" : "bg-[#25D366]"
+                                className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Bot" ? "bg-[#128C7E]" : "bg-[#25D366]"
                                     }`}
                             >
                                 <p>{msg.message}</p>

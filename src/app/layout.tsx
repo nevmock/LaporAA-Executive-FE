@@ -1,7 +1,7 @@
 import Sidebar from "./sidebar";
 import './globals.css';
 import React from "react";
-import UserNav from "../components/userNav";
+// import UserNav from "../components/userNav";
 
 interface RootLayoutProps {
     children: React.ReactNode;

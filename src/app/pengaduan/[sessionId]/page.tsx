@@ -11,6 +11,14 @@ const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 interface Data {
     _id: string;
+    from: string;
+    sessionId: string;
+    user: {
+        name: string;
+        phone: string;
+        email: string;
+        address: string;
+    };
     senderName: string;
     senderPhone: string;
     senderEmail: string;
@@ -19,29 +27,26 @@ interface Data {
 }
 
 export default function ChatPage() {
-    const params = useParams() as { from?: string };
-    const from = params?.from;
-    if (!from) return null; // atau loading state
+    const params = useParams() as { sessionId?: string };
+    const sessionId = params?.sessionId;
+    if (!sessionId) return null; // atau loading state
 
-    const [data, setData] = useState<Data[]>([]);
+    const [data, setData] = useState<Data | null>(null); // Ubah menjadi objek, bukan array
     const [activeTab, setActiveTab] = useState<"pesan" | "profile" | "keluhan" | "tindakan">("keluhan");
 
     useEffect(() => {
         axios
-            .get(`${API_URL}/chat`)
+            .get(`${API_URL}/reports/${sessionId}`)
             .then((res) => {
-                // Pastikan isi dari res.data itu array
-                const responseData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+                const responseData = res.data || null; // Pastikan respons adalah objek
+                console.info("✅ page data:", responseData);
                 setData(responseData);
-                console.log("✅ res.data:", res.data);
             })
             .catch((err) => {
                 console.error(err);
-                setData([]); // fallback safe
+                setData(null); // fallback safe
             });
-    }, []);
-
-    const selectedUser = data.find((item) => item._id === from);
+    }, [sessionId]);
 
     return (
         <div className="w-full h-screen flex flex-col bg-white">
@@ -50,8 +55,8 @@ export default function ChatPage() {
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gray-300" />
                     <div>
-                        <p className="font-semibold text-gray-800">{selectedUser?.senderName}</p>
-                        <p className="text-sm text-gray-500">+{selectedUser?._id}</p>
+                        <p className="font-semibold text-gray-800">{data?.user?.name}</p>
+                        <p className="text-sm text-gray-500">+{data?.from}</p>
                     </div>
                 </div>
                 <div className="flex gap-6 items-end">
@@ -89,7 +94,6 @@ export default function ChatPage() {
                         </select>
                     </div>
                 </div>
-
             </div>
 
             {/* Tabs */}
@@ -123,10 +127,16 @@ export default function ChatPage() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
                 {
-                    activeTab === "pesan" ? <Message from={from} /> :
-                        activeTab === "profile" ? <Profile from={from} /> :
-                            activeTab === "keluhan" ? <Keluhan from={from} /> :
-                                <Tindakan from={from} />}
+                    activeTab === "pesan" ? (
+                        <Message from={data?.from || ""} /> // Gunakan `from` dari objek
+                    ) : activeTab === "profile" ? (
+                        <Profile sessionId={sessionId} />
+                    ) : activeTab === "keluhan" ? (
+                        <Keluhan sessionId={sessionId} />
+                    ) : (
+                        <Tindakan sessionId={sessionId} />
+                    )
+                }
             </div>
         </div>
     );
