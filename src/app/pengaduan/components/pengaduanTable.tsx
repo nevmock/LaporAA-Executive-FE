@@ -15,6 +15,19 @@ interface Chat {
     status: "in_progress" | "done" | "rejected"; // Enum status
     createdAt?: string; // Ditambahkan karena timestamps
     updatedAt?: string; // Ditambahkan karena timestamps
+    tindakan?: [{
+        _id: string;
+        report: string;
+        hasil: string;
+        kesimpulan: string;
+        prioritas: string;
+        situasi: string;
+        status: string;
+        opd: string;
+        photos: string[];
+        createdAt: string;
+        updatedAt: string;
+    }];
 }
 
 type SortKey = keyof Chat;
@@ -94,7 +107,7 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                                 Nama {renderSortArrow("user")}
                             </th>
                             <th onClick={() => handleSort("from")} className="px-4 py-2 cursor-pointer select-none">
-                                Kontak {renderSortArrow("from")}
+                                No. Kontak {renderSortArrow("from")}
                             </th>
                             <th onClick={() => handleSort("address")} className="px-4 py-2 cursor-pointer select-none">
                                 Domisili {renderSortArrow("address")}
@@ -114,7 +127,6 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                             <th onClick={() => handleSort("status")} className="px-4 py-2 cursor-pointer select-none">
                                 OPD Terkait {renderSortArrow("status")}
                             </th>
-                            <th className="px-4 py-2">Action</th>
                         </tr>
                     </thead>
                     <tbody className="bg-gray-100 text-gray-900">
@@ -135,10 +147,10 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                                     <td className="px-4 py-2">{chat.from || "-"}</td>
                                     <td className="px-4 py-2">{chat.address || "-"}</td>
                                     <td className="px-4 py-2">{chat.location || "-"}</td>
-                                    <td className="px-4 py-2">{chat.status || "-"}</td>
-                                    <td className="px-4 py-2">{chat.status || "-"}</td>
-                                    <td className="px-4 py-2">{chat.status || "-"}</td>
-                                    <td className="px-4 py-2">{chat.status || "-"}</td>
+                                    <td className="px-4 py-2">{chat?.tindakan?.[0]?.prioritas || "-"}</td>
+                                    <td className="px-4 py-2">{chat?.tindakan?.[0]?.situasi || "-"}</td>
+                                    <td className="px-4 py-2">{chat?.tindakan?.[0]?.status || "-"}</td>
+                                    <td className="px-4 py-2">{chat?.tindakan?.[0]?.opd || "-"}</td>
                                 </tr>
                             ))
                         ) : (

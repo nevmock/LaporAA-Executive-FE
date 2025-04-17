@@ -19,11 +19,21 @@ interface Data {
         email: string;
         address: string;
     };
-    senderName: string;
-    senderPhone: string;
-    senderEmail: string;
-    senderAddress: string;
-    senderStatus: string;
+    location: string;
+    message: string;
+    photos: string[];
+    tindakan: [{
+        _id: string;
+        report: string;
+        hasil: string;
+        kesimpulan: string;
+        situasi: string;
+        status: string;
+        opd: string;
+        photos: string[];
+        createdAt: string;
+        updatedAt: string;
+    }];
 }
 
 export default function ChatPage() {
@@ -60,38 +70,16 @@ export default function ChatPage() {
                     </div>
                 </div>
                 <div className="flex gap-6 items-end">
-                    {/* Situasi Dropdown */}
+                    {/* Situasi */}
                     <div className="flex flex-col">
-                        <label htmlFor="situasi" className="text-sm text-gray-700 mb-1">
-                            Situasi
-                        </label>
-                        <select
-                            id="situasi"
-                            className="bg-gray-200 text-sm rounded-full px-4 py-1 focus:outline-none"
-                            defaultValue="Berpengawasan"
-                        >
-                            <option value="Darurat">Darurat</option>
-                            <option value="Permintaan Informasi">Permintaan Informasi</option>
-                            <option value="Tidak Berpengawasan">Tidak Berpengawasan</option>
-                            <option value="Berpengawasan">Berpengawasan</option>
-                        </select>
+                        <label className="text-sm text-gray-700 mb-1">Situasi</label>
+                        <p className="text-sm text-gray-800">{data?.tindakan?.[0]?.situasi || "Tidak ada data"}</p>
                     </div>
 
-                    {/* Status Dropdown */}
+                    {/* Status */}
                     <div className="flex flex-col">
-                        <label htmlFor="status" className="text-sm text-gray-700 mb-1">
-                            Status
-                        </label>
-                        <select
-                            id="status"
-                            className="bg-gray-200 text-sm rounded-full px-4 py-1 focus:outline-none"
-                            defaultValue="Verifikasi Data"
-                        >
-                            <option value="Verifikasi Data">Verifikasi Data</option>
-                            <option value="Dalam Proses">Dalam Proses</option>
-                            <option value="Selesai">Selesai</option>
-                            <option value="Proses Ulang">Proses Ulang</option>
-                        </select>
+                        <label className="text-sm text-gray-700 mb-1">Status</label>
+                        <p className="text-sm text-gray-800">{data?.tindakan?.[0]?.status || "Tidak ada data"}</p>
                     </div>
                 </div>
             </div>
@@ -128,13 +116,13 @@ export default function ChatPage() {
             <div className="flex-1 overflow-y-auto">
                 {
                     activeTab === "pesan" ? (
-                        <Message from={data?.from || ""} /> // Gunakan `from` dari objek
+                        <Message from={data?.from || ""} />
                     ) : activeTab === "profile" ? (
                         <Profile sessionId={sessionId} />
                     ) : activeTab === "keluhan" ? (
                         <Keluhan sessionId={sessionId} />
                     ) : (
-                        <Tindakan sessionId={sessionId} />
+                        <Tindakan _id={data?._id || ""} />
                     )
                 }
             </div>

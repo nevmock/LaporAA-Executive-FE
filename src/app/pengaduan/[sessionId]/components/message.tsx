@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 import { FaPaperPlane } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-const socket = io(`${API_URL}`);
+const socket = io(`${API_URL}`, { autoConnect: false }); // hanya connect saat `from` tersedia
 
 interface MessageItem {
     _id: string;
@@ -16,7 +16,7 @@ interface MessageItem {
     timestamp: string;
 }
 
-export default function Message({ from }: { from: string }) { // Ganti sessionId menjadi from
+export default function Message({ from }: { from: string }) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
@@ -25,15 +25,21 @@ export default function Message({ from }: { from: string }) { // Ganti sessionId
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
+    // 📦 Fetch messages
     useEffect(() => {
-        if (from) { // Gunakan from sebagai identifikasi
-            axios.get(`${API_URL}/chat/${from}`) // Ganti sessionId dengan from
-                .then((res) => setMessages(res.data))
-                .catch((err) => console.error(err));
-        }
+        if (!from) return;
+
+        socket.connect();
+
+        axios.get(`${API_URL}/chat/${from}`)
+            .then((res) => {
+                setMessages(res.data);
+                setTimeout(scrollToBottom, 100); // scroll otomatis ke bawah setelah load awal
+            })
+            .catch((err) => console.error(err));
 
         const handleNewMessage = (msg: MessageItem) => {
-            if (msg.from === from) { // Periksa apakah pesan baru berasal dari from yang sama
+            if (msg.from === from) {
                 setMessages((prev) => [...prev, msg]);
                 if (isScrolledUp) setUnreadCount((prev) => prev + 1);
                 else scrollToBottom();
@@ -41,10 +47,12 @@ export default function Message({ from }: { from: string }) { // Ganti sessionId
         };
 
         socket.on("newMessage", handleNewMessage);
+
         return () => {
             socket.off("newMessage", handleNewMessage);
+            socket.disconnect();
         };
-    }, [from, isScrolledUp]);
+    }, [from]);
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -64,7 +72,8 @@ export default function Message({ from }: { from: string }) { // Ganti sessionId
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
-        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage }) // Ganti sessionId dengan from
+
+        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage })
             .then(() => {
                 setNewMessage("");
                 scrollToBottom();
@@ -114,9 +123,9 @@ export default function Message({ from }: { from: string }) { // Ganti sessionId
                 {messages.length === 0 ? (
                     <p className="text-gray-500 text-center">Belum ada pesan.</p>
                 ) : (
-                    messages.map((msg, index) => (
+                    messages.map((msg) => (
                         <div
-                            key={index}
+                            key={msg._id}
                             className={`flex ${msg.senderName === "Bot" ? "justify-end" : "justify-start"}`}
                         >
                             <div
@@ -124,9 +133,7 @@ export default function Message({ from }: { from: string }) { // Ganti sessionId
                                     }`}
                             >
                                 <p>{msg.message}</p>
-                                <p className="text-xs text-gray-200 mt-1">
-                                    {formatDate(msg.timestamp)}
-                                </p>
+                                <p className="text-xs text-gray-200 mt-1">{formatDate(msg.timestamp)}</p>
                             </div>
                         </div>
                     ))

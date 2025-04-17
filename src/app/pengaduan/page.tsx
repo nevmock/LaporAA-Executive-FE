@@ -18,6 +18,19 @@ interface Chat {
   status: "in_progress" | "done" | "rejected"; // Enum status
   createdAt?: string; // Ditambahkan karena timestamps
   updatedAt?: string; // Ditambahkan karena timestamps
+  tindakan?: [{
+    _id: string;
+    report: string;
+    hasil: string;
+    kesimpulan: string;
+    prioritas: string;
+    situasi: string;
+    status: string;
+    opd: string;
+    photos: string[];
+    createdAt: string;
+    updatedAt: string;
+  }];
 }
 
 export default function PengaduanPage() {
