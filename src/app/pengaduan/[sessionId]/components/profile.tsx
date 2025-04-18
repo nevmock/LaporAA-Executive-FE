@@ -16,7 +16,11 @@ interface Data {
         email: string;
         reportHistory: string[];
     };
-    location: string;
+    location: {
+        latitude: number;
+        longitude: number;
+        description: string;
+    };
     status: string;
 }
 

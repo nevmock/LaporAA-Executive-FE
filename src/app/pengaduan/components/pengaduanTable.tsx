@@ -2,19 +2,26 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
 interface Chat {
-    _id: string[]; // Sesuai dengan MongoDB ObjectId
-    sessionId: string; // Ditambahkan dari skema
-    from: string; // Ditambahkan dari skema
-    user: string[]; // Mengacu pada ObjectId dari UserProfile
-    address: string; // Ditambahkan dari skema
-    location: string; // Ditambahkan dari skema
-    message: string; // Ditambahkan dari skema
-    photos: string[]; // URL foto, default array kosong
-    status: "in_progress" | "done" | "rejected"; // Enum status
-    createdAt?: string; // Ditambahkan karena timestamps
-    updatedAt?: string; // Ditambahkan karena timestamps
+    _id: string[];
+    sessionId: string;
+    from: string;
+    user: string[];
+    address: string;
+    location: {
+        latitude: number;
+        longitude: number;
+        description: string;
+    };
+    message: string;
+    photos: string[];
+    status: "in_progress" | "done" | "rejected";
+    createdAt?: string;
+    updatedAt?: string;
     tindakan?: [{
         _id: string;
         report: string;
@@ -37,7 +44,12 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
     const [sortKey, setSortKey] = useState<SortKey>("_id");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-    // 🔁 Handle Klik Sort
+    const [selectedLoc, setSelectedLoc] = useState<{
+        lat: number;
+        lon: number;
+        description: string;
+    } | null>(null);
+
     const handleSort = (key: SortKey) => {
         if (key === sortKey) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -47,17 +59,15 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
         }
     };
 
-    // 🔍 Filter + Sort
     const filteredData = useMemo(() => {
         const lowerSearch = search.toLowerCase();
 
         const filtered = data.filter(
             (item) =>
-                //   item._id.toLowerCase().includes(lowerSearch) ||
                 item.sessionId.toLowerCase().includes(lowerSearch) ||
                 item.from.toLowerCase().includes(lowerSearch) ||
                 item.address.toLowerCase().includes(lowerSearch) ||
-                item.location.toLowerCase().includes(lowerSearch) ||
+                item.location.description.toLowerCase().includes(lowerSearch) ||
                 item.message.toLowerCase().includes(lowerSearch)
         );
 
@@ -78,7 +88,7 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
 
     return (
         <div className="space-y-4">
-            {/* Search Input */}
+            {/* 🔍 Search */}
             <div>
                 <input
                     type="text"
@@ -89,7 +99,7 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                 />
             </div>
 
-            {/* Tabel */}
+            {/* 📋 Table */}
             <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-800 text-white">
@@ -146,7 +156,24 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                                     <td className="px-4 py-2">{chat.user || "-"}</td>
                                     <td className="px-4 py-2">{chat.from || "-"}</td>
                                     <td className="px-4 py-2">{chat.address || "-"}</td>
-                                    <td className="px-4 py-2">{chat.location || "-"}</td>
+                                    <td className="px-4 py-2">
+                                        {chat.location?.description ? (
+                                            <button
+                                                onClick={() =>
+                                                    setSelectedLoc({
+                                                        lat: chat.location.latitude,
+                                                        lon: chat.location.longitude,
+                                                        description: chat.location.description
+                                                    })
+                                                }
+                                                className="text-blue-600 hover:underline"
+                                            >
+                                                {chat.location.description}
+                                            </button>
+                                        ) : (
+                                            "-"
+                                        )}
+                                    </td>
                                     <td className="px-4 py-2">{chat?.tindakan?.[0]?.prioritas || "-"}</td>
                                     <td className="px-4 py-2">{chat?.tindakan?.[0]?.situasi || "-"}</td>
                                     <td className="px-4 py-2">{chat?.tindakan?.[0]?.status || "-"}</td>
@@ -155,7 +182,7 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={10} className="text-center py-4 text-gray-500">
+                                <td colSpan={11} className="text-center py-4 text-gray-500">
                                     Tidak ada data ditemukan.
                                 </td>
                             </tr>
@@ -163,6 +190,22 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
                     </tbody>
                 </table>
             </div>
+
+            {/* 🗺️ Modal Map */}
+            {selectedLoc && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-4 w-[90%] max-w-md relative shadow-lg">
+                        <button
+                            onClick={() => setSelectedLoc(null)}
+                            className="absolute top-2 right-3 text-gray-700 hover:text-black text-lg"
+                        >
+                            ✕
+                        </button>
+                        <h2 className="text-lg font-semibold mb-2">{selectedLoc.description}</h2>
+                        <MapPopup lat={selectedLoc.lat} lon={selectedLoc.lon} description={selectedLoc.description} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

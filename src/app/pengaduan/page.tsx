@@ -12,7 +12,11 @@ interface Chat {
   from: string; // Ditambahkan dari skema
   user: string[]; // Mengacu pada ObjectId dari UserProfile
   address: string; // Ditambahkan dari skema
-  location: string; // Ditambahkan dari skema
+  location: {
+    latitude: number;
+    longitude: number;
+    description: string;
+  };
   message: string; // Ditambahkan dari skema
   photos: string[]; // URL foto, default array kosong
   status: "in_progress" | "done" | "rejected"; // Enum status

@@ -19,7 +19,11 @@ interface Data {
         email: string;
         address: string;
     };
-    location: string;
+    location: {
+        latitude: number;
+        longitude: number;
+        description: string;
+    };
     message: string;
     photos: string[];
     tindakan: [{
