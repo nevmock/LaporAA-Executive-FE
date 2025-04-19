@@ -1,6 +1,7 @@
 import Sidebar from "./sidebar";
 import './globals.css';
 import React from "react";
+import "leaflet/dist/leaflet.css";
 // import UserNav from "../components/userNav";
 
 interface RootLayoutProps {

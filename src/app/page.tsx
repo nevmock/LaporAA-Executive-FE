@@ -1,34 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import axios from "axios";
 import Link from "next/link";
-
-const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-
-
 
 export default function Home() {
   return (
-    <div className="w-full h-screen bg-white p-6 overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900">Halaman Home</h2>
-
-      {/* Top 3 Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gray-100 rounded-xl p-6 shadow text-center">
-          <p className="font-medium text-gray-700">Pengaduan belum dibaca</p>
-        </div>
-        <div className="bg-gray-100 rounded-xl p-6 shadow text-center">
-          <p className="font-medium text-gray-700">Responsiveness</p>
-        </div>
-        <div className="bg-gray-100 rounded-xl p-6 shadow text-center">
-          <p className="font-medium text-gray-700">Persebaran</p>
-        </div>
-      </div>
-
-      {/* Maps Container */}
-      <div className="bg-gray-200 rounded-xl h-[300px] flex items-center justify-center shadow">
-        <p className="text-gray-600">maps persebaran</p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white text-center p-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-4">Selamat datang 👋</h1>
+      <p className="text-gray-600 mb-6">Silakan masuk ke dashboard untuk melihat data laporan.</p>
+      <Link href="/dashboard" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Masuk ke Dashboard
+      </Link>
     </div>
   );
 }

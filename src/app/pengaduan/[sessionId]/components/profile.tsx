@@ -62,9 +62,6 @@ export default function Profile({ sessionId }: { sessionId: string }) {
 
                 <p className="col-span-1 font-medium">Alamat</p>
                 <p className="col-span-3">: {data.user.address}</p>
-
-                <p className="col-span-1 font-medium">Status</p>
-                <p className="col-span-3">: {data.status}</p>
             </div>
         </div>
     );

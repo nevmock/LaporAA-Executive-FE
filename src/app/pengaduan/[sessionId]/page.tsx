@@ -43,24 +43,56 @@ interface Data {
 export default function ChatPage() {
     const params = useParams() as { sessionId?: string };
     const sessionId = params?.sessionId;
-    if (!sessionId) return null; // atau loading state
+    if (!sessionId) return null;
 
-    const [data, setData] = useState<Data | null>(null); // Ubah menjadi objek, bukan array
+    const [data, setData] = useState<Data | null>(null);
     const [activeTab, setActiveTab] = useState<"pesan" | "profile" | "keluhan" | "tindakan">("keluhan");
+    const [formData, setFormData] = useState({ situasi: "", status: "" });
+
+    // Fetch initial data
+    const fetchData = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/reports/${sessionId}`);
+            setData(res.data || null);
+
+            if (res.data?.tindakan?.[0]) {
+                setFormData({
+                    situasi: res.data.tindakan[0].situasi,
+                    status: res.data.tindakan[0].status,
+                });
+            }
+        } catch (err) {
+            console.error("❌ Gagal ambil data:", err);
+            setData(null);
+        }
+    };
 
     useEffect(() => {
-        axios
-            .get(`${API_URL}/reports/${sessionId}`)
-            .then((res) => {
-                const responseData = res.data || null; // Pastikan respons adalah objek
-                console.info("✅ page data:", responseData);
-                setData(responseData);
-            })
-            .catch((err) => {
-                console.error(err);
-                setData(null); // fallback safe
-            });
+        fetchData();
     }, [sessionId]);
+
+    // Auto-save handler
+    const handleFormChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        const updated = { ...formData, [name]: value };
+        setFormData(updated);
+
+        if (!data?._id || !data?.tindakan?.[0]?._id) return;
+
+        try {
+            await axios.post(`${API_URL}/tindakan`, {
+                ...data.tindakan[0],
+                [name]: value,
+                reportId: data._id,
+                createdAt: data.tindakan[0].createdAt,
+                updatedAt: new Date().toISOString(),
+            });
+
+            await fetchData(); // Refresh data
+        } catch (err) {
+            console.error("❌ Gagal update data:", err);
+        }
+    };
 
     return (
         <div className="w-full h-screen flex flex-col bg-white">
@@ -77,13 +109,34 @@ export default function ChatPage() {
                     {/* Situasi */}
                     <div className="flex flex-col">
                         <label className="text-sm text-gray-700 mb-1">Situasi</label>
-                        <p className="text-sm text-gray-800">{data?.tindakan?.[0]?.situasi || "Tidak ada data"}</p>
+                        <select
+                            name="situasi"
+                            value={formData.situasi}
+                            onChange={handleFormChange}
+                            className="col-span-3 border p-2 text-gray-700 rounded-md"
+                        >
+                            <option value="Verifikasi Data">Verifikasi Data</option>
+                            <option value="Darurat">Darurat</option>
+                            <option value="Permintaan Informasi">Permintaan Informasi</option>
+                            <option value="Berpengawasan">Berpengawasan</option>
+                            <option value="Tidak Berpengawasan">Tidak Berpengawasan</option>
+                        </select>
                     </div>
 
                     {/* Status */}
                     <div className="flex flex-col">
                         <label className="text-sm text-gray-700 mb-1">Status</label>
-                        <p className="text-sm text-gray-800">{data?.tindakan?.[0]?.status || "Tidak ada data"}</p>
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleFormChange}
+                            className="col-span-3 border p-2 text-gray-700 rounded-md"
+                        >
+                            <option value="Verifikasi Data">Verifikasi Data</option>
+                            <option value="Dalam Proses">Dalam Proses</option>
+                            <option value="Selesai">Selesai</option>
+                            <option value="Proses Ulang">Proses Ulang</option>
+                        </select>
                     </div>
                 </div>
             </div>
