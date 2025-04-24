@@ -1,13 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Message from "./components/message";
 import Profile from "./components/profile";
-import Keluhan from "./components/keluhan";
 import Tindakan from "./components/tindakan";
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+
+interface TindakanData {
+    _id: string;
+    report: string;
+    hasil: string;
+    kesimpulan: string;
+    situasi: string;
+    status: string;
+    opd: string;
+    photos: string[];
+    createdAt: string;
+    updatedAt: string;
+}
 
 interface Data {
     _id: string;
@@ -26,41 +38,21 @@ interface Data {
     };
     message: string;
     photos: string[];
-    tindakan: [{
-        _id: string;
-        report: string;
-        hasil: string;
-        kesimpulan: string;
-        situasi: string;
-        status: string;
-        opd: string;
-        photos: string[];
-        createdAt: string;
-        updatedAt: string;
-    }];
+    tindakan?: TindakanData;
 }
 
 export default function ChatPage() {
     const params = useParams() as { sessionId?: string };
     const sessionId = params?.sessionId;
-    if (!sessionId) return null;
+    const router = useRouter();
 
     const [data, setData] = useState<Data | null>(null);
-    const [activeTab, setActiveTab] = useState<"pesan" | "profile" | "keluhan" | "tindakan">("keluhan");
-    const [formData, setFormData] = useState({ situasi: "", status: "" });
+    const [activeTab, setActiveTab] = useState<"pesan" | "profile" | "tindakan">("tindakan");
 
-    // Fetch initial data
     const fetchData = async () => {
         try {
             const res = await axios.get(`${API_URL}/reports/${sessionId}`);
-            setData(res.data || null);
-
-            if (res.data?.tindakan?.[0]) {
-                setFormData({
-                    situasi: res.data.tindakan[0].situasi,
-                    status: res.data.tindakan[0].status,
-                });
-            }
+            setData(res.data);
         } catch (err) {
             console.error("❌ Gagal ambil data:", err);
             setData(null);
@@ -68,120 +60,55 @@ export default function ChatPage() {
     };
 
     useEffect(() => {
-        fetchData();
+        if (sessionId) fetchData();
     }, [sessionId]);
 
-    // Auto-save handler
-    const handleFormChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        const updated = { ...formData, [name]: value };
-        setFormData(updated);
-
-        if (!data?._id || !data?.tindakan?.[0]?._id) return;
-
-        try {
-            await axios.post(`${API_URL}/tindakan`, {
-                ...data.tindakan[0],
-                [name]: value,
-                reportId: data._id,
-                createdAt: data.tindakan[0].createdAt,
-                updatedAt: new Date().toISOString(),
-            });
-
-            await fetchData(); // Refresh data
-        } catch (err) {
-            console.error("❌ Gagal update data:", err);
-        }
-    };
+    if (!sessionId) return null;
 
     return (
         <div className="w-full h-screen flex flex-col bg-white">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-100">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gray-300" />
+                    <button
+                        onClick={() => router.push("/pengaduan")}
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
                     <div>
                         <p className="font-semibold text-gray-800">{data?.user?.name}</p>
                         <p className="text-sm text-gray-500">+{data?.from}</p>
-                    </div>
-                </div>
-                <div className="flex gap-6 items-end">
-                    {/* Situasi */}
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-700 mb-1">Situasi</label>
-                        <select
-                            name="situasi"
-                            value={formData.situasi}
-                            onChange={handleFormChange}
-                            className="col-span-3 border p-2 text-gray-700 rounded-md"
-                        >
-                            <option value="Verifikasi Data">Verifikasi Data</option>
-                            <option value="Darurat">Darurat</option>
-                            <option value="Permintaan Informasi">Permintaan Informasi</option>
-                            <option value="Berpengawasan">Berpengawasan</option>
-                            <option value="Tidak Berpengawasan">Tidak Berpengawasan</option>
-                        </select>
-                    </div>
-
-                    {/* Status */}
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-700 mb-1">Status</label>
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleFormChange}
-                            className="col-span-3 border p-2 text-gray-700 rounded-md"
-                        >
-                            <option value="Verifikasi Data">Verifikasi Data</option>
-                            <option value="Dalam Proses">Dalam Proses</option>
-                            <option value="Selesai">Selesai</option>
-                            <option value="Proses Ulang">Proses Ulang</option>
-                        </select>
                     </div>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b px-6 bg-white">
-                <button
-                    className={`py-2 px-4 font-medium ${activeTab === "pesan" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
-                    onClick={() => setActiveTab("pesan")}
-                >
-                    Pesan
-                </button>
-                <button
-                    className={`py-2 px-4 font-medium ${activeTab === "profile" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
-                    onClick={() => setActiveTab("profile")}
-                >
-                    Profile
-                </button>
-                <button
-                    className={`py-2 px-4 font-medium ${activeTab === "keluhan" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
-                    onClick={() => setActiveTab("keluhan")}
-                >
-                    Keluhan
-                </button>
-                <button
-                    className={`py-2 px-4 font-medium ${activeTab === "tindakan" ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
-                    onClick={() => setActiveTab("tindakan")}
-                >
-                    Tindakan
-                </button>
+                {["tindakan", "profile", "pesan"].map((tab) => (
+                    <button
+                        key={tab}
+                        className={`py-2 px-4 font-medium ${
+                            activeTab === tab ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"
+                        }`}
+                        onClick={() => setActiveTab(tab as any)}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                ))}
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
-                {
-                    activeTab === "pesan" ? (
-                        <Message from={data?.from || ""} />
-                    ) : activeTab === "profile" ? (
-                        <Profile sessionId={sessionId} />
-                    ) : activeTab === "keluhan" ? (
-                        <Keluhan sessionId={sessionId} />
-                    ) : (
-                        <Tindakan _id={data?._id || ""} />
-                    )
-                }
+                {activeTab === "pesan" ? (
+                    <Message from={data?.from || ""} />
+                ) : activeTab === "profile" ? (
+                    <Profile sessionId={sessionId} />
+                ) : (
+                    <Tindakan tindakan={data?.tindakan || null} sessionId={sessionId} />
+                )}
             </div>
         </div>
     );

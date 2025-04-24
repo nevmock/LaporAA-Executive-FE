@@ -30,16 +30,13 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
     useEffect(() => {
         axios
             .get(`${API_URL}/reports/${sessionId}`)
-            .then((res) => {
-                setData(res.data || null);
-            })
+            .then((res) => setData(res.data || null))
             .catch((err) => {
                 console.error("❌ API Error:", err);
                 setData(null);
             });
     }, [sessionId]);
 
-    // Tutup modal saat tekan Esc
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === "Escape") setShowModal(false);
@@ -65,7 +62,9 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
     }
 
     return (
-        <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
+        <div className="space-y-6 text-sm text-gray-800">
+            <h2 className="text-lg font-medium mb-4">Data Keluhan</h2>
+            {/* Detail Keluhan */}
             <div className="grid grid-cols-4 gap-2">
                 <p className="col-span-1 font-medium">Keluhan</p>
                 <p className="col-span-3">: {data.message}</p>
@@ -109,15 +108,12 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                         className="relative bg-white rounded-md p-4 max-w-lg w-[90%] shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* ✕ Close */}
                         <button
                             onClick={() => setShowModal(false)}
                             className="absolute top-2 right-3 text-gray-600 hover:text-black text-lg"
                         >
                             ✕
                         </button>
-
-                        {/* Gambar utama (zoomable + swipeable) */}
                         <div {...handlers}>
                             <Zoom>
                                 <img
@@ -127,8 +123,6 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                                 />
                             </Zoom>
                         </div>
-
-                        {/* Navigasi */}
                         <div className="flex justify-between mt-4 text-sm font-medium">
                             <button
                                 onClick={() =>
