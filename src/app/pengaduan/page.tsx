@@ -4,38 +4,43 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import PengaduanTable from "./components/pengaduanTable";
 
-const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+// Modular interface
+interface Location {
+  latitude: number;
+  longitude: number;
+  description: string;
+}
+
+interface Tindakan {
+  _id: string;
+  report: string;
+  hasil: string;
+  kesimpulan: string;
+  prioritas: string;
+  situasi: string;
+  status: string;
+  opd: string;
+  photos: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Chat {
-  _id: string[]; // Sesuai dengan MongoDB ObjectId
-  sessionId: string; // Ditambahkan dari skema
-  from: string; // Ditambahkan dari skema
-  user: string[]; // Mengacu pada ObjectId dari UserProfile
-  address: string; // Ditambahkan dari skema
-  location: {
-    latitude: number;
-    longitude: number;
-    description: string;
-  };
-  message: string; // Ditambahkan dari skema
-  photos: string[]; // URL foto, default array kosong
-  status: "in_progress" | "done" | "rejected"; // Enum status
-  createdAt?: string; // Ditambahkan karena timestamps
-  updatedAt?: string; // Ditambahkan karena timestamps
-  tindakan?: [{
-    _id: string;
-    report: string;
-    hasil: string;
-    kesimpulan: string;
-    prioritas: string;
-    situasi: string;
-    status: string;
-    opd: string;
-    photos: string[];
-    createdAt: string;
-    updatedAt: string;
-  }];
+  _id: string;
+  sessionId: string;
+  from: string;
+  user: string;
+  address: string;
+  location: Location;
+  message: string;
+  photos: string[];
+  status: "in_progress" | "done" | "rejected";
+  createdAt?: string;
+  updatedAt?: string;
+  tindakan?: Tindakan;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 export default function PengaduanPage() {
   const [data, setData] = useState<Chat[]>([]);
@@ -45,13 +50,14 @@ export default function PengaduanPage() {
       .get(`${API_URL}/reports`)
       .then((res) => {
         const responseData = Array.isArray(res.data) ? res.data : res.data?.data || [];
-        const processedData = responseData.map((item: any) => ({
+
+        // Transform user object (jika masih object) jadi string name
+        const processedData: Chat[] = responseData.map((item: any) => ({
           ...item,
           user: typeof item.user === "object" ? item.user.name : item.user,
-          nik: typeof item.user === "object" ? item.user.nik : item.user,
-          address: typeof item.user === "object" ? item.user.address : item.user,
-          reportHistory: typeof item.user === "object" ? item.user.reportHistory : item.user,
+          address: typeof item.user === "object" ? item.user.address : item.address,
         }));
+
         setData(processedData);
         console.log("✅ fetched data:", processedData);
       })
