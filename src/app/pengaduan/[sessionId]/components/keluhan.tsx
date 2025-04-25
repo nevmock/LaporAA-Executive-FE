@@ -20,6 +20,7 @@ interface Data {
         description: string;
     };
     photos: string[];
+    createdAt: string;
 }
 
 export default function Keluhan({ sessionId }: { sessionId: string }) {
@@ -57,19 +58,77 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
         trackMouse: true,
     });
 
+    const [locationDetails, setLocationDetails] = useState<any>(null);
+
+    useEffect(() => {
+        if (!data) return;
+
+        const fetchLocation = async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${data.location.latitude}&lon=${data.location.longitude}&zoom=18&addressdetails=1`,
+                    {
+                        headers: {
+                            "Accept-Language": "id", // Bahasa Indonesia
+                        },
+                    }
+                );
+                const result = await res.json();
+                setLocationDetails(result);
+            } catch (err) {
+                console.error("❌ Gagal ambil lokasi:", err);
+            }
+        };
+
+        fetchLocation();
+    }, [data]);
+
+
     if (!data) {
-        return <p className="text-center text-gray-500">Memuat data keluhan...</p>;
+        return <p className="text-center text-gray-500">Memuat data Laporan...</p>;
     }
 
     return (
         <div className="space-y-6 text-sm text-gray-800">
-            <h2 className="text-lg font-medium mb-4">Data Keluhan</h2>
             {/* Detail Keluhan */}
             <div className="grid grid-cols-4 gap-2">
-                <p className="col-span-1 font-medium">Keluhan</p>
+                {/* Isi Laporan */}
+                <p className="col-span-1 font-medium">Isi Laporan</p>
                 <p className="col-span-3">: {data.message}</p>
 
-                <p className="col-span-1 font-medium">Lokasi</p>
+                <p className="col-span-1 font-medium">Tanggal Kejadian</p>
+                <p className="col-span-3">
+                    : {new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
+                </p>
+
+                {/* Lokasi Kejadian */}
+                {locationDetails?.address && (
+                    <>
+                        <p className="col-span-1 font-medium">Lokasi Kejadian</p>
+                        <p className="col-span-3">: {data.location.description}</p>
+
+                        <p className="col-span-1 font-medium">Nama Jalan</p>
+                        <p className="col-span-3">: {locationDetails.address.road || "-"}</p>
+
+                        <p className="col-span-1 font-medium">Kecamatan</p>
+                        <p className="col-span-3">: {locationDetails.address.suburb || "-"}</p>
+
+                        <p className="col-span-1 font-medium">Kota/Kab</p>
+                        <p className="col-span-3">: {locationDetails.address.city || locationDetails.address.town || locationDetails.address.village || "-"}</p>
+
+                        <p className="col-span-1 font-medium">Provinsi</p>
+                        <p className="col-span-3">: {locationDetails.address.state || "-"}</p>
+
+                        <p className="col-span-1 font-medium">Negara</p>
+                        <p className="col-span-3">: {locationDetails.address.country || "-"}</p>
+
+                        <p className="col-span-1 font-medium">Kode Pos</p>
+                        <p className="col-span-3">: {locationDetails.address.postcode || "-"}</p>
+                    </>
+                )}
+
+                {/* Peta Lokasi */}
+                <p className="col-span-1 font-medium">Peta Lokasi Kejadian</p>
                 <div className="col-span-3">
                     <MapView
                         lat={data.location.latitude}
@@ -78,7 +137,8 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                     />
                 </div>
 
-                <p className="col-span-1 font-medium">Foto</p>
+                {/* Foto */}
+                <p className="col-span-1 font-medium">Bukti Kejadian</p>
                 <div className="col-span-3 flex gap-2 flex-wrap">
                     {data.photos.length > 0 ? (
                         data.photos.map((photo, index) => (

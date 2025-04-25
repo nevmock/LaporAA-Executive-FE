@@ -1,139 +1,147 @@
 "use client";
 import { useEffect, useState } from "react";
+import axios from "axios";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
-import axios from "axios";
 import Keluhan from "./keluhan";
+import { TindakanClientState } from "../../../../lib/types";
+
+// Komponen per langkah
+import Verifikasi from "./componentsTindakan/verifikasi";
+import Verifikasi2 from "./componentsTindakan/verifikasi2";
+import Proses from "./componentsTindakan/proses";
+import Selesai from "./componentsTindakan/selesai";
+import Selesai2 from "./componentsTindakan/selesai2";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-interface TindakanData {
-    _id: string;
-    report: string;
-    hasil: string;
-    kesimpulan: string;
-    situasi: string;
-    status: string;
-    opd: string;
-    photos: string[];
-    createdAt: string;
-    updatedAt: string;
-}
-
 const STATUS_LIST = [
     "Perlu Verifikasi",
-    "Sedang di Verifikasi",
-    "Proses Penyelesaian",
-    "Selesai",
-    "Proses Penyelesaian Ulang"
+    "Verifikasi Kelengkapan Berkas",
+    "Proses OPD Terkait",
+    "Selesai Pengaduan",
+    "Selesai Penanganan",
 ];
+
+const STEP_FLOW = [
+    { label: "Perlu Verifikasi", fields: ["situasi"] },
+    { label: "Verifikasi Kelengkapan Berkas", fields: ["trackingId", "opd", "kesimpulan"] },
+    { label: "Proses OPD Terkait", fields: ["kesimpulan"] },
+    { label: "Selesai Pengaduan", fields: ["trackingId"] },
+    { label: "Selesai Penanganan", fields: [] },
+];
+
+const STEP_COMPONENTS = [Verifikasi, Verifikasi2, Proses, Selesai, Selesai2];
 
 export default function Tindakan({
     tindakan,
     sessionId,
-    onTindakanSaved
 }: {
-    tindakan: TindakanData | null;
+    tindakan: TindakanClientState | null;
     sessionId: string;
-    onTindakanSaved?: () => void;
 }) {
-    const [formData, setFormData] = useState<Partial<TindakanData>>({});
-    const [tempPhotos, setTempPhotos] = useState<File[]>([]);
+    const [formData, setFormData] = useState<Partial<TindakanClientState>>({});
     const [showModal, setShowModal] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-    const maxPhotos = 5;
+    const [showKeluhan, setShowKeluhan] = useState(false);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [notif, setNotif] = useState<string | null>(null);
 
     useEffect(() => {
         if (tindakan) {
             setFormData(tindakan);
-            console.info("✅ Data tindakan dimuat:", tindakan);
+            const stepIndex = STATUS_LIST.indexOf(tindakan.status || "Perlu Verifikasi");
+            setCurrentStepIndex(stepIndex >= 0 ? stepIndex : 0);
         }
     }, [tindakan]);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        const updated = { ...formData, [name]: value };
-        setFormData(updated);
-        console.info("📝 Form diubah:", updated);
+    const validateCurrentStep = () => {
+        const requiredFields = STEP_FLOW[currentStepIndex].fields;
+        return requiredFields.every((field) => !!formData[field as keyof TindakanClientState]);
     };
 
-    const handlePhotoSelect = (files: FileList | null) => {
-        if (!files) return;
-        const newFiles = Array.from(files).slice(0, maxPhotos - (formData.photos?.length || 0));
-        setTempPhotos((prev) => [...prev, ...newFiles]);
-        console.info("🖼️ Foto ditambahkan:", newFiles);
-    };
-
-    const handleRemovePhoto = (index: number) => {
-        const updatedPhotos = formData.photos?.filter((_, i) => i !== index) || [];
-        setFormData((prev) => ({ ...prev, photos: updatedPhotos }));
-        console.info("❌ Foto dihapus, sisa:", updatedPhotos);
-    };
-
-    const handleCancel = () => {
-        setTempPhotos([]);
-        console.info("🚫 Upload foto dibatalkan");
-    };
-
-    const handleSave = async () => {
+    const saveData = async (nextStatus?: string) => {
         try {
-            console.info("🔄 Proses simpan dimulai...");
-            let uploadedPaths: string[] = [];
-
-            if (tempPhotos.length > 0) {
-                const formDataUpload = new FormData();
-                tempPhotos.forEach((file) => formDataUpload.append("photos", file));
-                const res = await axios.post(`${API_URL}/api/upload-tindakan`, formDataUpload, {
-                    headers: { "Content-Type": "multipart/form-data" }
-                });
-                uploadedPaths = res.data.paths || [];
-                console.info("📤 Foto berhasil diupload:", uploadedPaths);
-            }
-
-            const updatedData = {
+            const updatedData: Partial<TindakanClientState> = {
                 ...formData,
-                photos: [...(formData.photos || []), ...uploadedPaths].slice(0, maxPhotos),
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                status: nextStatus || formData.status,
             };
 
             await axios.put(`${API_URL}/tindakan/${formData.report}`, updatedData);
-            console.info("✅ Data berhasil disimpan:", updatedData);
-
             setFormData(updatedData);
-            setTempPhotos([]);
-            onTindakanSaved?.();
+            setNotif("✅ Data berhasil disimpan.");
         } catch (err) {
             console.error("❌ Gagal menyimpan:", err);
+            setNotif("❌ Gagal menyimpan data.");
+        } finally {
+            setTimeout(() => setNotif(null), 3000);
         }
     };
+
+    const handleSaveDraft = () => saveData();
+
+    const handleNextStep = async () => {
+        if (!validateCurrentStep()) {
+            alert("Harap lengkapi semua data yang dibutuhkan terlebih dahulu.");
+            return;
+        }
+
+        // Khusus langkah konfirmasi sebelum lanjut
+        if (STATUS_LIST[currentStepIndex] === "Proses OPD Terkait") {
+            const confirmed = confirm(
+                "Apakah kamu yakin bahwa tindakan ini sudah selesai dan siap dilaporkan kepada pelapor?"
+            );
+            if (!confirmed) return;
+        }
+
+        const nextIndex = currentStepIndex + 1;
+        const nextStatus = STATUS_LIST[nextIndex];
+        await saveData(nextStatus);
+        setCurrentStepIndex(nextIndex);
+    };
+
+    const handlePreviousStep = async () => {
+        const prevIndex = currentStepIndex - 1;
+        if (prevIndex < 0) return;
+        const prevStatus = STATUS_LIST[prevIndex];
+        await saveData(prevStatus);
+        setCurrentStepIndex(prevIndex);
+    };
+
+    const StepComponent = STEP_COMPONENTS[currentStepIndex];
 
     const handlers = useSwipeable({
         onSwipedLeft: () =>
             setActivePhotoIndex((prev) => (prev < (formData.photos?.length || 0) - 1 ? prev + 1 : 0)),
         onSwipedRight: () =>
             setActivePhotoIndex((prev) => (prev > 0 ? prev - 1 : (formData.photos?.length || 0) - 1)),
-        trackMouse: true
+        trackMouse: true,
     });
-
-    const currentStatusIndex = STATUS_LIST.indexOf(formData.status || "");
 
     return (
         <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
-            {/* Progress */}
+            {notif && (
+                <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded mb-4 shadow-sm">
+                    {notif}
+                </div>
+            )}
+
+            {/* Progress Bar */}
             <div>
                 <h2 className="text-lg font-medium mb-2">Progress Tindakan</h2>
                 <div className="flex justify-between items-center">
                     {STATUS_LIST.map((status, idx) => {
-                        const current = formData.status === status;
-                        const done = currentStatusIndex > idx;
+                        const current = idx === currentStepIndex;
+                        const done = idx < currentStepIndex;
 
                         return (
                             <div key={status} className="flex-1 flex flex-col items-center text-xs relative">
-                                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10
-                  ${current ? "bg-green-700 text-white" : done ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"}
-                `}>
+                                <div
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10
+                    ${current ? "bg-green-700 text-white" : done ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"}`}
+                                >
                                     {idx + 1}
                                 </div>
                                 <span className={`mt-1 text-center ${current ? "text-green-700 font-semibold" : "text-gray-400"}`}>
@@ -148,95 +156,44 @@ export default function Tindakan({
                 </div>
             </div>
 
-            {/* Keluhan */}
+            {/* Detail Laporan */}
             <div className="border-b pb-4">
-                <Keluhan sessionId={sessionId} />
+                <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-medium">Detail Laporan</h2>
+                    <button
+                        onClick={() => setShowKeluhan((prev) => !prev)}
+                        className="text-sm text-blue-600 hover:underline"
+                    >
+                        {showKeluhan ? "Sembunyikan" : "Lihat"}
+                    </button>
+                </div>
+                {showKeluhan && <Keluhan sessionId={sessionId} />}
             </div>
 
-            {/* Form */}
+            {/* Komponen Step Form */}
             <div className="border-b pb-4">
-                <h2 className="text-lg font-medium mb-4">Data Tindakan</h2>
-                <div className="grid grid-cols-4 gap-2 mb-4">
-
-                    <label className="col-span-1 font-medium">Situasi</label>
-                    <select name="situasi" value={formData.situasi || ""} onChange={handleFormChange} className="col-span-3 border p-2 rounded-md">
-                        <option value="Verifikasi Data">Verifikasi Data</option>
-                        <option value="Darurat">Darurat</option>
-                        <option value="Permintaan Informasi">Permintaan Informasi</option>
-                        <option value="Berpengawasan">Berpengawasan</option>
-                        <option value="Tidak Berpengawasan">Tidak Berpengawasan</option>
-                    </select>
-
-                    <label className="col-span-1 font-medium">Status</label>
-                    <select name="status" value={formData.status || ""} onChange={handleFormChange} className="col-span-3 border p-2 rounded-md">
-                        {STATUS_LIST.map((status) => (
-                            <option key={status} value={status}>{status}</option>
-                        ))}
-                    </select>
-
-                    <label className="col-span-1 font-medium">OPD Terkait</label>
-                    <input
-                        name="opd"
-                        value={formData.opd || ""}
-                        onChange={handleFormChange}
-                        className={`col-span-3 border p-2 rounded-md ${!formData.opd ? "bg-yellow-100" : ""
-                            }`}
-                    />
-
-                    <label className="col-span-1 font-medium">Kesimpulan</label>
-                    <textarea
-                        name="kesimpulan"
-                        value={formData.kesimpulan || ""}
-                        onChange={handleFormChange}
-                        className={`col-span-3 border p-2 rounded-md ${!formData.kesimpulan ? "bg-yellow-100" : ""
-                            }`}
-                    />
-
-                    <label className="col-span-1 font-medium">Foto Tindakan</label>
-                    <div className="col-span-3 flex gap-2 flex-wrap">
-                        {(formData.photos || []).map((photo, index) => (
-                            <div key={index} className="relative w-24 h-24">
-                                <img src={`${API_URL}${photo}`} className="w-full h-full object-cover rounded-md cursor-pointer"
-                                    onClick={() => {
-                                        setActivePhotoIndex(index);
-                                        setShowModal(true);
-                                    }}
-                                />
-                                <button className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemovePhoto(index);
-                                    }}
-                                >✕</button>
-                            </div>
-                        ))}
-                        {(formData.photos?.length || 0) + tempPhotos.length < maxPhotos && (
-                            <label className="w-24 h-24 border-dashed border-2 border-gray-400 flex items-center justify-center rounded-md cursor-pointer">
-                                <span className="text-gray-500 text-xl">+</span>
-                                <input type="file" accept="image/*" multiple onChange={(e) => handlePhotoSelect(e.target.files)} className="hidden" />
-                            </label>
+                <h2 className="text-lg font-medium mb-4">Tindakan</h2>
+                <StepComponent data={formData} onChange={setFormData} />
+                {!["Selesai Pengaduan", "Selesai Penanganan"].includes(STATUS_LIST[currentStepIndex]) && (
+                    <div className="flex justify-end gap-2 mt-4">
+                        <button onClick={handleSaveDraft} className="bg-gray-500 text-white px-4 py-2 rounded-md">
+                            Simpan sebagai Draft
+                        </button>
+                        {currentStepIndex > 0 && (
+                            <button onClick={handlePreviousStep} className="bg-gray-400 text-white px-4 py-2 rounded-md">
+                                Kembali
+                            </button>
                         )}
-                        {tempPhotos.map((file, index) => (
-                            <div key={`temp-${index}`} className="w-24 h-24 bg-gray-300 flex items-center justify-center text-xs text-gray-600 rounded-md">
-                                {file.name}
-                            </div>
-                        ))}
+                        {currentStepIndex < STATUS_LIST.length - 1 && (
+                            <button onClick={handleNextStep} className="bg-green-500 text-white px-4 py-2 rounded-md">
+                                Lanjutkan
+                            </button>
+                        )}
                     </div>
-
-                    <label className="col-span-1 font-medium">Tanggal Diperbarui</label>
-                    <p className="col-span-3">{new Date(formData.updatedAt || "").toLocaleString()}</p>
-
-                </div>
-
-                <div className="flex justify-end gap-2">
-                    <button className="bg-gray-500 text-white px-4 py-2 rounded-md" onClick={handleCancel}>Batalkan</button>
-                    <button className="bg-green-500 text-white px-4 py-2 rounded-md" onClick={handleSave}>Simpan</button>
-                </div>
+                )}
             </div>
 
-
-
-            {/* Modal Zoom */}
+            {/* Modal Zoom Foto */}
             {showModal && formData.photos && (
                 <div className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center" onClick={() => setShowModal(false)}>
                     <div className="relative bg-white rounded-md p-4 max-w-lg w-[90%] shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -247,9 +204,9 @@ export default function Tindakan({
                             </Zoom>
                         </div>
                         <div className="flex justify-between mt-4 text-sm font-medium">
-                            <button onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : formData.photos!.length - 1)} className="text-blue-600 hover:underline">←</button>
-                            <span>Foto {activePhotoIndex + 1} dari {formData.photos.length}</span>
-                            <button onClick={() => setActivePhotoIndex((prev) => prev < formData.photos!.length - 1 ? prev + 1 : 0)} className="text-blue-600 hover:underline">→</button>
+                            <button onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : (formData.photos!.length || 1) - 1)} className="text-blue-600 hover:underline">←</button>
+                            <span>Foto {activePhotoIndex + 1} dari {formData.photos?.length}</span>
+                            <button onClick={() => setActivePhotoIndex((prev) => prev < (formData.photos!.length || 1) - 1 ? prev + 1 : 0)} className="text-blue-600 hover:underline">→</button>
                         </div>
                     </div>
                 </div>
