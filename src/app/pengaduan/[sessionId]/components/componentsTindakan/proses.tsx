@@ -55,7 +55,10 @@ export default function Proses({
 
     return (
         <div className="grid grid-cols-4 gap-2">
-            <label className="col-span-1 font-medium">Kesimpulan Tindakan</label>
+            <label className="col-span-1 font-medium">Kesimpulan Tindakan 
+                <span className="text-red-500">*</span>
+                <p>(Update Jika ada Informasi Terbaru)</p>
+            </label>
             <textarea
                 name="kesimpulan"
                 value={data.kesimpulan || ""}

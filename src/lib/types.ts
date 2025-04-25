@@ -11,6 +11,7 @@ export interface TindakanData {
     photos: string[];
     createdAt: string;
     updatedAt: string;
+    rating: number;
 }
 
 export interface TindakanClientState extends TindakanData {

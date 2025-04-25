@@ -20,16 +20,16 @@ const STATUS_LIST = [
     "Perlu Verifikasi",
     "Verifikasi Kelengkapan Berkas",
     "Proses OPD Terkait",
-    "Selesai Pengaduan",
     "Selesai Penanganan",
+    "Selesai Pengaduan",
 ];
 
 const STEP_FLOW = [
     { label: "Perlu Verifikasi", fields: ["situasi"] },
     { label: "Verifikasi Kelengkapan Berkas", fields: ["trackingId", "opd", "kesimpulan"] },
     { label: "Proses OPD Terkait", fields: ["kesimpulan"] },
-    { label: "Selesai Pengaduan", fields: ["trackingId"] },
     { label: "Selesai Penanganan", fields: [] },
+    { label: "Selesai Pengaduan", fields: [] },
 ];
 
 const STEP_COMPONENTS = [Verifikasi, Verifikasi2, Proses, Selesai, Selesai2];
@@ -174,7 +174,7 @@ export default function Tindakan({
             <div className="border-b pb-4">
                 <h2 className="text-lg font-medium mb-4">Tindakan</h2>
                 <StepComponent data={formData} onChange={setFormData} />
-                {!["Selesai Pengaduan", "Selesai Penanganan"].includes(STATUS_LIST[currentStepIndex]) && (
+                {!["Selesai Penanganan", "Selesai Pengaduan"].includes(STATUS_LIST[currentStepIndex]) && (
                     <div className="flex justify-end gap-2 mt-4">
                         <button onClick={handleSaveDraft} className="bg-gray-500 text-white px-4 py-2 rounded-md">
                             Simpan sebagai Draft

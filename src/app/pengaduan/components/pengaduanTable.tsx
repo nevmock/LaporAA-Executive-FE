@@ -57,7 +57,7 @@ function getElapsedTime(createdAt?: string): string {
     return "Baru saja";
 }
 
-const statusOrder = ["Perlu Verifikasi", "Sedang di Verifikasi", "Proses Penyelesaian", "Proses Penyelesaian Ulang", "Selesai"];
+const statusOrder = ["Perlu Verifikasi", "Verifikasi Kelengkapan Berkas", "Proses OPD Terkait", "Selesai Penanganan", "Selesai Pengaduan"];
 
 export default function PengaduanTable({ data }: { data: Chat[] }) {
     const [search, setSearch] = useState("");
