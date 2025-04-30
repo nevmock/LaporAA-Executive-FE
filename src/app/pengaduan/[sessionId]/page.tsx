@@ -103,7 +103,6 @@ export default function ChatPage() {
             </div>
 
             {/* Kanan: Panel Profil */}
-            <Profile sessionId={sessionId} />
         </div>
     );
 }

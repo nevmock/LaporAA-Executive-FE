@@ -55,24 +55,28 @@ export default function Proses({
 
     return (
         <div className="grid grid-cols-4 gap-2">
-            <label className="col-span-1 font-medium">Kesimpulan Tindakan 
+            <label className="col-span-1 font-medium">Kesimpulan Tindakan
                 <span className="text-red-500">*</span>
-                <p>(Update Jika ada Informasi Terbaru)</p>
+                <p className="text-gray-500">(Update Jika ada Informasi Terbaru dari SP4N Lapor)</p>
             </label>
             <textarea
                 name="kesimpulan"
                 value={data.kesimpulan || ""}
                 onChange={handleChange}
-                className="col-span-3 border p-2 rounded-md"
+                className="col-span-3 border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
                 rows={4}
                 placeholder="Tulis kesimpulan tindakan dari SP4N Lapor di sini..."
             />
 
-            <label className="col-span-1 font-medium">Foto Pendukung</label>
+
+            <label className="col-span-1 font-medium">Foto Pendukung
+                <span className="text-red-500">*</span>
+                <p className="text-gray-500">(Evidence Tindakan dari SP4N Lapor)</p>
+            </label>
             <div className="col-span-3 space-y-2">
                 <div className="flex gap-2 flex-wrap">
                     {(data.photos || []).map((photo, idx) => (
-                        <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-gray-300">
+                        <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300">
                             <img
                                 src={`${API_URL}${photo}`}
                                 className="w-full h-full object-cover"
@@ -90,8 +94,8 @@ export default function Proses({
                     {(data.photos?.length || 0) < MAX_PHOTOS && (
                         <div
                             onClick={() => !loading && fileRef.current?.click()}
-                            className={`w-24 h-24 border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer transition
-                ${loading ? "border-gray-300 bg-gray-100" : "hover:border-green-500 hover:bg-green-50"}`}
+                            className={`w-24 h-24 border-2 border-yellow-300 bg-yellow-50 border-dashed rounded-md flex items-center justify-center cursor-pointer transition
+                ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
                         >
                             {loading ? (
                                 <span className="text-xs text-gray-500">Mengunggah...</span>

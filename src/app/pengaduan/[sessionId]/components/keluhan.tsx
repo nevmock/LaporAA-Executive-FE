@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
+import Profile from "./profile";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
@@ -90,6 +91,7 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
 
     return (
         <div className="space-y-6 text-sm text-gray-800">
+            <Profile sessionId={sessionId} />
             {/* Detail Keluhan */}
             <div className="grid grid-cols-4 gap-2">
                 {/* Isi Laporan */}

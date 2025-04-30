@@ -66,7 +66,6 @@ export default function Profile({ sessionId }: { sessionId: string }) {
                     <p className="w-28 font-medium">No. Telepon</p>
                     <p>: {data.from}</p>
                 </div>
-                
             </div>
         </div>
     );       

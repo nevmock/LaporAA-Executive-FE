@@ -7,6 +7,7 @@ export interface TindakanData {
     situasi: string;
     status: string;
     opd: string;
+    disposisi: string;
     trackingId: string;
     photos: string[];
     createdAt: string;
