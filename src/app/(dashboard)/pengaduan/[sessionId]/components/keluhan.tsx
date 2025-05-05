@@ -19,6 +19,9 @@ interface Data {
         latitude: number;
         longitude: number;
         description: string;
+        desa: string;
+        kecamatan: string;
+        kabupaten: string;
     };
     photos: string[];
     createdAt: string;
@@ -103,31 +106,17 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                     : {new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                 </p>
 
-                {/* Lokasi Kejadian */}
-                {locationDetails?.address && (
-                    <>
-                        <p className="col-span-1 font-medium">Lokasi Kejadian</p>
-                        <p className="col-span-3">: {data.location.description}</p>
+                <p className="col-span-1 font-medium">Lokasi Kejadian</p>
+                <p className="col-span-3">: {data.location.description}</p>
 
-                        <p className="col-span-1 font-medium">Nama Jalan</p>
-                        <p className="col-span-3">: {locationDetails.address.road || "-"}</p>
+                <p className="col-span-1 font-medium">Desa / Kelurahan</p>
+                <p className="col-span-3">: {data.location.desa || "-"}</p>
 
-                        <p className="col-span-1 font-medium">Kecamatan</p>
-                        <p className="col-span-3">: {locationDetails.address.suburb || "-"}</p>
+                <p className="col-span-1 font-medium">Kecamatan</p>
+                <p className="col-span-3">: {data.location.kecamatan || "-"}</p>
 
-                        <p className="col-span-1 font-medium">Kota/Kab</p>
-                        <p className="col-span-3">: {locationDetails.address.city || locationDetails.address.town || locationDetails.address.village || "-"}</p>
-
-                        <p className="col-span-1 font-medium">Provinsi</p>
-                        <p className="col-span-3">: {locationDetails.address.state || "-"}</p>
-
-                        <p className="col-span-1 font-medium">Negara</p>
-                        <p className="col-span-3">: {locationDetails.address.country || "-"}</p>
-
-                        <p className="col-span-1 font-medium">Kode Pos</p>
-                        <p className="col-span-3">: {locationDetails.address.postcode || "-"}</p>
-                    </>
-                )}
+                <p className="col-span-1 font-medium">Kota / Kabupaten</p>
+                <p className="col-span-3">: {data.location.kabupaten || "-"}</p>
 
                 {/* Peta Lokasi */}
                 <p className="col-span-1 font-medium">Peta Lokasi Kejadian</p>

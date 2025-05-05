@@ -6,7 +6,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
 import Keluhan from "./keluhan";
-import { TindakanClientState } from "../../../../lib/types";
+import { TindakanClientState } from "../../../../../lib/types";
 
 // Step Components
 import Verifikasi from "./componentsTindakan/verifikasi";

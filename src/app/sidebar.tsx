@@ -1,12 +1,19 @@
-import { FiSettings, FiHome, FiInbox } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiHome, FiInbox } from "react-icons/fi";
 import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
     countPending: number;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
+    const router = useRouter();
+
+    const handleLogout = () => {
+        localStorage.clear();
+        router.push("/login");
+    };
 
     return (
         <div className="w-24 bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg">
@@ -25,8 +32,16 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                     )}
                 </div>
             </Link>
-            <div className="text-3xl mt-auto mb-4 cursor-pointer transition-transform hover:scale-110">
-                <FiSettings />
+
+
+            <div className="text-3xl mt-auto mb-4">
+                <div className="my-4 cursor-pointer transition-transform hover:scale-110">
+                    <FiSettings />
+                </div>
+                <div className="my-4 cursor-pointer transition-transform hover:scale-110">
+                    <FiLogOut onClick={handleLogout} />
+                </div>
+
             </div>
         </div>
     );

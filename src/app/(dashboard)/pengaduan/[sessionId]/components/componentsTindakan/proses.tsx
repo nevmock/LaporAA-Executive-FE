@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { TindakanClientState } from "../../../../../lib/types";
+import { TindakanClientState } from "../../../../../../lib/types";
 import axios from "axios";
 import { Plus } from "lucide-react";
 

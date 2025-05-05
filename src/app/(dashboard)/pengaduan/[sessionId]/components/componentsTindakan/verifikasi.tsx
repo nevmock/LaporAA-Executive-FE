@@ -1,5 +1,5 @@
 "use client";
-import { TindakanData } from "../../../../../lib/types";
+import { TindakanData } from "../../../../../../lib/types";
 
 export default function Verifikasi({
     data,
