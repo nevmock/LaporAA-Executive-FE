@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Message from "./components/message";
 import Profile from "./components/profile";
 import Tindakan from "./components/tindakan";
-import { TindakanData } from "../../../lib/types";
+import { TindakanData } from "../../../../lib/types";
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -101,9 +101,6 @@ export default function ChatPage() {
                     )}
                 </div>
             </div>
-
-            {/* Kanan: Panel Profil */}
-            <Profile sessionId={sessionId} />
         </div>
     );
 }
