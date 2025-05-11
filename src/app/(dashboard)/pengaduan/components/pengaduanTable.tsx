@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Tindakan, Location, Chat, SortKey  } from "../../../../lib/types";
+import { Chat, SortKey  } from "../../../../lib/types";
+import {Switch} from "@headlessui/react";
+import axios from "axios";
+import { FaStar, FaIdCard, FaUser, FaPhone, FaMapMarkerAlt, FaMap, FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock } from "react-icons/fa";
 
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
@@ -23,12 +26,18 @@ function getElapsedTime(createdAt?: string): string {
 
 const statusOrder = ["Perlu Verifikasi", "Verifikasi Kelengkapan Berkas", "Proses OPD Terkait", "Selesai Penanganan", "Selesai Pengaduan", "Ditolak"];
 
-export default function PengaduanTable({ data }: { data: Chat[] }) {
+export default function PengaduanTable() {
+    const [data, setData] = useState<Chat[]>([]);
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<SortKey>("sessionId");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
     const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lon: number; description: string } | null>(null);
+
+    useEffect(() => {
+        getReports().then(() => {
+
+        })
+    }, []);
 
     const handleSort = (key: SortKey) => {
         if (key === sortKey) {
@@ -50,7 +59,7 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
         );
 
         return filtered.sort((a, b) => {
-            // Prioritas dulu
+            // // Prioritas dulu
             const aPrioritas = a.tindakan?.prioritas === "Ya" ? 1 : 0;
             const bPrioritas = b.tindakan?.prioritas === "Ya" ? 1 : 0;
             if (aPrioritas !== bPrioritas) return bPrioritas - aPrioritas;
@@ -67,6 +76,42 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
         return sortOrder === "asc" ? "↑" : "↓";
     };
 
+    const toggleMode = async (tindakanId: string, prioritas: boolean) => {
+        // setLoadingMode(true);
+        try {
+            await axios.put(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/tindakan/${tindakanId}`, { prioritas: prioritas ? "Ya" : "Tidak" }).then(async () => {
+                await getReports()
+            })
+        } catch (err) {
+            console.error("Gagal mengubah mode:", err);
+            alert("❌ Gagal mengubah mode.");
+        } finally {
+            // setLoadingMode(false);
+        }
+    };
+
+    const getReports = async () => {
+        axios
+            .get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`)
+            .then((res) => {
+                const responseData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+
+                // Transform user object (jika masih object) jadi string name
+                const processedData: Chat[] = responseData.map((item: any) => ({
+                    ...item,
+                    user: typeof item.user === "object" ? item.user.name : item.user,
+                    address: typeof item.user === "object" ? item.user.address : item.address,
+                }));
+
+                setData(processedData);
+                console.log("✅ fetched data:", processedData);
+            })
+            .catch((err) => {
+                console.error("❌ fetch error:", err);
+                setData([]);
+            });
+    }
+
     return (
         <div className="space-y-4">
             <input
@@ -80,18 +125,38 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
             <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-800 text-white">
-                        <tr>
-                            <th onClick={() => handleSort("prioritas")} className="px-4 py-2 cursor-pointer select-none">Prioritas Bupati {renderSortArrow("prioritas")}</th>
-                            <th onClick={() => handleSort("sessionId")} className="px-4 py-2 cursor-pointer select-none">No. Pengaduan {renderSortArrow("sessionId")}</th>
-                            <th onClick={() => handleSort("user")} className="px-4 py-2 cursor-pointer select-none">Nama {renderSortArrow("user")}</th>
-                            <th onClick={() => handleSort("from")} className="px-4 py-2 cursor-pointer select-none">No. Kontak {renderSortArrow("from")}</th>
-                            <th onClick={() => handleSort("address")} className="px-4 py-2 cursor-pointer select-none">Domisili {renderSortArrow("address")}</th>
-                            <th onClick={() => handleSort("description")} className="px-4 py-2 cursor-pointer select-none">Lokasi Kejadian {renderSortArrow("description")}</th>
-                            <th onClick={() => handleSort("situasi")} className="px-4 py-2 cursor-pointer select-none">Situasi {renderSortArrow("situasi")}</th>
-                            <th onClick={() => handleSort("status")} className="px-4 py-2 cursor-pointer select-none">Status {renderSortArrow("status")}</th>
-                            <th onClick={() => handleSort("opd")} className="px-4 py-2 cursor-pointer select-none">OPD Terkait {renderSortArrow("opd")}</th>
-                            <th onClick={() => handleSort("timer")} className="px-4 py-2 cursor-pointer select-none">Waktu Berjalan {renderSortArrow("timer")}</th>
-                        </tr>
+                    <tr>
+                        <th onClick={() => handleSort("prioritas")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaStar className={`inline mr-1`}/> Prioritas Bupati {renderSortArrow("prioritas")}
+                        </th>
+                        <th onClick={() => handleSort("sessionId")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaIdCard className={`inline mr-1`}/> No. Pengaduan {renderSortArrow("sessionId")}
+                        </th>
+                        <th onClick={() => handleSort("user")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaUser className={`inline mr-1`}/> Nama {renderSortArrow("user")}
+                        </th>
+                        <th onClick={() => handleSort("from")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaPhone className={`inline mr-1`}/> No. Kontak {renderSortArrow("from")}
+                        </th>
+                        <th onClick={() => handleSort("address")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaMapMarkerAlt className={`inline mr-1`}/> Domisili {renderSortArrow("address")}
+                        </th>
+                        <th onClick={() => handleSort("description")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaMap className={`inline mr-1`}/> Lokasi Kejadian {renderSortArrow("description")}
+                        </th>
+                        <th onClick={() => handleSort("situasi")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaExclamationCircle className={`inline mr-1`}/> Situasi {renderSortArrow("situasi")}
+                        </th>
+                        <th onClick={() => handleSort("status")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaCheckCircle className={`inline mr-1`}/> Status {renderSortArrow("status")}
+                        </th>
+                        <th onClick={() => handleSort("opd")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaBuilding className={`inline mr-1`}/> OPD Terkait {renderSortArrow("opd")}
+                        </th>
+                        <th onClick={() => handleSort("timer")} className="px-4 py-2 cursor-pointer select-none gap-2">
+                            <FaClock className={`inline mr-1`}/> Waktu Berjalan {renderSortArrow("timer")}
+                        </th>
+                    </tr>
                     </thead>
                     <tbody className="bg-gray-100 text-gray-900">
                         {filteredData.length > 0 ? (
@@ -106,7 +171,24 @@ export default function PengaduanTable({ data }: { data: Chat[] }) {
 
                                 return (
                                     <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
-                                        <td className="px-4 py-2">{chat.tindakan?.prioritas || "-"}</td>
+                                        {
+                                            localStorage.getItem('role') == 'Bupati' ?
+                                                <td className="px-4 py-2">
+                                                    <Switch
+                                                        checked={chat.tindakan?.prioritas === "Ya"}
+                                                        onChange={async (e) => {
+                                                            await toggleMode(chat.tindakan?.report!, e)
+                                                        }}
+                                                        className={`${chat.tindakan?.prioritas === "Ya" ? "bg-green-500" : "bg-gray-300"} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                    >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${chat.tindakan?.prioritas === "Ya" ? "translate-x-6" : "translate-x-1"}`}
+                    />
+                                                    </Switch>
+                                                </td>
+                                                :
+                                                <td className="px-4 py-2">{chat.tindakan?.prioritas || "-"}</td>
+                                        }
                                         <td className="px-4 py-2">
                                             <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
                                                 {chat.sessionId}
