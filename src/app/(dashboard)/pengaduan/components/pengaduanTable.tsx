@@ -3,45 +3,9 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Tindakan, Location, Chat, SortKey  } from "../../../../lib/types";
 
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
-
-interface Location {
-    latitude: number;
-    longitude: number;
-    description: string;
-}
-
-interface Tindakan {
-    _id: string;
-    report: string;
-    hasil: string;
-    kesimpulan: string;
-    prioritas: string;
-    situasi: string;
-    status: string;
-    opd: string;
-    photos: string[];
-    createdAt: string;
-    updatedAt: string;
-}
-
-interface Chat {
-    _id: string;
-    sessionId: string;
-    from: string;
-    user: string;
-    address: string;
-    location: Location;
-    message: string;
-    photos: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    tindakan?: Tindakan;
-    rating?: number;
-}
-
-type SortKey = "sessionId" | "user" | "from" | "address" | "description" | "prioritas" | "situasi" | "status" | "opd" | "timer";
 
 function getElapsedTime(createdAt?: string): string {
     if (!createdAt) return "-";
