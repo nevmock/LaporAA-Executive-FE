@@ -4,30 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import Message from "./components/message";
 import Profile from "./components/profile";
 import Tindakan from "./components/tindakan";
-import { TindakanData } from "../../../../lib/types";
+import { Data } from "../../../../lib/types";
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-
-interface Data {
-    _id: string;
-    from: string;
-    sessionId: string;
-    user: {
-        name: string;
-        phone: string;
-        email: string;
-        address: string;
-    };
-    location: {
-        latitude: number;
-        longitude: number;
-        description: string;
-    };
-    message: string;
-    photos: string[];
-    tindakan?: TindakanData;
-}
 
 export default function ChatPage() {
     const params = useParams() as { sessionId?: string };

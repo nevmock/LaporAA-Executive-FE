@@ -3,42 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import PengaduanTable from "./components/pengaduanTable";
-
-// Modular interface
-interface Location {
-  latitude: number;
-  longitude: number;
-  description: string;
-}
-
-interface Tindakan {
-  _id: string;
-  report: string;
-  hasil: string;
-  kesimpulan: string;
-  prioritas: string;
-  situasi: string;
-  status: string;
-  opd: string;
-  photos: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Chat {
-  _id: string;
-  sessionId: string;
-  from: string;
-  user: string;
-  address: string;
-  location: Location;
-  message: string;
-  photos: string[];
-  status: "in_progress" | "done" | "rejected";
-  createdAt?: string;
-  updatedAt?: string;
-  tindakan?: Tindakan;
-}
+import { Tindakan, Location, Chat  } from "../../../lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
