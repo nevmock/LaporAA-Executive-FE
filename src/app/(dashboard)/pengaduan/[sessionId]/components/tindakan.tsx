@@ -70,7 +70,7 @@ export default function Tindakan({
         if (status === "Verifikasi Situasi") {
             requiredFields = ["situasi"];
         } else if (status === "Verifikasi Kelengkapan Berkas") {
-            requiredFields = ["trackingId", "opd", "disposisi", "kesimpulan"];
+            requiredFields = ["trackingId", "opd", "disposisi"];
         } else if (status === "Proses OPD Terkait") {
             requiredFields = ["kesimpulan"];
         }
