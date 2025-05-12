@@ -16,15 +16,49 @@ export default function Proses({
 }) {
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
+    const [newKesimpulan, setNewKesimpulan] = useState("");
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        onChange(prev => ({ ...prev, [name]: value }));
+    // Tambah Kesimpulan
+    const handleAddKesimpulan = async () => {
+        if (!newKesimpulan.trim() || !data._id) return;
+        try {
+            const res = await axios.post(`${API_URL}/tindakan/${data._id}/kesimpulan`, {
+                text: newKesimpulan.trim(),
+            });
+            onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
+            setNewKesimpulan("");
+        } catch (err) {
+            console.error("❌ Gagal menambahkan kesimpulan:", err);
+        }
     };
 
+    // Edit Kesimpulan
+    const handleEditKesimpulan = async (index: number, newText: string) => {
+        if (!data._id || !newText.trim()) return;
+        try {
+            const res = await axios.put(`${API_URL}/tindakan/${data._id}/kesimpulan/${index}`, {
+                text: newText.trim(),
+            });
+            onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
+        } catch (err) {
+            console.error("❌ Gagal mengedit kesimpulan:", err);
+        }
+    };
+
+    // Hapus Kesimpulan
+    const handleDeleteKesimpulan = async (index: number) => {
+        if (!data._id) return;
+        try {
+            const res = await axios.delete(`${API_URL}/tindakan/${data._id}/kesimpulan/${index}`);
+            onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
+        } catch (err) {
+            console.error("❌ Gagal menghapus kesimpulan:", err);
+        }
+    };
+
+    // Upload Foto
     const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
-
         const files = Array.from(e.target.files).slice(0, MAX_PHOTOS - (data.photos?.length || 0));
         if (files.length === 0) return;
 
@@ -55,20 +89,65 @@ export default function Proses({
 
     return (
         <div className="grid grid-cols-4 gap-2">
-            <label className="col-span-1 font-medium">Kesimpulan Tindakan
-                <span className="text-red-500">*</span>
-                <p className="text-gray-500">(Update Jika ada Informasi Terbaru dari SP4N Lapor)</p>
-            </label>
-            <textarea
-                name="kesimpulan"
-                value={data.kesimpulan || ""}
-                onChange={handleChange}
-                className="col-span-3 border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
-                rows={4}
-                placeholder="Tulis kesimpulan tindakan dari SP4N Lapor di sini..."
-            />
+            {/* ✅ Kesimpulan */}
+            <div className="col-span-4">
+                <h3 className="font-semibold text-gray-700 mb-2">Daftar Kesimpulan</h3>
+                <ul className="space-y-2">
+                    {data.kesimpulan?.map((item: any, idx: number) => (
+                        <li key={idx} className="bg-yellow-50 border border-yellow-300 p-3 rounded-md">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-500">
+                                    {new Date(item.timestamp).toLocaleString()}
+                                </span>
+                                <div className="flex gap-2 text-xs">
+                                    <button
+                                        className="text-blue-600 hover:underline"
+                                        onClick={() => {
+                                            const updated = prompt("Edit kesimpulan:", item.text);
+                                            if (updated && updated.trim()) {
+                                                handleEditKesimpulan(idx, updated);
+                                            }
+                                        }}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        className="text-red-600 hover:underline"
+                                        onClick={() => {
+                                            if (confirm("Yakin ingin menghapus kesimpulan ini?")) {
+                                                handleDeleteKesimpulan(idx);
+                                            }
+                                        }}
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-gray-700">{item.text}</p>
+                        </li>
+                    ))}
+                </ul>
 
+                {/* ➕ Tambah Kesimpulan */}
+                <div className="mt-4">
+                    <textarea
+                        value={newKesimpulan}
+                        onChange={(e) => setNewKesimpulan(e.target.value)}
+                        rows={3}
+                        className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
+                        placeholder="Tambahkan kesimpulan baru..."
+                    />
+                    <button
+                        onClick={handleAddKesimpulan}
+                        className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md text-sm flex items-center gap-1"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Tambah Kesimpulan
+                    </button>
+                </div>
+            </div>
 
+            {/* 📸 Upload Foto */}
             <label className="col-span-1 font-medium">Foto Pendukung
                 <span className="text-red-500">*</span>
                 <p className="text-gray-500">(Evidence Tindakan dari SP4N Lapor)</p>
@@ -95,7 +174,7 @@ export default function Proses({
                         <div
                             onClick={() => !loading && fileRef.current?.click()}
                             className={`w-24 h-24 border-2 border-yellow-300 bg-yellow-50 border-dashed rounded-md flex items-center justify-center cursor-pointer transition
-                ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
+                                ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
                         >
                             {loading ? (
                                 <span className="text-xs text-gray-500">Mengunggah...</span>
