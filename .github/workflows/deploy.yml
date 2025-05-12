@@ -1,0 +1,52 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches: 
+      - '**'  # Trigger on all branches
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.11.0'
+    - name: Load variables
+      run: |
+        touch .env
+    - name: Install dependencies
+      run: npm install
+    - name: Build project
+      run: npm run build
+
+  deploy:
+    if: github.ref == 'refs/heads/main'  # Only run on main
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy app
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        script: |
+            export NVM_DIR="/home/kanzen/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 20
+
+            cd /home/kanzen/LaporAA/FE
+            git reset --hard HEAD
+            git pull origin main --rebase
+            npm install
+            npm run build          
+            pm2 reload laporaa:service
