@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Tindakan, Location, Chat, SortKey  } from "../../../../lib/types";
+import { Chat, SortKey  } from "../../../../lib/types";
 
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
