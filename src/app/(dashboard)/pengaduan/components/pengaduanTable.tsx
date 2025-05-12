@@ -79,7 +79,7 @@ export default function PengaduanTable() {
     const toggleMode = async (tindakanId: string, prioritas: boolean) => {
         // setLoadingMode(true);
         try {
-            await axios.put(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/tindakan/${tindakanId}`, { prioritas: prioritas ? "Ya" : "Tidak" }).then(async () => {
+            await axios.patch(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/tindakan/${tindakanId}/prioritas`, { prioritas: prioritas ? "Ya" : "Tidak" }).then(async () => {
                 await getReports()
             })
         } catch (err) {

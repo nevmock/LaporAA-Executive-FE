@@ -10,6 +10,7 @@ import { TindakanClientState } from "../../../../../lib/types";
 
 // Step Components
 import Verifikasi from "./componentsTindakan/verifikasi";
+import Verifikasi1 from "./componentsTindakan/verifikasi1";
 import Verifikasi2 from "./componentsTindakan/verifikasi2";
 import Proses from "./componentsTindakan/proses";
 import Selesai from "./componentsTindakan/selesai";
@@ -20,6 +21,7 @@ const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 const STATUS_LIST = [
     "Perlu Verifikasi",
+    "Verifikasi Situasi",
     "Verifikasi Kelengkapan Berkas",
     "Proses OPD Terkait",
     "Selesai Penanganan",
@@ -27,7 +29,7 @@ const STATUS_LIST = [
     "Ditolak",
 ];
 
-const STEP_COMPONENTS = [Verifikasi, Verifikasi2, Proses, Selesai, Selesai2, Ditolak];
+const STEP_COMPONENTS = [Verifikasi, Verifikasi1, Verifikasi2, Proses, Selesai, Selesai2, Ditolak];
 
 export default function Tindakan({
     tindakan,
@@ -42,6 +44,9 @@ export default function Tindakan({
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
     const [showKeluhan, setShowKeluhan] = useState(false);
     const [notif, setNotif] = useState<string | null>(null);
+    const [showLaporModal, setShowLaporModal] = useState(false);
+    const [pendingNextStatus, setPendingNextStatus] = useState<string | null>(null);
+
     const router = useRouter();
 
     const showPrompt = (title: string, placeholder: string, callback: (input: string) => void) => {
@@ -62,7 +67,7 @@ export default function Tindakan({
 
         let requiredFields: string[] = [];
 
-        if (status === "Perlu Verifikasi") {
+        if (status === "Verifikasi Situasi") {
             requiredFields = ["situasi"];
         } else if (status === "Verifikasi Kelengkapan Berkas") {
             requiredFields = ["trackingId", "opd", "disposisi", "kesimpulan"];
@@ -107,6 +112,13 @@ export default function Tindakan({
         if (statusNow === "Proses OPD Terkait") {
             const confirmed = confirm("Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.");
             if (!confirmed) return;
+        }
+
+        // ❗ Modal hanya saat pindah ke "Verifikasi Kelengkapan Berkas"
+        if (statusNow === "Verifikasi Situasi" && nextStatus === "Verifikasi Kelengkapan Berkas") {
+            setShowLaporModal(true);
+            setPendingNextStatus(nextStatus);
+            return;
         }
 
         await saveData(nextStatus);
@@ -265,6 +277,44 @@ export default function Tindakan({
                     </div>
                 </div>
             )}
+
+            {/* Modal Konfirmasi SP4N Lapor */}
+            {showLaporModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
+                        <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Tindak Lanjut</h3>
+                        <p className="mb-2 text-sm text-gray-700">
+                            Yakin data sudah di croscheck, lanjutkan ke SP4N Lapor?
+                        </p>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button
+                                onClick={() => setShowLaporModal(false)}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (pendingNextStatus) {
+                                        await saveData(pendingNextStatus);
+                                        setCurrentStepIndex((prev) => prev + 1);
+                                        setPendingNextStatus(null);
+                                        setShowLaporModal(false);
+
+                                        if (currentStepIndex === 1) {
+                                            window.open("https://www.lapor.go.id/", "_blank", "noopener,noreferrer");
+                                        }
+                                    }
+                                }}
+                                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
+                            >
+                                Lanjutkan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

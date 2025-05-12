@@ -24,7 +24,7 @@ export interface TindakanData {
     _id: string;
     report: string;
     hasil: string;
-    kesimpulan: string;
+    kesimpulan: Array<any>;
     situasi: string;
     status: string;
     opd: string;
