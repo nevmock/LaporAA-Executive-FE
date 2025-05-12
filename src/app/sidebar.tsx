@@ -35,9 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
 
 
             <div className="text-3xl mt-auto mb-4">
-                <div className="my-4 cursor-pointer transition-transform hover:scale-110">
-                    <FiSettings />
-                </div>
+                {/*<div className="my-4 cursor-pointer transition-transform hover:scale-110">*/}
+                {/*    <FiSettings />*/}
+                {/*</div>*/}
                 <div className="my-4 cursor-pointer transition-transform hover:scale-110">
                     <FiLogOut onClick={handleLogout} />
                 </div>
