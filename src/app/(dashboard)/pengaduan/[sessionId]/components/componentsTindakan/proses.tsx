@@ -9,11 +9,14 @@ const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 export default function Proses({
     data,
-    onChange
+    onChange,
+    onConfirmChange
 }: {
     data: Partial<TindakanClientState>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanClientState>>>;
+    onConfirmChange?: (val: boolean) => void;
 }) {
+    const [isConfirmed, setIsConfirmed] = useState(false);
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [newKesimpulan, setNewKesimpulan] = useState("");
@@ -87,11 +90,51 @@ export default function Proses({
         onChange(prev => ({ ...prev, photos: updated }));
     };
 
+    if (!isConfirmed) {
+        return (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
+                <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>
+                <p className="text-sm text-gray-700">
+                    Silakan pastikan bahwa Anda sudah mengisi data di SP4N Lapor dan laporan tersebut sudah di Tindak Lanjuti.<br />
+                    Klik tombol di bawah ini untuk mulai mengisi data tindak lanjut yang sudah tersedia di halaman SP4N Lapor.
+                </p>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                    <button
+                        onClick={() => window.open(`${data.url}`, "_blank")}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                    >
+                        Buka Laporan SP4N Lapor
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setIsConfirmed(true);
+                            onConfirmChange?.(true);
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                    >
+                        Ya, Tindak Lanjut Sudah Tersedia di SP4N Lapor
+                    </button>
+
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-4 gap-2">
             {/* ✅ Kesimpulan */}
             <div className="col-span-4">
-                <h3 className="font-semibold text-gray-700 mb-2">Daftar Kesimpulan</h3>
+                <h3 className="font-semibold text-gray-700 mb-2">Tindak Lanjut</h3>
+                <div className="mt-3 mb-3">
+                    <button
+                        onClick={() => window.open(`${data.url}`, "_blank")}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                    >
+                        Buka Laporan SP4N Lapor
+                    </button>
+                </div>
                 <ul className="space-y-2">
                     {data.kesimpulan?.map((item: any, idx: number) => (
                         <li key={idx} className="bg-yellow-50 border border-yellow-300 p-3 rounded-md">
@@ -103,7 +146,7 @@ export default function Proses({
                                     <button
                                         className="text-blue-600 hover:underline"
                                         onClick={() => {
-                                            const updated = prompt("Edit kesimpulan:", item.text);
+                                            const updated = prompt("Edit Tindak Lanjut:", item.text);
                                             if (updated && updated.trim()) {
                                                 handleEditKesimpulan(idx, updated);
                                             }
@@ -114,7 +157,7 @@ export default function Proses({
                                     <button
                                         className="text-red-600 hover:underline"
                                         onClick={() => {
-                                            if (confirm("Yakin ingin menghapus kesimpulan ini?")) {
+                                            if (confirm("Yakin ingin menghapus tindak lanjut ini?")) {
                                                 handleDeleteKesimpulan(idx);
                                             }
                                         }}
@@ -135,14 +178,14 @@ export default function Proses({
                         onChange={(e) => setNewKesimpulan(e.target.value)}
                         rows={3}
                         className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
-                        placeholder="Tambahkan kesimpulan baru..."
+                        placeholder="Tambahkan Tindak Lanjut baru..."
                     />
                     <button
                         onClick={handleAddKesimpulan}
                         className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md text-sm flex items-center gap-1"
                     >
                         <Plus className="w-4 h-4" />
-                        Tambah Kesimpulan
+                        Tambah Tindak Lanjut
                     </button>
                 </div>
             </div>
@@ -150,7 +193,7 @@ export default function Proses({
             {/* 📸 Upload Foto */}
             <label className="col-span-1 font-medium">Foto Pendukung
                 <span className="text-red-500">*</span>
-                <p className="text-gray-500">(Evidence Tindakan dari SP4N Lapor)</p>
+                <p className="text-gray-500">(Evidence Tindak Lanjut dari SP4N Lapor)</p>
             </label>
             <div className="col-span-3 space-y-2">
                 <div className="flex gap-2 flex-wrap">
