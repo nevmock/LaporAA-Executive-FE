@@ -7,6 +7,8 @@ import EfisiensiCard from "./components/EfisiensiCard";
 import EffectivenessCard from "./components/EffectivenessCard";
 import DistribusiCard from "./components/DistribusiCard";
 import KepuasanCard from "./components/KepuasanCard";
+import EffectivenessChart from "@/app/(dashboard)/dashboard/components/EffectivenessChart";
+
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -40,7 +42,12 @@ export default function Home() {
                 <DistribusiCard />
                 <KepuasanCard />
             </div>
-    
+
+            {/* Effectiveness Chart Container */}
+            <div className="flex-1 bg-gray-200 rounded-xl shadow overflow-hidden">
+                <EffectivenessChart />
+            </div>
+
             {/* Maps Container */}
             <div className="flex-1 bg-gray-200 rounded-xl shadow overflow-hidden">
                 <MapPersebaran />

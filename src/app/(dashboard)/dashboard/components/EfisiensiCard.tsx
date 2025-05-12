@@ -12,6 +12,7 @@ export default function EfisiensiCard() {
         axios
             .get(`${API_URL}/dashboard/efisiensi`)
             .then((res) => {
+                console.info(res.data)
                 setEfisiensi(res.data ?? { value: 0, updated_at: "" });
             })
             .catch(() => {
