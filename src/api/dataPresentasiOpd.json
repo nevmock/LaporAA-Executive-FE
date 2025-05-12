@@ -1,0 +1,52 @@
+[
+  {
+    "opd": "Bagian Administrasi Pemerintahan",
+    "name_opd": "BAP",
+    "score_ranking": 34.5
+  },
+  {
+    "opd": "Bagian Administrasi Kesejahteraan Rakyat",
+    "name_opd": "BAKR",
+    "score_ranking": 32.5
+  },
+  {
+    "opd": "Sekretariat Dewan Perwakilan Rakyat Daerah",
+    "name_opd": "SDPRD",
+    "score_ranking": 30.5
+  },
+  {
+    "opd": "Sekretariat Dewan Pengurus KORPRI",
+    "name_opd": "SDP KORPRI",
+    "score_ranking": 28.5
+  },
+  {
+    "opd": "Dinas Pemberdayaan Perempuan dan Perlindungan Anak",
+    "name_opd": "DPPPA",
+    "score_ranking": 26.5
+  },
+  {
+    "opd": "Dinas Kebudayaan, Pemuda dan Olahraga",
+    "name_opd": "DKPO",
+    "score_ranking": 24.5
+  },
+  {
+    "opd": "Badan Perencanaan Pembangunan Daerah",
+    "name_opd": "BPPD",
+    "score_ranking": 22.5
+  },
+  {
+    "opd": "Badan Kepegawaian dan Pengembangan Sumber Daya Manusia",
+    "name_opd": "BKPSDM",
+    "score_ranking": 20.5
+  },
+  {
+    "opd": "Badan Pengelolaan Keuangan Daerah",
+    "name_opd": "BPKD",
+    "score_ranking": 18.5
+  },
+  {
+    "opd": "Satuan Polisi Pamong Praja (SATPOL PP)",
+    "name_opd": "SPPP",
+    "score_ranking": 16.5
+  }
+]
