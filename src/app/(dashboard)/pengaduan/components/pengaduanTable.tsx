@@ -34,8 +34,10 @@ export default function PengaduanTable() {
     const [sorts, setSorts] = useState<{ key: SortKey; order: "asc" | "desc" }[]>([
         { key: "prioritas", order: "desc" },
         { key: "status", order: "asc" },
-    ]);    
+    ]);
     const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lon: number; desa: string } | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
         getReports();
@@ -43,14 +45,19 @@ export default function PengaduanTable() {
 
     const getReports = async () => {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`);
-            const responseData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
+                params: { page, limit: 10 } // 👈 bisa ubah limit sesuai kebutuhan
+            });
+            const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
+
             const processedData: Chat[] = responseData.map((item: any) => ({
                 ...item,
                 user: typeof item.user === "object" ? item.user.name : item.user,
                 address: typeof item.user === "object" ? item.user.address : item.address,
             }));
+
             setData(processedData);
+            setTotalPages(res.data.totalPages || 1);
         } catch (err) {
             console.error("❌ Fetch error:", err);
             setData([]);
@@ -122,6 +129,10 @@ export default function PengaduanTable() {
             return 0;
         });
     }, [data, search, sorts]);
+
+    useEffect(() => {
+        getReports();
+    }, [page]);
 
     return (
         <div className="space-y-4">
@@ -224,6 +235,25 @@ export default function PengaduanTable() {
                         )}
                     </tbody>
                 </table>
+
+                <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
+                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                    >
+                        ← Prev
+                    </button>
+                    <span className="text-sm text-gray-600">Halaman {page} dari {totalPages}</span>
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(page + 1)}
+                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                    >
+                        Next →
+                    </button>
+                </div>
+
             </div>
 
             {selectedLoc && (
