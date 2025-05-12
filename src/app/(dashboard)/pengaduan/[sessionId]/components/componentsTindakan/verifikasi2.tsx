@@ -79,7 +79,7 @@ export default function Verifikasi2({
             </div>
 
             {/* Form Kesimpulan */}
-            <div className="grid grid-cols-4 items-start gap-2">
+            {/* <div className="grid grid-cols-4 items-start gap-2">
                 <div className="relative col-span-1">
                     <label className="font-medium text-gray-700">
                         Tindak Lanjut dari SP4N Lapor
@@ -95,7 +95,7 @@ export default function Verifikasi2({
                         placeholder="Tulis kesimpulan tindakan dari SP4N Lapor di sini..."
                     />
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }
