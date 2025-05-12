@@ -46,6 +46,8 @@ export default function Tindakan({
     const [notif, setNotif] = useState<string | null>(null);
     const [showLaporModal, setShowLaporModal] = useState(false);
     const [pendingNextStatus, setPendingNextStatus] = useState<string | null>(null);
+    const [confirmedVerifikasi2, setConfirmedVerifikasi2] = useState(false);
+    const [confirmedProses, setConfirmedProses] = useState(false);
 
     const router = useRouter();
 
@@ -70,7 +72,7 @@ export default function Tindakan({
         if (status === "Verifikasi Situasi") {
             requiredFields = ["situasi"];
         } else if (status === "Verifikasi Kelengkapan Berkas") {
-            requiredFields = ["trackingId", "opd", "disposisi", "kesimpulan"];
+            requiredFields = ["trackingId", "opd", "disposisi", "url"];
         } else if (status === "Proses OPD Terkait") {
             requiredFields = ["kesimpulan"];
         }
@@ -141,6 +143,15 @@ export default function Tindakan({
         trackMouse: true,
     });
 
+    const NEXT_STEP_LABELS = [
+        "Terima Laporan",
+        "Konfirmasi Tindak Lanjut",
+        "Tindak Lanjut OPD Terkait",
+        "Selesai Penanganan",
+        "Selesai Pengaduan",
+        "Selesai",
+    ];
+
     return (
         <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
             {notif && (
@@ -184,43 +195,56 @@ export default function Tindakan({
                 </div>
             )}
 
+
             {/* Detail Laporan */}
             <div className="border-b pb-4">
                 <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-medium flex items-center gap-2">
                         Detail Laporan
-                        {STATUS_LIST[currentStepIndex] !== "Perlu Verifikasi" && (
+                        {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(STATUS_LIST[currentStepIndex]) && (
                             <button
                                 onClick={() => setShowKeluhan((prev) => !prev)}
                                 className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
                             >
-                                {showKeluhan ? (
-                                    <>
-                                        <span className="rotate-90"></span>Sembunyikan Detail
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="-rotate-90"></span>Lihat Detail
-                                    </>
-                                )}
+                                {showKeluhan ? "Sembunyikan Detail" : "Lihat Detail"}
                             </button>
                         )}
                     </h2>
                 </div>
 
-                {(showKeluhan || STATUS_LIST[currentStepIndex] === "Perlu Verifikasi") && (
-                    <Keluhan sessionId={sessionId} />
-                )}
+                {(showKeluhan ||
+                    (["Perlu Verifikasi", "Verifikasi Kelengkapan Berkas"].includes(STATUS_LIST[currentStepIndex]) && !confirmedVerifikasi2)) && (
+                        <Keluhan sessionId={sessionId} />
+                    )}
             </div>
+
 
             {/* Step Form */}
             <div className="border-b pb-4">
-                <h2 className="text-lg font-medium mb-4">Tindakan</h2>
-                <StepComponent data={formData} onChange={setFormData} />
+                {/* Komponen Step */}
+                {STATUS_LIST[currentStepIndex] === "Verifikasi Kelengkapan Berkas" ? (
+                    <Verifikasi2
+                        data={formData}
+                        onChange={setFormData}
+                        onConfirmChange={(val) => setConfirmedVerifikasi2(val)}
+                    />
+                ) : (
+                    STATUS_LIST[currentStepIndex] === "Proses OPD Terkait" ? (
+                        <Proses
+                            data={formData}
+                            onChange={setFormData}
+                            onConfirmChange={(val) => setConfirmedProses(val)}
+                        />
+                    ) : (
+                        <StepComponent data={formData} onChange={setFormData} />
+                    )
+
+                )}
 
                 {/* Tombol Navigasi */}
                 {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(formData.status || "") && (
-                    <div className="flex justify-end gap-2 mt-4">
+                    <div className="flex justify-center gap-2 mt-4">
+                        {/* Tombol Tolak (hanya di step pertama) */}
                         {currentStepIndex === 0 && (
                             <button
                                 onClick={() => {
@@ -229,7 +253,7 @@ export default function Tindakan({
                                             ...formData,
                                             status: "Ditolak",
                                             updatedAt: new Date().toISOString(),
-                                            kesimpulan: `Pengaduan ditolak karena: ${reason}`,
+                                            keterangan: `Pengaduan ditolak karena: ${reason}`,
                                         };
                                         await axios.put(`${API_URL}/tindakan/${formData.report}`, updated);
                                         router.push("/pengaduan");
@@ -239,8 +263,9 @@ export default function Tindakan({
                             >
                                 Tolak Pengaduan
                             </button>
-
                         )}
+
+                        {/* Tombol Kembali (jika bukan step pertama) */}
                         {currentStepIndex > 0 && (
                             <button
                                 onClick={handlePreviousStep}
@@ -249,12 +274,25 @@ export default function Tindakan({
                                 Kembali
                             </button>
                         )}
-                        <button
-                            onClick={handleNextStep}
-                            className="bg-green-500 text-white px-4 py-2 rounded-md"
-                        >
-                            Lanjutkan
-                        </button>
+
+                        {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
+                        {currentStepIndex < NEXT_STEP_LABELS.length && (
+                            <button
+                                onClick={handleNextStep}
+                                disabled={
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses)
+                                }
+                                className={`px-4 py-2 rounded-md text-white transition ${(
+                                        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                        (currentStepIndex === 3 && !confirmedProses))
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-green-500 hover:bg-green-600"
+                                    }`}
+                            >
+                                {NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan"}
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

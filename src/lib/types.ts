@@ -34,6 +34,8 @@ export interface TindakanData {
     createdAt: string;
     updatedAt: string;
     rating: number;
+    url: string;
+    keterangan: string;
 }
 
 export interface TindakanClientState extends TindakanData {
@@ -44,6 +46,9 @@ export interface Location {
     latitude: number;
     longitude: number;
     description: string;
+    desa: string;
+    kecamatan: string;
+    kabupaten: string;
 }
 
 export interface Tindakan {
@@ -58,6 +63,8 @@ export interface Tindakan {
     photos: string[];
     createdAt: string;
     updatedAt: string;
+    url: string;
+    keterangan: string;
 }
 
 export interface Chat {
@@ -75,4 +82,4 @@ export interface Chat {
     rating?: number;
 }
 
-export type SortKey = "sessionId" | "user" | "from" | "address" | "description" | "prioritas" | "situasi" | "status" | "opd" | "timer";
+export type SortKey = "sessionId" | "user" | "from" | "address" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
