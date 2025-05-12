@@ -17,7 +17,7 @@ const LineChart = () => {
         axios.get(`${API_URL}/dashboard/harian`)
             .then((res) => {
                 const data = res.data ?? [];
-                const sorted = data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const sorted = data.sort((a : any, b : any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
                 setDates(sorted.map((item: any) => item.date));
                 setTotals(sorted.map((item: any) => item.total));
