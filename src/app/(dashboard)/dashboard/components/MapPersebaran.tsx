@@ -14,7 +14,14 @@ interface Report {
     latitude: number;
     longitude: number;
     description: string;
+    desa?: string;
+    kecamatan?: string;
+    kabupaten?: string;
   };
+  user?: {
+    name: string;
+  };
+  photos?: string[];
 }
 
 const customIcon = L.icon({
@@ -34,7 +41,7 @@ export default function MapPersebaran() {
   useEffect(() => {
     axios
       .get(`${API_URL}/reports`)
-      .then((res) => setReports(res.data || []))
+      .then((res) => setReports(res.data.data || []))
       .catch((err) => {
         console.error('❌ Gagal ambil data laporan:', err);
       });
@@ -57,6 +64,8 @@ export default function MapPersebaran() {
     return [avgLat, avgLon];
   }, [reports]);
 
+  console.log(reports);
+
   return (
     <div className="w-full h-full rounded-xl overflow-hidden shadow">
       {reports.length > 0 ? (
@@ -78,9 +87,35 @@ export default function MapPersebaran() {
               icon={customIcon}
             >
               <Popup>
-                <strong>{report.sessionId}</strong>
-                <br />
-                {report.message}
+                <div className="text-sm">
+                  <strong>Session:</strong> {report.sessionId}
+                  <br />
+                  <strong>Pelapor:</strong>{' '}
+                  {report.user?.name || 'Tidak diketahui'}
+                  <br />
+                  <strong>Pesan:</strong> {report.message}
+                  <br />
+                  <strong>Lokasi:</strong> {report.location.description}
+                  <br />
+                  <strong>Desa:</strong> {report.location.desa}
+                  <br />
+                  <strong>Kecamatan:</strong> {report.location.kecamatan}
+                  <br />
+                  <strong>Kabupaten:</strong> {report.location.kabupaten}
+                  <br />
+                  {report.photos && report.photos.length > 0 && (
+                    <div className="mt-2">
+                      {report.photos.map((photo, index) => (
+                        <img
+                          key={index}
+                          src={`${API_URL}${photo}`}
+                          alt={`Foto ${index + 1}`}
+                          className="w-32 h-20 object-cover mb-1 rounded"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </Popup>
             </Marker>
           ))}

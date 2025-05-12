@@ -37,22 +37,22 @@ export default function Home() {
 
   return (
     <div className="w-full h-screen bg-white p-6 overflow-hidden flex flex-col">
-      {/* <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
+      <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
         <div className="flex-[2] min-w-[450px]">
           <BarchartsOpd />
         </div>
         <div className="flex-1 min-w-[150px]">
           <LeaderBoardCard />
         </div>
-      </div> */}
-      <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
+      </div>
+      {/* <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
         <div className="flex-1 min-w-[300px]">
           <SpedoChart />
         </div>
         <div className="flex-1 min-w-[300px]">
           <LineChart />
         </div>
-      </div>
+      </div> */}
 
       {/* Statistik Cards */}
       {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

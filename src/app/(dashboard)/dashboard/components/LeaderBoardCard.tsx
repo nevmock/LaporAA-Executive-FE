@@ -7,9 +7,9 @@ const LeaderBoardCard = () => {
   return (
     <div className="bg-white shadow-md rounded-xl p-6 w-full h-[600px] overflow-y-scroll">
       <div className="flex items-center justify-between mb-4">
-        <h5 className="text-xl font-bold leading-none text-gray-900">
-          Monthly Leaderboard
-        </h5>
+        <h4 className="text-lg font-semibold text-gray-800">
+          Yearly Leaderboard
+        </h4>
       </div>
       <div className="flow-root">
         <ul role="list" className="divide-y divide-gray-200">
