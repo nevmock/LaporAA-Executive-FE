@@ -298,14 +298,18 @@ export default function Tindakan({
                         {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
                         {currentStepIndex < NEXT_STEP_LABELS.length && (
                             <button
-                                onClick={handleNextStep}
+                                onClick={() => {
+                                    handleNextStep();
+                                }}
                                 disabled={
                                     (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses)
+                                    (currentStepIndex === 3 && !confirmedProses) ||
+                                    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait")
                                 }
                                 className={`px-4 py-2 rounded-md text-white transition ${(
                                     (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses))
+                                    (currentStepIndex === 3 && !confirmedProses) || 
+                                    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"))
                                     ? "bg-gray-400 cursor-not-allowed"
                                     : "bg-green-500 hover:bg-green-600"
                                     }`}
