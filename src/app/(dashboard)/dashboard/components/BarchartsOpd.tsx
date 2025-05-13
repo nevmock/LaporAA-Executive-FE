@@ -17,9 +17,13 @@ const BarchartsOpd = () => {
       formatter: function (params: any) {
         const data = params[0].data;
         return `
-        <strong>${data.name_opd}</strong><br/>
-        Score: ${data.value}
-      `;
+    <strong>${data.opd}</strong><br/>
+    Score: ${data.value}<br/>
+    Coverage: ${data.coverage}<br/>
+    Agility: ${data.agility}<br/>
+    Resolution: ${data.resolution}<br/>
+    Experience: ${data.experience}
+  `;
       },
     },
     grid: {
@@ -43,7 +47,12 @@ const BarchartsOpd = () => {
         type: 'bar',
         data: sorted.map((item) => ({
           value: item.score_ranking,
+          opd: item.opd,
           name_opd: item.name_opd,
+          coverage: item.coverage,
+          agility: item.agility,
+          resolution: item.resolution,
+          experience: item.experience,
         })),
       },
     ],
