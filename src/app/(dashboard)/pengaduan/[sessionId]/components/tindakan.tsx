@@ -72,9 +72,9 @@ export default function Tindakan({
         if (status === "Verifikasi Situasi") {
             requiredFields = ["situasi"];
         } else if (status === "Verifikasi Kelengkapan Berkas") {
-            requiredFields = ["trackingId", "opd", "disposisi", "url"];
+            requiredFields = ["trackingId", "url", "status_laporan"];
         } else if (status === "Proses OPD Terkait") {
-            requiredFields = ["kesimpulan"];
+            requiredFields = ["kesimpulan", "opd", "disposisi"  ];
         }
 
         return requiredFields.every((field) =>
@@ -200,7 +200,7 @@ export default function Tindakan({
             <div className="border-b pb-4">
                 <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-medium flex items-center gap-2">
-                        Detail Laporan
+                        Detail Keluhan
                         {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(STATUS_LIST[currentStepIndex]) && (
                             <button
                                 onClick={() => setShowKeluhan((prev) => !prev)}
@@ -270,8 +270,28 @@ export default function Tindakan({
                             <button
                                 onClick={handlePreviousStep}
                                 className="bg-gray-400 text-white px-4 py-2 rounded-md"
+                                
                             >
                                 Kembali
+                            </button>
+                        )}
+
+                        {/* Tombol Simpan Perubahan (hanya di index 2 dan 3) */}
+                        {[2, 3].includes(currentStepIndex) && (
+                            <button
+                                onClick={() => saveData()}
+                                disabled={
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses)
+                                }
+                                className={`px-4 py-2 rounded-md text-white transition ${(
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses))
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-green-500 hover:bg-green-600"
+                                    }`}
+                            >
+                                Simpan Perubahan
                             </button>
                         )}
 
@@ -284,10 +304,10 @@ export default function Tindakan({
                                     (currentStepIndex === 3 && !confirmedProses)
                                 }
                                 className={`px-4 py-2 rounded-md text-white transition ${(
-                                        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                        (currentStepIndex === 3 && !confirmedProses))
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-green-500 hover:bg-green-600"
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses))
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-green-500 hover:bg-green-600"
                                     }`}
                             >
                                 {NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan"}

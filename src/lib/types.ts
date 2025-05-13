@@ -36,6 +36,8 @@ export interface TindakanData {
     rating: number;
     url: string;
     keterangan: string;
+    status_laporan: string;
+    prioritas: string;
 }
 
 export interface TindakanClientState extends TindakanData {
@@ -55,16 +57,20 @@ export interface Tindakan {
     _id: string;
     report: string;
     hasil: string;
-    kesimpulan: string;
-    prioritas: string;
+    kesimpulan: Array<any>;
     situasi: string;
     status: string;
     opd: string;
+    disposisi: string;
+    trackingId: string;
     photos: string[];
     createdAt: string;
     updatedAt: string;
+    rating: number;
     url: string;
     keterangan: string;
+    status_laporan: string;
+    prioritas: string;
 }
 
 export interface Chat {

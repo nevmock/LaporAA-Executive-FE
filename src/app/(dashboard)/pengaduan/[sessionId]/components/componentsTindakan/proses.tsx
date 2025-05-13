@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { TindakanClientState } from "../../../../../../lib/types";
 import axios from "axios";
 import { Plus } from "lucide-react";
+import OPDSelect from "./opdSelect"
 
 const MAX_PHOTOS = 5;
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -20,6 +21,11 @@ export default function Proses({
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [newKesimpulan, setNewKesimpulan] = useState("");
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        onChange((prev) => ({ ...prev, [name]: value }));
+    };
 
     // Tambah Kesimpulan
     const handleAddKesimpulan = async () => {
@@ -95,7 +101,7 @@ export default function Proses({
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
                 <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>
                 <p className="text-sm text-gray-700">
-                    Silakan pastikan bahwa Anda sudah mengisi data di SP4N Lapor dan laporan tersebut sudah di Tindak Lanjuti.<br />
+                    Apakah laporan yang ada di SP4N Lapor sudah ditindak lanjuti?<br />
                     Klik tombol di bawah ini untuk mulai mengisi data tindak lanjut yang sudah tersedia di halaman SP4N Lapor.
                 </p>
 
@@ -136,6 +142,53 @@ export default function Proses({
                     </button>
                 </div>
                 <ul className="space-y-2">
+
+                    {/* Form Terdisposisi ke */}
+                    <div className="grid grid-cols-4 items-center gap-2">
+                        <div className="col-span-1">
+                            <span className="font-medium text-gray-700">Terdisposisi ke</span><br />
+                            <span className="font-small text-gray-500">(Salin dari SP4N Lapor)</span>
+                        </div>
+                        <div className="col-span-3">
+                            <input
+                                name="disposisi"
+                                value={data.disposisi || ""}
+                                onChange={handleChange}
+                                className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500"
+                                placeholder="Tempel atau Ketik informasi disposisi dari SP4N Lapor"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Form OPD */}
+                    <div className="grid grid-cols-4 items-start gap-2">
+                        <label className="col-span-1 font-medium text-gray-700 mt-2">OPD Terkait</label>
+                        <div className="col-span-3">
+                            <OPDSelect value={data.opd || ""} onChange={(val) => onChange((prev) => ({ ...prev, opd: val }))} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-2">
+                        <div className="col-span-1">
+                            <span className="font-medium text-gray-800">Status Laporan SP4N Lapor</span><br />
+                            <span className="text-sm text-gray-500">(Salin dari SP4N Lapor)</span>
+                        </div>
+                        <div className="col-span-3">
+                            <select
+                                name="status_laporan"
+                                value={data.status_laporan || ""}
+                                onChange={handleChange}
+                                className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
+                            >
+                                <option value="">-- Pilih Status --</option>
+                                <option value="Menunggu Verifikasi Admin">Menunggu Verifikasi Admin</option>
+                                <option value="Sedang Diproses OPD Terkait">Sedang Diproses OPD Terkait</option>
+                                <option value="Telah Diproses OPD Terkait">Telah Diproses OPD Terkait</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Tindak Lanjut List */}
                     {data.kesimpulan?.map((item: any, idx: number) => (
                         <li key={idx} className="bg-yellow-50 border border-yellow-300 p-3 rounded-md">
                             <div className="flex justify-between items-center mb-1">
@@ -177,8 +230,8 @@ export default function Proses({
                         value={newKesimpulan}
                         onChange={(e) => setNewKesimpulan(e.target.value)}
                         rows={3}
-                        className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
-                        placeholder="Tambahkan Tindak Lanjut baru..."
+                        className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500 "
+                        placeholder="Tempel atau Ketik Tindak Lanjut dari Halaman SP4N Lapor . . . . "
                     />
                     <button
                         onClick={handleAddKesimpulan}
