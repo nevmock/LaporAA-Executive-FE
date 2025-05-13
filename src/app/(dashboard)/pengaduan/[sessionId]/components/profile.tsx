@@ -14,6 +14,7 @@ interface Data {
         nik: string;
         address: string;
         email: string;
+        jenis_kelamin: string;
         reportHistory: string[];
     };
     location: {
@@ -48,7 +49,7 @@ export default function Profile({ sessionId }: { sessionId: string }) {
     return (
         <div className="bg-gray-50 px-6 py-4 text-sm text-gray-800 border-l w-70 h-full overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">Profil Pelapor</h2>
-    
+
             <div className="space-y-3">
                 <div className="flex">
                     <p className="w-28 font-medium">Nama</p>
@@ -57,6 +58,10 @@ export default function Profile({ sessionId }: { sessionId: string }) {
                 <div className="flex">
                     <p className="w-28 font-medium">NIK</p>
                     <p>: {data.user.nik}</p>
+                </div>
+                <div className="flex">
+                    <p className="w-28 font-medium">Jenis Kelamin</p>
+                    <p>: {data.user.jenis_kelamin}</p>
                 </div>
                 <div className="flex">
                     <p className="w-28 font-medium">Alamat</p>
@@ -68,5 +73,5 @@ export default function Profile({ sessionId }: { sessionId: string }) {
                 </div>
             </div>
         </div>
-    );       
+    );
 }

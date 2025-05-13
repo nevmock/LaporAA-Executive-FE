@@ -81,7 +81,7 @@ export default function PengaduanTable() {
 
     const toggleMode = async (tindakanId: string, prioritas: boolean) => {
         try {
-            await axios.patch(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/tindakan/${tindakanId}/prioritas`, { prioritas: prioritas ? "Ya" : "Tidak" });
+            await axios.patch(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/tindakan/${tindakanId}/prioritas`, { prioritas: prioritas ? "Ya" : "-" });
             await getReports();
         } catch (err) {
             console.error("Gagal ubah mode:", err);
@@ -92,6 +92,7 @@ export default function PengaduanTable() {
         const filtered = data.filter((item) => {
             const lower = search.toLowerCase();
             return item.sessionId.toLowerCase().includes(lower) ||
+                item.user.toLowerCase().includes(lower) ||
                 item.from.toLowerCase().includes(lower) ||
                 item.address.toLowerCase().includes(lower) ||
                 item.location.desa.toLowerCase().includes(lower) ||
@@ -141,11 +142,11 @@ export default function PengaduanTable() {
                 placeholder="Cari data pengaduan..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded-md text-sm text-gray-700 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 bg-white z-[500] shadow-md"
             />
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="w-full text-sm text-left">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 h-full">
+                <table className="w-full text-sm text-left h-full">
                     <thead className="bg-gray-800 text-white">
                         <tr>
                             {[
@@ -163,7 +164,7 @@ export default function PengaduanTable() {
                                 <th
                                     key={key}
                                     onClick={() => toggleSort(key as SortKey)}
-                                    className="px-4 py-2 cursor-pointer select-none whitespace-nowrap"
+                                    className="px-4 py-2 cursor-pointer select-none whitespace-nowrap w-1/12"
                                 >
                                     {icon} {label} {renderSortArrow(key as SortKey)}
                                 </th>
@@ -235,25 +236,24 @@ export default function PengaduanTable() {
                         )}
                     </tbody>
                 </table>
+            </div>
 
-                <div className="flex justify-center items-center gap-2 mt-4">
-                    <button
-                        disabled={page === 1}
-                        onClick={() => setPage(page - 1)}
-                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
-                    >
-                        ← Prev
-                    </button>
-                    <span className="text-sm text-gray-600">Halaman {page} dari {totalPages}</span>
-                    <button
-                        disabled={page === totalPages}
-                        onClick={() => setPage(page + 1)}
-                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
-                    >
-                        Next →
-                    </button>
-                </div>
-
+            <div className="flex justify-center items-center gap-2 mt-4 sticky bottom-0 bg-white p-4 border-t border-gray-200">
+                <button
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                    className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                >
+                    ← Prev
+                </button>
+                <span className="text-sm text-gray-600">Halaman {page} dari {totalPages}</span>
+                <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(page + 1)}
+                    className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                >
+                    Next →
+                </button>
             </div>
 
             {selectedLoc && (
