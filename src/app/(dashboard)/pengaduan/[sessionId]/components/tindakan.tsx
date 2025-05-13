@@ -242,7 +242,7 @@ export default function Tindakan({
                 )}
 
                 {/* Tombol Navigasi */}
-                {!["Ditolak", "Selesai Pengaduan"].includes(formData.status || "") && (
+                {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(formData.status || "") && (
                     <div className="flex justify-center gap-2 mt-4">
                         {/* Tombol Tolak (hanya di step pertama) */}
                         {currentStepIndex === 0 && (

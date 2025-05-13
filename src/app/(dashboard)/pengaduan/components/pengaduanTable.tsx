@@ -145,7 +145,7 @@ export default function PengaduanTable() {
                 className="w-full p-2 border rounded-md text-sm text-gray-700 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 bg-white z-[500] shadow-md"
             />
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 h-full">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 h-[800px]">
                 <table className="w-full text-sm text-left h-full">
                     <thead className="bg-gray-800 text-white">
                         <tr>
