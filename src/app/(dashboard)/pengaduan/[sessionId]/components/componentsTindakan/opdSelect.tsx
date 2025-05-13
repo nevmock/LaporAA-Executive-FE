@@ -60,10 +60,10 @@ export default function OPDSelect({ value, onChange }: { value: string; onChange
         <Combobox value={value} onChange={onChange}>
             <div className="relative">
                 <Combobox.Input
-                    className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
+                    className="w-full border border-yellow-300 bg-yellow-50 text-grey-700 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
                     onChange={(e) => setQuery(e.target.value)}
                     displayValue={(opd: string) => opd}
-                    placeholder="Cari atau pilih OPD terkait"
+                    placeholder="Ketik dan Cari OPD terkait"
                 />
                 <Transition
                     as={Fragment}

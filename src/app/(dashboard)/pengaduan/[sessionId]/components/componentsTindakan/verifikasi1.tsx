@@ -19,7 +19,7 @@ export default function Verifikasi1({
             {/* Form Tingkat Kedaruratan */}
             <div className="grid grid-cols-4 items-center gap-2">
                 <div className="relative col-span-1">
-                    <label className="font-medium text-gray-700">
+                    <label className="font-medium text-gray-800">
                         Tingkat Kedaruratan
                     </label>
                 </div>
@@ -28,7 +28,7 @@ export default function Verifikasi1({
                         name="situasi"
                         value={data.situasi || ""}
                         onChange={handleChangeSituasi}
-                        className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
+                        className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500"
                     >
                         <option value="">-- Pilih Opsi --</option>
                         <option value="Darurat">Darurat</option>
