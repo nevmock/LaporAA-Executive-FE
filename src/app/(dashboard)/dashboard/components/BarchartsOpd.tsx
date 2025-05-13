@@ -63,7 +63,7 @@ const BarchartsOpd = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-lg font-semibold text-gray-800">
-          Tasks Performance
+          CARE Score
         </h4>
         <button className="text-gray-400 hover:text-gray-600">
           <MoreVertical size={18} />

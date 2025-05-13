@@ -67,7 +67,7 @@ export default function MapPersebaran() {
   console.log(reports);
 
   return (
-    <div className="w-full h-full rounded-xl overflow-hidden shadow">
+    <div className="w-full h-[700px] rounded-xl overflow-hidden shadow">
       {reports.length > 0 ? (
         <MapContainer
           center={mapCenter}

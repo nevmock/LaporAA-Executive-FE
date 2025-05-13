@@ -3,12 +3,6 @@ import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-import EfisiensiCard from './components/EfisiensiCard';
-import EffectivenessCard from './components/EffectivenessCard';
-import DistribusiCard from './components/DistribusiCard';
-import KepuasanCard from './components/KepuasanCard';
-import SpedoChart from '@/app/(dashboard)/dashboard/components/SpedoChart';
-import LineChart from '@/app/(dashboard)/dashboard/components/LineChart';
 import LeaderBoardCard from './components/LeaderBoardCard';
 import BarchartsOpd from './components/BarchartsOpd';
 
@@ -36,7 +30,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-white p-6 overflow-hidden flex flex-col">
+    <div className="w-full h-auto bg-white p-6 overflow-hidden flex flex-col">
       <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
         <div className="flex-[2] min-w-[450px]">
           <BarchartsOpd />
@@ -63,7 +57,7 @@ export default function Home() {
             </div> */}
 
       {/* Maps Container */}
-      <div className="flex-1 bg-gray-200 rounded-xl shadow overflow-hidden">
+      <div className="flex-1 bg-gray-200 rounded-xl shadow overflow-hidden h-[700px]">
         <MapPersebaran />
       </div>
     </div>

@@ -22,20 +22,20 @@ const LeaderBoardCard = () => {
                   }`}
                 >
                   {index === 0 ? (
-                    <span className="text-2xl">🥇</span>
+                    <span className="text-4xl">🥇</span>
                   ) : index === 1 ? (
-                    <span className="text-2xl">🥈</span>
+                    <span className="text-3xl">🥈</span>
                   ) : index === 2 ? (
-                    <span className="text-2xl">🥉</span>
+                    <span className="text-3xl">🥉</span>
                   ) : (
                     index + 1
                   )}
                 </div>
-                <div className="flex-1 min-w-0 ms-4">
+                <div className="min-w-0 ms-4">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {item.opd}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">
+                  <p className="text-gray-500 truncate font-bold text-lg">
                     {item.score_ranking}
                   </p>
                 </div>
