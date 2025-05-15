@@ -23,9 +23,9 @@ export default function Message({ from }: { from: string }) {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isScrolledUp, setIsScrolledUp] = useState(false);
     const [mode, setMode] = useState<"bot" | "manual">("bot");
-    const [loadingMode, setLoadingMode] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [role, setRole] = useState<string | null>(null);
     const limit = 20;
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -52,13 +52,24 @@ export default function Message({ from }: { from: string }) {
     useEffect(() => {
         if (!from) return;
 
+        // Ambil role dari localStorage
+        const storedRole = localStorage.getItem("role");
+        setRole(storedRole);
+
         axios
-            .patch(`${API_URL}/user/user-mode/${from}`, { mode: "bot" })
-            .then((res) => setMode(res.data.session.mode))
-            .catch((err) => console.error("Gagal set mode awal:", err));
+            .get(`${API_URL}/user/user-mode/${from}`)
+            .then((res) => {
+                const mode = res.data?.mode || res.data?.session?.mode;
+                if (mode === "manual" || mode === "bot") {
+                    console.info("Mode:", mode);
+                    setMode(mode);
+                } else {
+                    console.info("Mode tidak valid atau tidak ditemukan:", res.data);
+                }
+            })
+            .catch((err) => console.error("Gagal fetch mode:", err));
 
         fetchMessages(true);
-
         socket.connect();
         socket.on("newMessage", () => fetchMessages(true));
 
@@ -84,13 +95,13 @@ export default function Message({ from }: { from: string }) {
 
             if (scrollTop === 0 && hasMore && !loadingMore) {
                 setLoadingMore(true);
-            
+
                 const container = chatContainerRef.current;
                 const prevScrollHeight = container?.scrollHeight || 0;
-            
+
                 fetchMessages(false).finally(() => {
                     setLoadingMore(false);
-            
+
                     // Hitung perbedaan tinggi setelah load pesan baru
                     setTimeout(() => {
                         const newScrollHeight = container?.scrollHeight || 0;
@@ -101,7 +112,7 @@ export default function Message({ from }: { from: string }) {
                     }, 50); // Delay agar render selesai
                 });
             }
-            
+
         }
     };
 
@@ -112,20 +123,6 @@ export default function Message({ from }: { from: string }) {
             .post(`${API_URL}/chat/send/${from}`, { message: newMessage })
             .then(() => setNewMessage(""))
             .catch((err) => console.error(err));
-    };
-
-    const toggleMode = async () => {
-        const newMode = mode === "bot" ? "manual" : "bot";
-        setLoadingMode(true);
-        try {
-            const res = await axios.patch(`${API_URL}/user/user-mode/${from}`, { mode: newMode });
-            setMode(res.data.session.mode);
-        } catch (err) {
-            console.error("Gagal mengubah mode:", err);
-            alert("❌ Gagal mengubah mode.");
-        } finally {
-            setLoadingMode(false);
-        }
     };
 
     const formatDate = (rawDate?: string): string => {
@@ -162,15 +159,13 @@ export default function Message({ from }: { from: string }) {
         <div className="flex flex-col h-full relative">
             <div className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-white shadow px-3 py-1 rounded-full border text-xs">
                 <span className="text-gray-700">Mode:</span>
-                <Switch
-                    checked={mode === "manual"}
-                    onChange={toggleMode}
-                    className={`${mode === "manual" ? "bg-green-500" : "bg-gray-300"} relative inline-flex h-6 w-11 items-center rounded-full transition`}
-                >
-                    <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${mode === "manual" ? "translate-x-6" : "translate-x-1"}`}
-                    />
-                </Switch>
+
+                {/* Colored dot */}
+                <span
+                    className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`}
+                    title={mode === "manual" ? "Manual Mode" : "Bot Mode"}
+                />
+
                 <span className="text-gray-700">{mode === "manual" ? "Manual" : "Bot"}</span>
             </div>
 

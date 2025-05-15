@@ -46,7 +46,7 @@ export default function PengaduanTable() {
     const getReports = async () => {
         try {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
-                params: { page, limit: 10 } // 👈 bisa ubah limit sesuai kebutuhan
+                params: { page, limit: 15 } // 👈 bisa ubah limit sesuai kebutuhan
             });
             const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
 
@@ -136,124 +136,132 @@ export default function PengaduanTable() {
     }, [page]);
 
     return (
-        <div className="space-y-4">
-            <input
-                type="text"
-                placeholder="Cari data pengaduan..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full p-2 border rounded-md text-sm text-gray-700 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 bg-white z-[500] shadow-md"
-            />
+        <div className="flex flex-col h-screen">
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 h-[800px]">
-                <table className="w-full text-sm text-left h-full">
-                    <thead className="bg-gray-800 text-white">
-                        <tr>
-                            {[
-                                { key: "prioritas", icon: <FaStar />, label: "Prioritas Bupati" },
-                                { key: "sessionId", icon: <FaIdCard />, label: "No. Pengaduan" },
-                                { key: "user", icon: <FaUser />, label: "Nama" },
-                                { key: "from", icon: <FaPhone />, label: "No. Kontak" },
-                                { key: "address", icon: <FaMapMarkerAlt />, label: "Domisili" },
-                                { key: "lokasi_kejadian", icon: <FaMap />, label: "Lokasi Kejadian" },
-                                { key: "situasi", icon: <FaExclamationCircle />, label: "Situasi" },
-                                { key: "status", icon: <FaCheckCircle />, label: "Status" },
-                                { key: "opd", icon: <FaBuilding />, label: "OPD Terkait" },
-                                { key: "timer", icon: <FaClock />, label: "Waktu Berjalan" },
-                            ].map(({ key, icon, label }) => (
-                                <th
-                                    key={key}
-                                    onClick={() => toggleSort(key as SortKey)}
-                                    className="px-4 py-2 cursor-pointer select-none whitespace-nowrap w-1/12"
-                                >
-                                    {icon} {label} {renderSortArrow(key as SortKey)}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-gray-100 text-gray-900">
-                        {filteredData.length > 0 ? (
-                            filteredData.map((chat) => {
-                                const isPrioritas = chat.tindakan?.prioritas === "Ya";
-                                const rowClass = isPrioritas
-                                    ? "bg-red-100"
-                                    : chat.tindakan?.status === "Perlu Verifikasi"
-                                        ? "bg-yellow-100"
-                                        : "";
-
-                                return (
-                                    <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
-                                        {localStorage.getItem("role") === "Bupati" ? (
-                                            <td className="px-4 py-2">
-                                                <Switch
-                                                    checked={isPrioritas}
-                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
-                                                    className={`${isPrioritas ? "bg-green-500" : "bg-gray-300"} relative inline-flex h-6 w-11 items-center rounded-full transition`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? "translate-x-6" : "translate-x-1"}`}
-                                                    />
-                                                </Switch>
-                                            </td>
-                                        ) : (
-                                            <td className="px-4 py-2">{chat.tindakan?.prioritas || "-"}</td>
-                                        )}
-                                        <td className="px-4 py-2">
-                                            <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
-                                                {chat.sessionId}
-                                            </Link>
-                                        </td>
-                                        <td className="px-4 py-2">{chat.user || "-"}</td>
-                                        <td className="px-4 py-2">{chat.from || "-"}</td>
-                                        <td className="px-4 py-2">{chat.address || "-"}</td>
-                                        <td className="px-4 py-2">
-                                            {chat.location?.desa ? (
-                                                <button
-                                                    onClick={() =>
-                                                        setSelectedLoc({ lat: chat.location.latitude, lon: chat.location.longitude, desa: chat.location.desa })
-                                                    }
-                                                    className="text-blue-600 hover:underline"
-                                                >
-                                                    {chat.location.desa}, {chat.location.kecamatan}
-                                                </button>
-                                            ) : (
-                                                "-"
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-2">{chat.tindakan?.situasi || "-"}</td>
-                                        <td className="px-4 py-2">{chat.tindakan?.status || "-"}</td>
-                                        <td className="px-4 py-2">{chat.tindakan?.opd || "-"}</td>
-                                        <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan={11} className="text-center py-4 text-gray-500">
-                                    Tidak ada data ditemukan.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+            <div className="sticky top-0 z-50 m-3">
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">Daftar Pengaduan</h2>
+                <input
+                    type="text"
+                    placeholder="Cari data pengaduan..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full p-2 border rounded-md text-sm text-gray-700 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 bg-white z-[500] shadow-md"
+                />
             </div>
 
-            <div className="flex justify-center items-center gap-2 mt-4 sticky bottom-0 bg-white p-4 border-t border-gray-200">
-                <button
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
-                    className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
-                >
-                    ← Prev
-                </button>
-                <span className="text-sm text-gray-600">Halaman {page} dari {totalPages}</span>
-                <button
-                    disabled={page === totalPages}
-                    onClick={() => setPage(page + 1)}
-                    className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
-                >
-                    Next →
-                </button>
+            <div className="flex-1 overflow-y-auto ml-3 mr-3 rounded-t-lg">
+                <div className="rounded-lg border border-gray-400">
+                    <table className="w-full text-sm text-left h-full">
+                        <thead className="bg-gray-800 text-white sticky top-0 text-center">
+                            <tr>
+                                {[
+                                    { key: "prioritas", icon: <FaStar />, label: "Prioritas Bupati" },
+                                    { key: "sessionId", icon: <FaIdCard />, label: "No. Pengaduan" },
+                                    { key: "user", icon: <FaUser />, label: "Nama" },
+                                    { key: "from", icon: <FaPhone />, label: "No. Kontak" },
+                                    { key: "address", icon: <FaMapMarkerAlt />, label: "Domisili" },
+                                    { key: "lokasi_kejadian", icon: <FaMap />, label: "Lokasi Kejadian" },
+                                    { key: "situasi", icon: <FaExclamationCircle />, label: "Situasi" },
+                                    { key: "status", icon: <FaCheckCircle />, label: "Status" },
+                                    { key: "opd", icon: <FaBuilding />, label: "OPD Terkait" },
+                                    { key: "timer", icon: <FaClock />, label: "Waktu Berjalan" },
+                                ].map(({ key, icon, label }) => (
+                                    <th
+                                        key={key}
+                                        onClick={() => toggleSort(key as SortKey)}
+                                        className="px-4 py-2 cursor-pointer select-none whitespace-nowrap w-1/12"
+                                    >
+                                        {icon} {label} {renderSortArrow(key as SortKey)}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="bg-gray-100 text-gray-900 text-center">
+                            {filteredData.length > 0 ? (
+                                filteredData.map((chat) => {
+                                    const isPrioritas = chat.tindakan?.prioritas === "Ya";
+                                    const rowClass = isPrioritas
+                                        ? "bg-red-100"
+                                        : chat.tindakan?.status === "Perlu Verifikasi"
+                                            ? "bg-yellow-100"
+                                            : "";
+
+                                    return (
+                                        <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
+                                            {localStorage.getItem("role") === "Bupati" ? (
+                                                <td className="px-4 py-2">
+                                                    <Switch
+                                                        checked={isPrioritas}
+                                                        onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                        className={`${isPrioritas ? "bg-green-500" : "bg-gray-300"} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                    >
+                                                        <span
+                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? "translate-x-6" : "translate-x-1"}`}
+                                                        />
+                                                    </Switch>
+                                                </td>
+                                            ) : (
+                                                <td className="px-4 py-2">{chat.tindakan?.prioritas || "-"}</td>
+                                            )}
+                                            <td className="px-4 py-2">
+                                                <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
+                                                    {chat.sessionId}
+                                                </Link>
+                                            </td>
+                                            <td className="px-4 py-2">{chat.user || "-"}</td>
+                                            <td className="px-4 py-2">{chat.from || "-"}</td>
+                                            <td className="px-4 py-2">{chat.address || "-"}</td>
+                                            <td className="px-4 py-2">
+                                                {chat.location?.desa ? (
+                                                    <button
+                                                        onClick={() =>
+                                                            setSelectedLoc({ lat: chat.location.latitude, lon: chat.location.longitude, desa: chat.location.desa })
+                                                        }
+                                                        className="text-blue-600 hover:underline"
+                                                    >
+                                                        {chat.location.desa}, {chat.location.kecamatan}
+                                                    </button>
+                                                ) : (
+                                                    "-"
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2">{chat.tindakan?.situasi || "-"}</td>
+                                            <td className="px-4 py-2">{chat.tindakan?.status || "-"}</td>
+                                            <td className="px-4 py-2">{chat.tindakan?.opd || "-"}</td>
+                                            <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan={11} className="text-center py-4 text-gray-500">
+                                        Tidak ada data ditemukan.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-white z-40 border-t border-gray-200 py-3 px-4">
+                <div className="flex justify-center items-center gap-2">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
+                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                    >
+                        ← Prev
+                    </button>
+                    <span className="text-sm text-gray-600">Halaman {page} dari {totalPages}</span>
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(page + 1)}
+                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
+                    >
+                        Next →
+                    </button>
+                </div>
             </div>
 
             {selectedLoc && (
