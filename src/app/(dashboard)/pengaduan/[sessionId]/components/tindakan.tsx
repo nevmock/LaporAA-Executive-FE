@@ -156,6 +156,25 @@ export default function Tindakan({
         "Selesai",
     ];
 
+    const isButtonDisabled =
+    isLoading ||
+    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+    (currentStepIndex === 3 && !confirmedProses) ||
+    (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
+    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
+
+const tooltipMessage = isLoading
+    ? "Sedang memproses..."
+    : currentStepIndex === 2 && !confirmedVerifikasi2
+        ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
+        : currentStepIndex === 3 && !confirmedProses
+            ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
+            : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
+                ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
+                : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
+                    ? "Pastikan Status laporan SP4N Lapor sudah 'Telah Diproses OPD Terkait'"
+                    : "";
+
     return (
         <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
             {notif && (
@@ -242,7 +261,6 @@ export default function Tindakan({
                     ) : (
                         <StepComponent data={formData} onChange={setFormData} />
                     )
-
                 )}
 
                 {/* Tombol Navigasi */}
@@ -273,7 +291,7 @@ export default function Tindakan({
                         {currentStepIndex > 0 && (
                             <button
                                 onClick={handlePreviousStep}
-                                className="bg-gray-400 text-white px-4 py-2 rounded-md"
+                                className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md"
 
                             >
                                 Kembali
@@ -291,8 +309,8 @@ export default function Tindakan({
                                 className={`px-4 py-2 rounded-md text-white transition ${(
                                     (currentStepIndex === 2 && !confirmedVerifikasi2) ||
                                     (currentStepIndex === 3 && !confirmedProses))
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-green-500 hover:bg-green-600"
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-emerald-500 hover:bg-emerald-600"
                                     }`}
                             >
                                 Simpan Perubahan
@@ -301,25 +319,26 @@ export default function Tindakan({
 
                         {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
                         {currentStepIndex < NEXT_STEP_LABELS.length && (
-                            <button
-                                onClick={() => handleNextStep()}
-                                disabled={
-                                    isLoading ||
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses) ||
-                                    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait")
-                                }
-                                className={`px-4 py-2 rounded-md text-white transition ${(isLoading ||
-                                        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                        (currentStepIndex === 3 && !confirmedProses) ||
-                                        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"))
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-green-500 hover:bg-green-600"
-                                    }`}
-                            >
-                                {isLoading ? <LoadingSpinner /> : (NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan")}
-                            </button>
+                            <div className="relative group inline-block">
+                                <button
+                                    onClick={() => handleNextStep()}
+                                    disabled={isButtonDisabled}
+                                    className={`px-4 py-2 rounded-md text-white transition ${isButtonDisabled
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-indigo-500 hover:bg-indigo-600"
+                                        }`}
+                                >
+                                    {isLoading ? <LoadingSpinner /> : (NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan")}
+                                </button>
+
+                                {isButtonDisabled && tooltipMessage && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-max bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                                        {tooltipMessage}
+                                    </div>
+                                )}
+                            </div>
                         )}
+
                     </div>
                 )}
             </div>

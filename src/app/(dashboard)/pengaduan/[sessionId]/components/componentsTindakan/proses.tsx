@@ -108,7 +108,7 @@ export default function Proses({
                 <div className="flex flex-wrap gap-2 mt-4">
                     <button
                         onClick={() => window.open(`${data.url}`, "_blank")}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                     >
                         Buka Laporan SP4N Lapor
                     </button>
@@ -118,7 +118,7 @@ export default function Proses({
                             setIsConfirmed(true);
                             onConfirmChange?.(true);
                         }}
-                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                        className="px-4 py-2 bg-indigo-500 text-white text-sm rounded-md hover:bg-indigo-600 transition"
                     >
                         Ya, Tindak Lanjut Sudah Tersedia di SP4N Lapor
                     </button>
@@ -136,7 +136,7 @@ export default function Proses({
                 <div className="mt-3 mb-3">
                     <button
                         onClick={() => window.open(`${data.url}`, "_blank")}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                     >
                         Buka Laporan SP4N Lapor
                     </button>
@@ -171,7 +171,6 @@ export default function Proses({
                     <div className="grid grid-cols-4 items-center gap-2">
                         <div className="col-span-1">
                             <span className="font-medium text-gray-800">Status Laporan SP4N Lapor</span><br />
-                            <span className="text-sm text-gray-500">(Salin dari SP4N Lapor)</span>
                         </div>
                         <div className="col-span-3">
                             <select
@@ -188,10 +187,10 @@ export default function Proses({
                         </div>
                     </div>
 
-                    
+
                     {/* Tindak Lanjut List */}
                     <ul className="relative border-l-2 border-yellow-300 pl-6">
-                        <span className="font-medium text-gray-800">Tindak Lanjut:</span>    
+                        <span className="font-medium text-gray-800">Tindak Lanjut:</span>
                         {data.kesimpulan?.map((item: any, idx: number) => (
                             <li key={idx} className="mb-5 mt-3 relative">
                                 {/* Titik bulat */}
@@ -242,11 +241,14 @@ export default function Proses({
                         className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500 "
                         placeholder="Tempel atau Ketik Tindak Lanjut dari Halaman SP4N Lapor . . . . "
                     />
-                    <button
-                        onClick={handleAddKesimpulan}
-                        className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md text-sm flex items-center gap-1"
-                    >Simpan Tindak Lanjut
-                    </button>
+                    <div className="mt-2 flex justify-center">
+                        <button
+                            onClick={handleAddKesimpulan}
+                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm flex items-center gap-1"
+                        >
+                            Simpan Data Tindak Lanjut
+                        </button>
+                    </div>
                 </div>
             </div>
 

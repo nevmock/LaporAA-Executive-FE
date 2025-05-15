@@ -24,14 +24,14 @@ export default function Verifikasi2({
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
                 <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>
                 <p className="text-sm text-gray-700">
-                    Apakah sudah mengisi data ke SP4N Lapor, dan Sudah di Verifikasi?<br />
+                    Apakah sudah mengisi data ke SP4N Lapor, dan mendapatkan Tracking ID ?<br />
                     Klik tombol di bawah ini untuk mulai mengisi data yang sudah tersedia di halaman SP4N Lapor.
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
                     <button
                         onClick={() => window.open("https://www.lapor.go.id", "_blank")}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                     >
                         Buka SP4N Lapor
                     </button>
@@ -41,9 +41,9 @@ export default function Verifikasi2({
                             setIsConfirmed(true);
                             onConfirmChange?.(true);
                         }}
-                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                        className="px-4 py-2 bg-indigo-500 text-white text-sm rounded-md hover:bg-indigo-600 transition"
                     >
-                        Ya, Saya Sudah Mengisi dan Verifikasi
+                        Ya, Saya Sudah Mengisi Data
                     </button>
 
                 </div>
@@ -92,7 +92,6 @@ export default function Verifikasi2({
             <div className="grid grid-cols-4 items-center gap-2">
                 <div className="col-span-1">
                     <span className="font-medium text-gray-800">Status Laporan SP4N Lapor</span><br />
-                    <span className="text-sm text-gray-500">(Salin dari SP4N Lapor)</span>
                 </div>
                 <div className="col-span-3">
                     <select
