@@ -141,8 +141,8 @@ export default function Proses({
                         Buka Laporan SP4N Lapor
                     </button>
                 </div>
-                <ul className="space-y-2">
 
+                <ul className="space-y-2">
                     {/* Form Terdisposisi ke */}
                     <div className="grid grid-cols-4 items-center gap-2">
                         <div className="col-span-1">
@@ -188,40 +188,49 @@ export default function Proses({
                         </div>
                     </div>
 
+                    
                     {/* Tindak Lanjut List */}
-                    {data.kesimpulan?.map((item: any, idx: number) => (
-                        <li key={idx} className="bg-yellow-50 border border-yellow-300 p-3 rounded-md">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-gray-500">
-                                    {new Date(item.timestamp).toLocaleString()}
-                                </span>
-                                <div className="flex gap-2 text-xs">
-                                    <button
-                                        className="text-blue-600 hover:underline"
-                                        onClick={() => {
-                                            const updated = prompt("Edit Tindak Lanjut:", item.text);
-                                            if (updated && updated.trim()) {
-                                                handleEditKesimpulan(idx, updated);
-                                            }
-                                        }}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        className="text-red-600 hover:underline"
-                                        onClick={() => {
-                                            if (confirm("Yakin ingin menghapus tindak lanjut ini?")) {
-                                                handleDeleteKesimpulan(idx);
-                                            }
-                                        }}
-                                    >
-                                        Hapus
-                                    </button>
+                    <ul className="relative border-l-2 border-yellow-300 pl-6">
+                        <span className="font-medium text-gray-800">Tindak Lanjut:</span>    
+                        {data.kesimpulan?.map((item: any, idx: number) => (
+                            <li key={idx} className="mb-5 mt-3 relative">
+                                {/* Titik bulat */}
+                                {/* <span className="absolute -left-7 top-5 w-3 h-3 bg-yellow-400 border-2 border-white rounded-full z-10"></span> */}
+
+                                <div className="bg-yellow-50 border border-yellow-300 p-3 rounded-md shadow-sm">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-xs text-gray-500">
+                                            {new Date(item.timestamp).toLocaleString()}
+                                        </span>
+                                        <div className="flex gap-2 text-xs">
+                                            <button
+                                                className="text-blue-600 hover:underline"
+                                                onClick={() => {
+                                                    const updated = prompt("Edit Tindak Lanjut:", item.text);
+                                                    if (updated && updated.trim()) {
+                                                        handleEditKesimpulan(idx, updated);
+                                                    }
+                                                }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                className="text-red-600 hover:underline"
+                                                onClick={() => {
+                                                    if (confirm("Yakin ingin menghapus tindak lanjut ini?")) {
+                                                        handleDeleteKesimpulan(idx);
+                                                    }
+                                                }}
+                                            >
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-700">{item.text}</p>
                                 </div>
-                            </div>
-                            <p className="text-gray-700">{item.text}</p>
-                        </li>
-                    ))}
+                            </li>
+                        ))}
+                    </ul>
                 </ul>
 
                 {/* ➕ Tambah Kesimpulan */}
@@ -236,9 +245,7 @@ export default function Proses({
                     <button
                         onClick={handleAddKesimpulan}
                         className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md text-sm flex items-center gap-1"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Tindak Lanjut
+                    >Simpan Tindak Lanjut
                     </button>
                 </div>
             </div>

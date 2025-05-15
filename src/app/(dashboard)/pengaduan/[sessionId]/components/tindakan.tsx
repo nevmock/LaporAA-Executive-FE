@@ -7,6 +7,7 @@ import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
 import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../../../lib/types";
+import LoadingSpinner from "../../../../../components/LoadingSpinner"
 
 // Step Components
 import Verifikasi from "./componentsTindakan/verifikasi";
@@ -48,6 +49,7 @@ export default function Tindakan({
     const [pendingNextStatus, setPendingNextStatus] = useState<string | null>(null);
     const [confirmedVerifikasi2, setConfirmedVerifikasi2] = useState(false);
     const [confirmedProses, setConfirmedProses] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const router = useRouter();
 
@@ -74,7 +76,7 @@ export default function Tindakan({
         } else if (status === "Verifikasi Kelengkapan Berkas") {
             requiredFields = ["trackingId", "url", "status_laporan"];
         } else if (status === "Proses OPD Terkait") {
-            requiredFields = ["kesimpulan", "opd", "disposisi"  ];
+            requiredFields = ["kesimpulan", "opd", "disposisi"];
         }
 
         return requiredFields.every((field) =>
@@ -110,20 +112,22 @@ export default function Tindakan({
         const nextIndex = currentStepIndex + 1;
         const nextStatus = STATUS_LIST[nextIndex];
 
-        // Tambahkan konfirmasi hanya untuk langkah "Proses OPD Terkait"
+        // Konfirmasi khusus untuk step 'Proses OPD Terkait'
         if (statusNow === "Proses OPD Terkait") {
             const confirmed = confirm("Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.");
             if (!confirmed) return;
         }
 
-        // ❗ Modal hanya saat pindah ke "Verifikasi Kelengkapan Berkas"
+        // Modal khusus saat pindah ke 'Verifikasi Kelengkapan Berkas'
         if (statusNow === "Verifikasi Situasi" && nextStatus === "Verifikasi Kelengkapan Berkas") {
             setShowLaporModal(true);
             setPendingNextStatus(nextStatus);
             return;
         }
 
+        setIsLoading(true);
         await saveData(nextStatus);
+        setIsLoading(false);
         setCurrentStepIndex(nextIndex);
     };
 
@@ -270,7 +274,7 @@ export default function Tindakan({
                             <button
                                 onClick={handlePreviousStep}
                                 className="bg-gray-400 text-white px-4 py-2 rounded-md"
-                                
+
                             >
                                 Kembali
                             </button>
@@ -298,23 +302,22 @@ export default function Tindakan({
                         {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
                         {currentStepIndex < NEXT_STEP_LABELS.length && (
                             <button
-                                onClick={() => {
-                                    handleNextStep();
-                                }}
+                                onClick={() => handleNextStep()}
                                 disabled={
+                                    isLoading ||
                                     (currentStepIndex === 2 && !confirmedVerifikasi2) ||
                                     (currentStepIndex === 3 && !confirmedProses) ||
                                     (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait")
                                 }
-                                className={`px-4 py-2 rounded-md text-white transition ${(
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses) || 
-                                    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"))
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-green-500 hover:bg-green-600"
+                                className={`px-4 py-2 rounded-md text-white transition ${(isLoading ||
+                                        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                        (currentStepIndex === 3 && !confirmedProses) ||
+                                        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"))
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-green-500 hover:bg-green-600"
                                     }`}
                             >
-                                {NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan"}
+                                {isLoading ? <LoadingSpinner /> : (NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan")}
                             </button>
                         )}
                     </div>
