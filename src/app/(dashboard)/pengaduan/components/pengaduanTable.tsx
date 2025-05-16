@@ -152,7 +152,7 @@ export default function PengaduanTable() {
             <div className="flex-1 overflow-y-auto ml-3 mr-3 rounded-t-lg">
                 <div className="rounded-lg border border-gray-400">
                     <table className="w-full text-sm text-left h-full">
-                        <thead className="bg-gray-800 text-white sticky top-0 text-center">
+                        <thead className="bg-gray-800 text-white sticky top-0 text-center z-[500]">
                             <tr>
                                 {[
                                     { key: "prioritas", icon: <FaStar />, label: "Prioritas Bupati" },
