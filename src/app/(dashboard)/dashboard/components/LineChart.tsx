@@ -78,7 +78,7 @@ const LineChart = () => {
     ];
 
     return (
-        <div className="bg-white shadow-md rounded-xl p-6 w-full h-[600px]">
+        <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
             <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-800">Laporan Masuk Harian</h4>
                 <button className="text-gray-400 hover:text-gray-600">
@@ -91,7 +91,6 @@ const LineChart = () => {
                 series={chartSeries}
                 type="line"
                 width="100%"
-                
             />
         </div>
     );

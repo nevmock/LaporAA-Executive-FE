@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     };
 
     return (
-        <div className="w-24 bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg">
+        <div className="w-24 h-screen bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg">
             <Link href="/dashboard" passHref>
                 <div className="text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
                     <FiHome />

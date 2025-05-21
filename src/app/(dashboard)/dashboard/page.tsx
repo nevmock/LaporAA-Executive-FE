@@ -5,6 +5,12 @@ import axios from 'axios';
 
 import LeaderBoardCard from './components/LeaderBoardCard';
 import BarchartsOpd from './components/BarchartsOpd';
+import EfisiensiCard from './components/EfisiensiCard';
+import EffectivenessCard from './components/EffectivenessCard';
+import SpedoChart from './components/SpedoChart';
+import LineChart from './components/LineChart';
+import DistribusiCard from './components/DistribusiCard';
+import KepuasanCard from './components/KepuasanCard';
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -30,36 +36,36 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full h-auto bg-white p-6 overflow-hidden flex flex-col">
-      <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
-        <div className="flex-[2] min-w-[450px]">
+    <div className="w-full h-screen overflow-y-auto bg-white p-6 space-y-6">
+      {/* Section atas: Spedo dan LineChart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-4 min-w-[300px]">
+          {/* <SpedoChart /> */}
+          <EfisiensiCard />
+          <EffectivenessCard />
+          <DistribusiCard />
+          <KepuasanCard />
+        </div>
+        <div className="min-w-[300px]">
+          <LineChart />
+        </div>
+      </div>
+
+      {/* Peta Persebaran */}
+      <div className="w-full bg-gray-200 rounded-xl shadow overflow-hidden h-[700px]">
+        <MapPersebaran />
+      </div>
+
+      {/* BarChart OPD & Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 min-w-[450px]">
           <BarchartsOpd />
         </div>
-        <div className="flex-1 min-w-[150px]">
+        <div className="min-w-[150px]">
           <LeaderBoardCard />
         </div>
       </div>
-      {/* <div className="flex flex-row flex-wrap gap-4 justify-between items-start mb-4">
-        <div className="flex-1 min-w-[300px]">
-          <SpedoChart />
-        </div>
-        <div className="flex-1 min-w-[300px]">
-          <LineChart />
-        </div>
-      </div> */}
-
-      {/* Statistik Cards */}
-      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <EfisiensiCard />
-                <EffectivenessCard />
-                <DistribusiCard />
-                <KepuasanCard />
-            </div> */}
-
-      {/* Maps Container */}
-      <div className="flex-1 bg-gray-200 rounded-xl shadow overflow-hidden h-[700px]">
-        <MapPersebaran />
-      </div>
     </div>
+
   );
 }
