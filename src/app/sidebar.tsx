@@ -1,4 +1,4 @@
-import { FiLogOut, FiSettings, FiHome, FiInbox } from "react-icons/fi";
+import { FiLogOut, FiHome, FiInbox } from "react-icons/fi";
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -16,32 +16,31 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     };
 
     return (
-        <div className="w-24 h-screen bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg">
+        <div className="h-screen bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg transition-all duration-300">
+            {/* Home */}
             <Link href="/dashboard" passHref>
                 <div className="text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
                     <FiHome />
                 </div>
             </Link>
+
+            {/* Pengaduan */}
             <Link href="/pengaduan" passHref>
                 <div className="relative text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
                     <FiInbox />
                     {countPending > 0 && (
-                        <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
+                        <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
                             {countPending}
                         </div>
                     )}
                 </div>
             </Link>
 
-
-            <div className="text-3xl mt-auto mb-4">
-                {/*<div className="my-4 cursor-pointer transition-transform hover:scale-110">*/}
-                {/*    <FiSettings />*/}
-                {/*</div>*/}
-                <div className="my-4 cursor-pointer transition-transform hover:scale-110">
+            {/* Logout */}
+            <div className="mt-auto mb-4">
+                <div className="text-4xl cursor-pointer transition-transform hover:scale-110">
                     <FiLogOut onClick={handleLogout} />
                 </div>
-
             </div>
         </div>
     );

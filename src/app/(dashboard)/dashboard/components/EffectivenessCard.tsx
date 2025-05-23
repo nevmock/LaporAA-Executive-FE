@@ -20,7 +20,7 @@ export default function EffectivenessCard() {
     }, []);
 
     return (
-        <div className="bg-pink-400 text-white rounded-xl p-6 shadow">
+        <div className="bg-pink-400 text-white rounded-xl p-6 shadow-md">
             <p className="text-xl font-bold">{effectiveness?.value.toFixed(2)} %</p>
             <p className="text-sm mt-1">Effectiveness</p>
             <p className="text-xs mt-2">Jumlah laporan yang diselesaikan</p>

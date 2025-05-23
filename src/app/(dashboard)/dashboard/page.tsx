@@ -12,6 +12,9 @@ import LineChart from './components/LineChart';
 import DistribusiCard from './components/DistribusiCard';
 import KepuasanCard from './components/KepuasanCard';
 
+import SummaryTable from './components/SummaryTable';
+import SummaryPieChart from './components/SummaryPieChart';
+
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 const MapPersebaran = dynamic(() => import('./components/MapPersebaran'), {
@@ -20,6 +23,13 @@ const MapPersebaran = dynamic(() => import('./components/MapPersebaran'), {
 
 export default function Home() {
   const [countPending, setCountPending] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    axios.get(`${API_URL}/reports/summary`)
+      .then((res) => setStatusCounts(res.data || {}))
+      .catch(() => setStatusCounts({}));
+  }, []);
 
   useEffect(() => {
     axios
@@ -36,36 +46,57 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full h-screen overflow-y-auto bg-white p-6 space-y-6">
-      {/* Section atas: Spedo dan LineChart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="space-y-4 min-w-[300px]">
-          {/* <SpedoChart /> */}
-          <EfisiensiCard />
-          <EffectivenessCard />
-          <DistribusiCard />
-          <KepuasanCard />
-        </div>
-        <div className="min-w-[300px]">
-          <LineChart />
-        </div>
+    <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
+
+      {/* Summary Table - full width */}
+      <div className="w-full">
+        <SummaryTable statusCounts={statusCounts} />
       </div>
 
-      {/* Peta Persebaran */}
-      <div className="w-full bg-gray-200 rounded-xl shadow overflow-hidden h-[700px]">
-        <MapPersebaran />
+      {/* Pie Chart + KPI Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <div className="rounded-xl drop-shadow-lg">
+          <SummaryPieChart statusCounts={statusCounts} />
+        </div>
+        <div className="bg-gray-200 rounded-xl drop-shadow-lg overflow-hidden h-[400px]">
+          <MapPersebaran />
+        </div>
+
+      </div>
+
+      {/* Line Chart + Map */}
+      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+        <div>
+          <LineChart />
+        </div>
+
+        <div className="space-y-4">
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <EfisiensiCard />
+          </div>
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <EffectivenessCard />
+          </div>
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <DistribusiCard />
+          </div>
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <KepuasanCard />
+          </div>
+        </div>
+
       </div>
 
       {/* BarChart OPD & Leaderboard */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 min-w-[450px]">
+        <div className="drop-shadow-lg lg:col-span-2 min-w-[450px]">
           <BarchartsOpd />
         </div>
-        <div className="min-w-[150px]">
+        <div className="drop-shadow-lg min-w-[150px]">
           <LeaderBoardCard />
         </div>
       </div>
     </div>
-
   );
 }

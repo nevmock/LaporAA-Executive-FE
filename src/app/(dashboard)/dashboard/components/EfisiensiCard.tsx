@@ -21,7 +21,7 @@ export default function EfisiensiCard() {
     }, []);    
 
     return (
-        <div className="bg-orange-400 text-white rounded-xl p-6 shadow">
+        <div className="bg-orange-400 text-white rounded-xl p-6 shadow-md">
             <p className="text-xl font-bold">{efisiensi?.value.toFixed(2)} %</p>
             <p className="text-sm mt-1">Efisiensi</p>
             <p className="text-xs mt-2">Jumlah pelapor yang dilayani</p>
