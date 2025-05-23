@@ -20,7 +20,7 @@ export default function KepuasanCard() {
     }, []);
 
     return (
-        <div className="bg-cyan-400 text-white rounded-xl p-6 shadow">
+        <div className="bg-cyan-400 text-white rounded-xl p-6 shadow-md">
             <p className="text-xl font-bold">{kepuasan?.value.toFixed(2)} %</p>
             <p className="text-sm mt-1">Kepuasan Solusi</p>
             <p className="text-xs mt-2">Skala dari pelapor (1–5)</p>

@@ -9,6 +9,7 @@ import {
     FaStar, FaIdCard, FaUser, FaPhone, FaMapMarkerAlt, FaMap,
     FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock
 } from "react-icons/fa";
+import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
@@ -38,16 +39,31 @@ export default function PengaduanTable() {
     const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lon: number; desa: string } | null>(null);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
+    const [limit, setLimit] = useState(15);
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-    useEffect(() => {
-        getReports();
-    }, []);
+    const statusTabs = [
+        "Semua",
+        "Perlu Verifikasi",
+        "Verifikasi Situasi",
+        "Verifikasi Kelengkapan Berkas",
+        "Proses OPD Terkait",
+        "Selesai Penanganan",
+        "Selesai Pengaduan",
+        "Ditolak"
+    ];
 
-    const getReports = async () => {
+    const getReports = async (statusParam = selectedStatus, pageParam = page, limitParam = limit) => {
         try {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
-                params: { page, limit: 15 } // 👈 bisa ubah limit sesuai kebutuhan
+                params: {
+                    page: pageParam,
+                    limit: limitParam,
+                    status: statusParam !== "Semua" ? statusParam : undefined
+                }
             });
+
             const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
 
             const processedData: Chat[] = responseData.map((item: any) => ({
@@ -61,6 +77,16 @@ export default function PengaduanTable() {
         } catch (err) {
             console.error("❌ Fetch error:", err);
             setData([]);
+        }
+    };
+
+    const getSummary = async () => {
+        try {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary`);
+            setStatusCounts(res.data || {});
+        } catch (err) {
+            console.error("❌ Failed to fetch summary:", err);
+            setStatusCounts({});
         }
     };
 
@@ -89,7 +115,7 @@ export default function PengaduanTable() {
     };
 
     const filteredData = useMemo(() => {
-        const filtered = data.filter((item) => {
+        return [...data].filter((item) => {
             const lower = search.toLowerCase();
             return item.sessionId.toLowerCase().includes(lower) ||
                 item.user.toLowerCase().includes(lower) ||
@@ -98,9 +124,7 @@ export default function PengaduanTable() {
                 item.location.desa.toLowerCase().includes(lower) ||
                 item.location.kecamatan.toLowerCase().includes(lower) ||
                 item.location.kabupaten.toLowerCase().includes(lower);
-        });
-
-        return [...filtered].sort((a, b) => {
+        }).sort((a, b) => {
             for (const { key, order } of sorts) {
                 let valA: any = "", valB: any = "";
 
@@ -132,8 +156,12 @@ export default function PengaduanTable() {
     }, [data, search, sorts]);
 
     useEffect(() => {
-        getReports();
-    }, [page]);
+        getSummary(); // ambil saat awal render
+    }, []);
+
+    useEffect(() => {
+        getReports(selectedStatus, page, limit);
+    }, [selectedStatus, page, limit]);
 
     return (
         <div className="flex flex-col h-screen">
@@ -147,9 +175,62 @@ export default function PengaduanTable() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full p-2 border rounded-md text-sm text-gray-700 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 bg-white z-[500] shadow-md"
                 />
+
+                <div className="flex items-center justify-between mb-3 mt-5">
+                    <div className="flex flex-wrap gap-3">
+                        {statusTabs.map((status) => {
+                            const label = status === "Semua"
+                                ? `Semua (${Object.values(statusCounts).reduce((a, b) => a + b, 0)})`
+                                : `${status} (${statusCounts[status] || 0})`;
+
+                            return (
+                                <button
+                                    key={status}
+                                    onClick={() => {
+                                        setSelectedStatus(status);
+                                        setPage(1);
+                                    }}
+                                    className={`px-4 py-1 rounded-full text-sm font-semibold border ${selectedStatus === status
+                                        ? "bg-pink-600 text-white border-pink-600"
+                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                        }`}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex items-center space-x-3 mr-3">
+                        <button
+                            onClick={() => getReports()}
+                            title="Refresh data"
+                            className="text-gray-500 hover:bg-gray-100 hover:text-black hover:outline-none hover:ring-1 hover:ring-grey-500 px-2 py-1 border border-gray-300"
+                        >
+                            <IoIosRefresh />
+                        </button>
+
+                        <select
+                            value={limit}
+                            onChange={(e) => {
+                                setLimit(Number(e.target.value));
+                                setPage(1); // reset ke halaman 1 juga saat ganti limit
+                            }}
+                            className="text-sm text-gray-500 border border-gray-300 rounded px-2 py-1 hover:outline-none hover:ring-1 hover:ring-grey-500"
+                        >
+                            {[10, 15, 20, 30, 50].map((l) => (
+                                <option key={l} value={l}>
+                                    Tampilkan {l}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto ml-3 mr-3 rounded-t-lg">
+
                 <div className="rounded-lg border border-gray-400">
                     <table className="w-full text-sm text-left h-full">
                         <thead className="bg-gray-800 text-white sticky top-0 text-center z-[500]">

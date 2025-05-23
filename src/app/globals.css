@@ -23,3 +23,12 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.apexcharts-tooltip .apexcharts-tooltip-title {
+  color: #111 !important; /* warna teks bagian atas */
+}
+
+.apexcharts-tooltip-series-group .apexcharts-tooltip-text {
+  color: #0ea5e9 !important; /* warna tulisan 'Laporan Masuk' */
+}
+

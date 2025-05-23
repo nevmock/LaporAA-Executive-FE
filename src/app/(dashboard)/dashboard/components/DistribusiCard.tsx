@@ -20,7 +20,7 @@ export default function DistribusiCard() {
     }, []);
 
     return (
-        <div className="bg-green-400 text-white rounded-xl p-6 shadow">
+        <div className="bg-green-400 text-white rounded-xl p-6 shadow-md">
             <p className="text-xl font-bold">{stdDev?.value.toFixed(2)}</p>
             <p className="text-sm mt-1">Distribusi Solusi</p>
             <p className="text-xs mt-2">Standar deviasi laporan selesai per wilayah</p>
