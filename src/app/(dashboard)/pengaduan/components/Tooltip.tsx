@@ -3,17 +3,12 @@
 import React from "react";
 
 /**
- * Simple, zero-dependency Tooltip component.
+ * Komponen Tooltip tanpa library eksternal.
  *
  * Props:
- *  • text      – string yang akan ditampilkan di tooltip
- *  • position  – "top" | "bottom" | "left" | "right"  (default: "top")
- *  • className – kelas ekstra (optional)
- *
- * Cara pakai:
- *  <Tooltip text="Hello 👋">
- *      <button>Hover me</button>
- *  </Tooltip>
+ *  - text: isi tooltip
+ *  - position: top | bottom | left | right (default: right)
+ *  - className: tambahan class (optional)
  */
 interface TooltipProps {
     text: string;
@@ -25,25 +20,22 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({
     text,
     children,
-    position = "top",
+    position = "right",
     className = ""
 }) => {
-    // Posisi tooltip relatif terhadap elemen pemicu
     const positionClass = {
-        top: "bottom-full left-1/2 -translate-x-1/2 mb-1 z-[1000]",
-        bottom: "top-full left-1/2 -translate-x-1/2 mt-1 z-[1000]",
-        left: "right-full top-1/2 -translate-y-1/2 mr-1 z-[1000]",
-        right: "left-full top-1/2 -translate-y-1/2 ml-1 z-[1000]"
+        top: "bottom-full left-1/2 -translate-x-1/2 mb-1",
+        bottom: "top-full left-1/2 -translate-x-1/2 mt-1",
+        left: "right-full top-1/2 -translate-y-1/2 mr-2",
+        right: "left-full top-1/2 -translate-y-1/2 ml-2"
     }[position];
 
     return (
         <span className={`relative inline-block group ${className}`}>
-            {/* Elemen trigger */}
             {children}
 
-            {/* Tooltip */}
             <span
-                className={`pointer-events-none absolute z-50 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity duration-100 ease-out group-hover:opacity-100 group-focus:opacity-100 ${positionClass}`}
+                className={`pointer-events-none absolute z-50 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 ease-out ${positionClass}`}
             >
                 {text}
             </span>

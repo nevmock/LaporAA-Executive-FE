@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { FaPaperPlane } from "react-icons/fa";
-import { Switch } from "@headlessui/react";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 const socket = io(`${API_URL}`, { autoConnect: false });
@@ -15,6 +14,8 @@ interface MessageItem {
     senderName: string;
     from: string;
     timestamp: string;
+    type?: string;         // text | image | etc
+    mediaUrl?: string;     // for image
 }
 
 export default function Message({ from }: { from: string }) {
@@ -25,7 +26,6 @@ export default function Message({ from }: { from: string }) {
     const [mode, setMode] = useState<"bot" | "manual">("bot");
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [role, setRole] = useState<string | null>(null);
     const limit = 20;
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -52,26 +52,19 @@ export default function Message({ from }: { from: string }) {
     useEffect(() => {
         if (!from) return;
 
-        // Ambil role dari localStorage
-        const storedRole = localStorage.getItem("role");
-        setRole(storedRole);
-
-        axios
-            .get(`${API_URL}/user/user-mode/${from}`)
+        axios.get(`${API_URL}/user/user-mode/${from}`)
             .then((res) => {
                 const mode = res.data?.mode || res.data?.session?.mode;
-                if (mode === "manual" || mode === "bot") {
-                    console.info("Mode:", mode);
-                    setMode(mode);
-                } else {
-                    console.info("Mode tidak valid atau tidak ditemukan:", res.data);
-                }
+                if (mode === "manual" || mode === "bot") setMode(mode);
             })
             .catch((err) => console.error("Gagal fetch mode:", err));
 
         fetchMessages(true);
         socket.connect();
-        socket.on("newMessage", () => fetchMessages(true));
+        socket.on("newMessage", (msg) => {
+            setMessages((prev) => [...prev, msg]);
+            scrollToBottom();
+        });
 
         return () => {
             socket.off("newMessage", () => fetchMessages(true));
@@ -87,32 +80,27 @@ export default function Message({ from }: { from: string }) {
     };
 
     const handleScroll = () => {
-        if (chatContainerRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-            const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
-            setIsScrolledUp(!atBottom);
-            if (atBottom) setUnreadCount(0);
+        if (!chatContainerRef.current) return;
 
-            if (scrollTop === 0 && hasMore && !loadingMore) {
-                setLoadingMore(true);
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
+        setIsScrolledUp(!atBottom);
+        if (atBottom) setUnreadCount(0);
 
-                const container = chatContainerRef.current;
-                const prevScrollHeight = container?.scrollHeight || 0;
+        if (scrollTop === 0 && hasMore && !loadingMore) {
+            setLoadingMore(true);
 
-                fetchMessages(false).finally(() => {
-                    setLoadingMore(false);
+            const container = chatContainerRef.current;
+            const prevScrollHeight = container?.scrollHeight || 0;
 
-                    // Hitung perbedaan tinggi setelah load pesan baru
-                    setTimeout(() => {
-                        const newScrollHeight = container?.scrollHeight || 0;
-                        const diff = newScrollHeight - prevScrollHeight;
-                        if (container) {
-                            container.scrollTop = diff; // Jaga posisi agar tidak loncat
-                        }
-                    }, 50); // Delay agar render selesai
-                });
-            }
-
+            fetchMessages(false).finally(() => {
+                setLoadingMore(false);
+                setTimeout(() => {
+                    const newScrollHeight = container?.scrollHeight || 0;
+                    const diff = newScrollHeight - prevScrollHeight;
+                    if (container) container.scrollTop = diff;
+                }, 50);
+            });
         }
     };
 
@@ -132,7 +120,6 @@ export default function Message({ from }: { from: string }) {
 
         const now = new Date();
         const isSameDay = date.toDateString() === now.toDateString();
-
         const yesterday = new Date();
         yesterday.setDate(now.getDate() - 1);
         const isYesterday = date.toDateString() === yesterday.toDateString();
@@ -157,18 +144,14 @@ export default function Message({ from }: { from: string }) {
 
     return (
         <div className="flex flex-col h-full relative">
+            {/* Mode indicator */}
             <div className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-white shadow px-3 py-1 rounded-full border text-xs">
                 <span className="text-gray-700">Mode:</span>
-
-                {/* Colored dot */}
-                <span
-                    className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`}
-                    title={mode === "manual" ? "Manual Mode" : "Bot Mode"}
-                />
-
+                <span className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`} />
                 <span className="text-gray-700">{mode === "manual" ? "Manual" : "Bot"}</span>
             </div>
 
+            {/* Chat area */}
             <div
                 className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#EFEAE2]"
                 ref={chatContainerRef}
@@ -184,10 +167,19 @@ export default function Message({ from }: { from: string }) {
                             key={msg._id || `${msg.sessionId}-${msg.senderName}-${index}`}
                             className={`flex ${msg.senderName === "Bot" ? "justify-end" : "justify-start"}`}
                         >
-                            <div
-                                className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Bot" ? "bg-[#128C7E]" : "bg-[#25D366]"}`}
-                            >
-                                <p>{msg.message}</p>
+                            <div className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Bot" ? "bg-[#128C7E]" : "bg-[#25D366]"}`}>
+                                {msg.type === "image" && msg.mediaUrl ? (
+                                    <img
+                                        src={msg.mediaUrl}
+                                        alt="Gambar"
+                                        className="rounded mb-2 max-w-full"
+                                        onError={(e) => {
+                                            e.currentTarget.src = "/no-image.png"; // fallback
+                                        }}
+                                    />
+                                ) : (
+                                    <p>{msg.message}</p>
+                                )}
                                 <p className="text-xs text-gray-200 mt-1">{formatDate(msg.timestamp)}</p>
                             </div>
                         </div>
@@ -196,6 +188,7 @@ export default function Message({ from }: { from: string }) {
                 <div ref={messagesEndRef} className="pb-20" />
             </div>
 
+            {/* Scroll to bottom indicator */}
             {unreadCount > 0 && (
                 <div
                     className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-[#128C7E] text-white px-4 py-2 rounded-full cursor-pointer z-10"
@@ -205,6 +198,7 @@ export default function Message({ from }: { from: string }) {
                 </div>
             )}
 
+            {/* Input */}
             {mode === "manual" && (
                 <div className="p-4 bg-white flex items-center border-t">
                     <input

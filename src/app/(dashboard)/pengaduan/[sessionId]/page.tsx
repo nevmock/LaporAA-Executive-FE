@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Message from "./components/message";
 import Tindakan from "./components/tindakan";
 import { Data } from "../../../../lib/types";
@@ -12,10 +12,10 @@ export default function ChatPage() {
   const params = useParams() as { sessionId?: string };
   const sessionId = params?.sessionId;
   const router = useRouter();
-  const pathname = usePathname();
 
   const [data, setData] = useState<Data | null>(null);
   const [activeTab, setActiveTab] = useState<"pesan" | "tindakan">("tindakan");
+  const [modeReady, setModeReady] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -23,54 +23,77 @@ export default function ChatPage() {
       setData(res.data);
     } catch (err) {
       console.error("❌ Gagal ambil data:", err);
-      setData(null);
     }
   };
 
+  // Saat sessionId berubah, ambil ulang data
   useEffect(() => {
     if (sessionId) fetchData();
   }, [sessionId]);
 
+  // Fungsi untuk set mode hanya jika perlu
+  const ensureMode = async (from: string, target: "manual" | "bot") => {
+    let retry = 0;
+
+    while (retry < 5) {
+      try {
+        const check = await axios.get(`${API_URL}/user/user-mode/${from}`);
+        const current = check.data?.mode || check.data?.session?.mode;
+
+        if (current === target) {
+          console.log(`✅ Mode sudah sesuai: ${current}`);
+          if (target === "manual") setModeReady(true);
+          return;
+        }
+
+        // Patch jika belum sesuai
+        await axios.patch(`${API_URL}/user/user-mode/${from}`, { mode: target });
+        console.log(`✅ Mode berhasil diubah ke: ${target}`);
+        await new Promise((r) => setTimeout(r, 300)); // tunggu sebentar
+        retry++;
+      } catch (err) {
+        console.warn(`❌ Gagal patch mode ke ${target}, retry ke-${retry + 1}`);
+        retry++;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
+
+    console.error(`❌ Gagal set mode ${target} setelah 5 percobaan`);
+    if (target === "manual") setModeReady(false);
+  };
+
+  // Handle mode berdasarkan tab
   useEffect(() => {
-    const role = localStorage.getItem("role");
-    console.info("data role:", role);
+    if (!data?.from) return;
 
-    if (!data?.from || role !== "Bupati") return;
+    const from = data.from;
 
-    const handleUnload = () => {
+    if (activeTab === "pesan") {
+      setModeReady(false);
+      ensureMode(from, "manual");
+    } else {
+      ensureMode(from, "bot");
+    }
+
+    const handleBeforeUnload = () => {
       navigator.sendBeacon(
-        `${API_URL}/user/user-mode/${data.from}`,
+        `${API_URL}/user/user-mode/${from}`,
         JSON.stringify({ mode: "bot" })
       );
     };
 
-    // Set manual saat buka tab pesan
-    if (activeTab === "pesan") {
-      axios.patch(`${API_URL}/user/user-mode/${data.from}`, { mode: "manual" })
-        .catch((err) => console.error("❌ Gagal ubah ke manual:", err));
-    }
-
-    // Kembalikan ke bot saat navigasi halaman (bukan cuma tab)
-    const handlePathChange = () => {
-      if (data?.from) {
-        axios.patch(`${API_URL}/user/user-mode/${data.from}`, { mode: "bot" })
-          .catch((err) => console.error("❌ Gagal reset ke bot saat pindah halaman:", err));
-      }
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      handlePathChange(); // saat unmount
-      window.removeEventListener("beforeunload", handleUnload);
+      ensureMode(from, "bot");
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [activeTab, data?.from, pathname]);
+  }, [activeTab, data?.from]);
 
   if (!sessionId) return null;
 
   return (
     <div className="w-full h-screen flex bg-white">
-      {/* Left section */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center px-6 py-4 border-b bg-gray-100 justify-between">
@@ -96,7 +119,7 @@ export default function ChatPage() {
             <button
               key={tab}
               className={`py-2 px-4 font-medium ${activeTab === tab ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
-              onClick={() => setActiveTab(tab as any)}
+              onClick={() => setActiveTab(tab as "pesan" | "tindakan")}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -106,7 +129,13 @@ export default function ChatPage() {
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === "pesan" ? (
-            <Message from={data?.from || ""} />
+            modeReady ? (
+              <Message from={data?.from || ""} />
+            ) : (
+              <div className="p-6 text-center text-gray-500 text-sm">
+                Menyiapkan mode manual...
+              </div>
+            )
           ) : (
             <Tindakan tindakan={data?.tindakan || null} sessionId={sessionId} />
           )}

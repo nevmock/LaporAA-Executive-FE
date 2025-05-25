@@ -24,7 +24,7 @@ export default function LoginPage() {
             localStorage.setItem('role', res.data.role);
             localStorage.setItem('username', res.data.username);
 
-            router.push('/pengaduan');
+            router.push('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login gagal');
         }
