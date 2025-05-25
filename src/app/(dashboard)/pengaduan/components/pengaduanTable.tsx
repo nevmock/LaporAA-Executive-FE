@@ -19,7 +19,7 @@ import {
 } from "react-icons/fa";
 import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
-import { Tooltip } from "./Tooltip"; // 🔧 import Tooltip
+import { Tooltip } from "./Tooltip";
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
 /* ------------------------- Utils ------------------------- */
@@ -70,6 +70,7 @@ export default function PengaduanTable() {
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
     const [limit, setLimit] = useState(15);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+    const [photoModal, setPhotoModal] = useState<string[] | null>(null);
 
     /* ------------------ Status Tabs ----------------- */
     const statusTabs = [
@@ -147,8 +148,15 @@ export default function PengaduanTable() {
 
     const renderSortArrow = (key: SortKey) => {
         const found = sorts.find(s => s.key === key);
-        if (!found) return "";
-        return found.order === "asc" ? "↑" : "↓";
+        if (!found) return null;
+
+        const arrow = found.order === "asc" ? "↑" : "↓";
+
+        return (
+            <span className="ml-1 text-cyan-500 font-semibold">
+                {arrow}
+            </span>
+        );
     };
 
     /* ----------------- Toggle Mode ------------------ */
@@ -260,8 +268,8 @@ export default function PengaduanTable() {
                                         setPage(1);
                                     }}
                                     className={`rounded-full px-4 py-1 text-sm font-semibold border ${selectedStatus === status
-                                            ? "border-pink-600 bg-pink-600 text-white"
-                                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                        ? "border-pink-600 bg-pink-600 text-white"
+                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                                         }`}
                                 >
                                     {label}
@@ -300,8 +308,8 @@ export default function PengaduanTable() {
 
             {/* ----------------- TABLE ------------------ */}
             <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
-                <div className="rounded-lg border border-gray-400">
-                    <table className="h-full w-full text-left text-sm">
+                <div className="w-full overflow-x-auto box-border rounded-lg border border-gray-400">
+                    <table className="min-w-full table-fixed text-left text-sm">
                         {/* Head */}
                         <thead className="sticky top-0 z-[500] bg-gray-800 text-center text-white">
                             <tr>
@@ -360,13 +368,12 @@ export default function PengaduanTable() {
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        onClick={() =>
-                                            toggleSort(key as SortKey)
-                                        }
-                                        className="w-1/12 cursor-pointer select-none whitespace-nowrap px-4 py-2"
+                                        onClick={() => toggleSort(key as SortKey)}
+                                        className="px-4 py-2 cursor-pointer select-none whitespace-nowrap"
                                     >
-                                        {icon} {label}{" "}
-                                        {renderSortArrow(key as SortKey)}
+                                        <div className="flex items-center justify-center gap-1">
+                                            {icon} {label} {renderSortArrow(key as SortKey)}
+                                        </div>
                                     </th>
                                 ))}
                             </tr>
@@ -404,14 +411,14 @@ export default function PengaduanTable() {
                                                             )
                                                         }
                                                         className={`${isPrioritas
-                                                                ? "bg-green-500"
-                                                                : "bg-gray-300"
+                                                            ? "bg-green-500"
+                                                            : "bg-gray-300"
                                                             } relative inline-flex h-6 w-11 items-center rounded-full transition`}
                                                     >
                                                         <span
                                                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas
-                                                                    ? "translate-x-6"
-                                                                    : "translate-x-1"
+                                                                ? "translate-x-6"
+                                                                : "translate-x-1"
                                                                 }`}
                                                         />
                                                     </Switch>
@@ -509,27 +516,26 @@ export default function PengaduanTable() {
                                             {/* Foto thumbnail */}
                                             <td className="px-2 py-2">
                                                 {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
-                                                    <div className="flex gap-1">
-                                                        {chat.photos.map((photoUrl, index) => (
-                                                            <Tooltip key={index} text={`Klik untuk melihat foto ${index + 1}`}>
-                                                                <img
-                                                                    src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${photoUrl}`}
-                                                                    alt={`Foto ${index + 1}`}
-                                                                    className="h-10 w-10 cursor-pointer rounded border border-gray-300 object-cover"
-                                                                    onClick={() =>
-                                                                        window.open(
-                                                                            `${process.env.NEXT_PUBLIC_BE_BASE_URL}${photoUrl}`,
-                                                                            "_blank"
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </Tooltip>
-                                                        ))}
-                                                    </div>
+                                                    <img
+                                                        src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`}
+                                                        alt="Foto pengaduan"
+                                                        className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
+                                                        onClick={() => {
+                                                            if (chat.photos.length > 1) {
+                                                                setPhotoModal(chat.photos);
+                                                            } else {
+                                                                window.open(
+                                                                    `${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`,
+                                                                    "_blank"
+                                                                );
+                                                            }
+                                                        }}
+                                                    />
                                                 ) : (
                                                     "-"
                                                 )}
                                             </td>
+
                                         </tr>
                                     );
                                 })
@@ -573,7 +579,7 @@ export default function PengaduanTable() {
 
             {/* ------------- Map Modal --------------- */}
             {selectedLoc && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-50">
                     <div className="relative w-[90%] max-w-md rounded-lg bg-white p-4 shadow-lg">
                         <button
                             onClick={() => setSelectedLoc(null)}
@@ -589,6 +595,37 @@ export default function PengaduanTable() {
                             lon={selectedLoc.lon}
                             description={selectedLoc.desa}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* ------------- Photo Modal --------------- */}
+            {photoModal && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="relative max-h-[90%] w-[90%] max-w-2xl overflow-y-auto rounded-lg bg-white p-4 shadow-lg">
+                        <button
+                            onClick={() => setPhotoModal(null)}
+                            className="absolute right-3 top-2 text-lg text-gray-700 hover:text-black"
+                        >
+                            ✕
+                        </button>
+                        <h2 className="mb-3 text-lg font-semibold">Foto Laporan</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            {photoModal.map((url, index) => (
+                                <img
+                                    key={index}
+                                    src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${url}`}
+                                    alt={`Foto ${index + 1}`}
+                                    className="max-h-60 w-full rounded border border-gray-300 object-cover cursor-pointer"
+                                    onClick={() =>
+                                        window.open(
+                                            `${process.env.NEXT_PUBLIC_BE_BASE_URL}${url}`,
+                                            "_blank"
+                                        )
+                                    }
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
