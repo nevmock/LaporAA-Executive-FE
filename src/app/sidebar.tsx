@@ -1,7 +1,15 @@
-import { FiLogOut, FiHome, FiInbox } from "react-icons/fi";
+"use client";
+
+import {
+    FiLogOut,
+    FiHome,
+    FiInbox,
+    FiChevronLeft
+} from "react-icons/fi";
 import Link from "next/link";
-import React from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Tooltip } from "../components/Tooltip";
 
 interface SidebarProps {
     countPending: number;
@@ -9,37 +17,100 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     const router = useRouter();
+    const pathname = usePathname();
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const handleLogout = () => {
         localStorage.clear();
         router.push("/login");
     };
 
-    return (
-        <div className="h-screen bg-gray-900 text-white flex flex-col items-center py-6 shadow-lg transition-all duration-300">
-            {/* Home */}
-            <Link href="/dashboard" passHref>
-                <div className="text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
-                    <FiHome />
-                </div>
-            </Link>
+    const navItemClass = (isActive: boolean) =>
+        `flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition ${
+            isActive
+                ? "bg-red-100 text-red-500 font-semibold"
+                : "hover:bg-gray-800 text-white"
+        }`;
 
-            {/* Pengaduan */}
-            <Link href="/pengaduan" passHref>
-                <div className="relative text-4xl my-4 cursor-pointer transition-transform hover:scale-110">
-                    <FiInbox />
-                    {countPending > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
-                            {countPending}
-                        </div>
+    return (
+        <div
+            className={`h-screen bg-gray-900 text-white flex flex-col justify-between shadow-lg transition-all duration-300 ${
+                isCollapsed ? "w-[72px]" : "w-64"
+            }`}
+        >
+            {/* TOP SECTION: Brand & Toggle */}
+            <div className="w-full">
+                <div
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={`flex items-center gap-2 cursor-pointer px-4 py-3 ${
+                        isCollapsed ? "justify-center" : "justify-between"
+                    } hover:bg-gray-800 transition`}
+                >
+                    <span className="text-lg font-bold tracking-wide">
+                        {isCollapsed ? "L" : "LaporAA"}
+                    </span>
+                    {!isCollapsed && (
+                        <FiChevronLeft size={20} className="text-white" />
                     )}
                 </div>
-            </Link>
+
+                {/* MENU */}
+                <nav className="flex flex-col gap-4 mt-4 px-3">
+                    {/* Dashboard */}
+                    <Link href="/dashboard" passHref>
+                        <div className={navItemClass(pathname === "/dashboard")}>
+                            {isCollapsed ? (
+                                <Tooltip text="Dashboard">
+                                    <FiHome size={22} />
+                                </Tooltip>
+                            ) : (
+                                <>
+                                    <FiHome size={22} />
+                                    <span className="text-sm font-medium">Dashboard</span>
+                                </>
+                            )}
+                        </div>
+                    </Link>
+
+                    {/* Pengaduan */}
+                    <Link href="/pengaduan" passHref>
+                        <div className={`relative ${navItemClass(pathname.startsWith("/pengaduan"))}`}>
+                            {isCollapsed ? (
+                                <Tooltip text="Pengaduan">
+                                    <FiInbox size={22} />
+                                </Tooltip>
+                            ) : (
+                                <>
+                                    <FiInbox size={22} />
+                                    <span className="text-sm font-medium">Pengaduan</span>
+                                </>
+                            )}
+                            {countPending > 0 && (
+                                <div className={`absolute -top-2 ${isCollapsed ? "left-7" : "left-7"} bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}>
+                                    {countPending}
+                                </div>
+                            )}
+                        </div>
+                    </Link>
+                </nav>
+            </div>
 
             {/* Logout */}
-            <div className="mt-auto mb-4">
-                <div className="text-4xl cursor-pointer transition-transform hover:scale-110">
-                    <FiLogOut onClick={handleLogout} />
+            <div className="mb-6 px-3">
+                <div
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-800 transition"
+                    onClick={handleLogout}
+                >
+                    {isCollapsed ? (
+                        <Tooltip text="Logout">
+                            <FiLogOut size={22} />
+                        </Tooltip>
+                    ) : (
+                        <>
+                            <FiLogOut size={22} />
+                            <span className="text-sm font-medium">Logout</span>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

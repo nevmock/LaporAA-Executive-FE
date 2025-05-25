@@ -25,7 +25,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen w-screen overflow-hidden">
-            <div className="w-20 shrink-0 bg-gray-900 text-white">
+            <div className="bg-gray-900 text-white">
                 <Sidebar countPending={countPending} />
             </div>
             <main className="flex-1 overflow-y-auto bg-white">
