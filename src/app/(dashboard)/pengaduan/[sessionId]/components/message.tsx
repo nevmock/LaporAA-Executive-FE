@@ -31,6 +31,13 @@ export default function Message({ from }: { from: string }) {
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            setUnreadCount(0);
+        }, 100);
+    };
+
     const fetchMessages = async (initial = false) => {
         try {
             const skip = initial ? 0 : messages.length;
@@ -53,31 +60,28 @@ export default function Message({ from }: { from: string }) {
         if (!from) return;
 
         axios.get(`${API_URL}/user/user-mode/${from}`)
-            .then((res) => {
+            .then(res => {
                 const mode = res.data?.mode || res.data?.session?.mode;
                 if (mode === "manual" || mode === "bot") setMode(mode);
             })
-            .catch((err) => console.error("Gagal fetch mode:", err));
+            .catch(err => console.error("Gagal fetch mode:", err));
 
         fetchMessages(true);
         socket.connect();
-        socket.on("newMessage", (msg) => {
-            setMessages((prev) => [...prev, msg]);
+
+        const handleNewMessage = (msg: MessageItem) => {
+            if (msg.from !== from) return;
+            setMessages(prev => [...prev, msg]);
             scrollToBottom();
-        });
+        };
+
+        socket.on("newMessage", handleNewMessage);
 
         return () => {
-            socket.off("newMessage", () => fetchMessages(true));
+            socket.off("newMessage", handleNewMessage);
             socket.disconnect();
         };
     }, [from]);
-
-    const scrollToBottom = () => {
-        setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            setUnreadCount(0);
-        }, 100);
-    };
 
     const handleScroll = () => {
         if (!chatContainerRef.current) return;
@@ -89,7 +93,6 @@ export default function Message({ from }: { from: string }) {
 
         if (scrollTop === 0 && hasMore && !loadingMore) {
             setLoadingMore(true);
-
             const container = chatContainerRef.current;
             const prevScrollHeight = container?.scrollHeight || 0;
 
@@ -106,11 +109,9 @@ export default function Message({ from }: { from: string }) {
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
-
-        axios
-            .post(`${API_URL}/chat/send/${from}`, { message: newMessage })
+        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage })
             .then(() => setNewMessage(""))
-            .catch((err) => console.error(err));
+            .catch(err => console.error(err));
     };
 
     const formatDate = (rawDate?: string): string => {
@@ -144,21 +145,20 @@ export default function Message({ from }: { from: string }) {
 
     return (
         <div className="flex flex-col h-full relative">
-            {/* Mode indicator */}
+            {/* Mode */}
             <div className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-white shadow px-3 py-1 rounded-full border text-xs">
                 <span className="text-gray-700">Mode:</span>
                 <span className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`} />
                 <span className="text-gray-700">{mode === "manual" ? "Manual" : "Bot"}</span>
             </div>
 
-            {/* Chat area */}
+            {/* Chat Area */}
             <div
                 className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#EFEAE2]"
                 ref={chatContainerRef}
                 onScroll={handleScroll}
             >
                 {loadingMore && <p className="text-center text-xs text-gray-500">Memuat pesan lama...</p>}
-
                 {messages.length === 0 ? (
                     <p className="text-gray-500 text-center">Belum ada pesan.</p>
                 ) : (
@@ -174,7 +174,7 @@ export default function Message({ from }: { from: string }) {
                                         alt="Gambar"
                                         className="rounded mb-2 max-w-full"
                                         onError={(e) => {
-                                            e.currentTarget.src = "/no-image.png"; // fallback
+                                            e.currentTarget.src = "/no-image.png";
                                         }}
                                     />
                                 ) : (
@@ -188,7 +188,7 @@ export default function Message({ from }: { from: string }) {
                 <div ref={messagesEndRef} className="pb-20" />
             </div>
 
-            {/* Scroll to bottom indicator */}
+            {/* Scroll to Bottom */}
             {unreadCount > 0 && (
                 <div
                     className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-[#128C7E] text-white px-4 py-2 rounded-full cursor-pointer z-10"
