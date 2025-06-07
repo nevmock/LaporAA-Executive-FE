@@ -24,13 +24,14 @@ interface Report {
   photos?: string[];
   tindakan?: {
     situasi?: string;
+    status?: string;
   };
 }
 
 // ICONS per situasi
 const iconBySituasi: Record<string, L.Icon> = {
   'Darurat': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -38,7 +39,7 @@ const iconBySituasi: Record<string, L.Icon> = {
     shadowSize: [41, 41],
   }),
   'Permintaan Informasi': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-white.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -46,7 +47,7 @@ const iconBySituasi: Record<string, L.Icon> = {
     shadowSize: [41, 41],
   }),
   'Berpengawasan': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -54,7 +55,15 @@ const iconBySituasi: Record<string, L.Icon> = {
     shadowSize: [41, 41],
   }),
   'Tidak Berpengawasan': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowSize: [41, 41],
+  }),
+  'Ditolak': L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -62,7 +71,7 @@ const iconBySituasi: Record<string, L.Icon> = {
     shadowSize: [41, 41],
   }),
   'default': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     iconSize: [25, 41],
@@ -114,7 +123,7 @@ export default function MapPersebaran() {
                 <span className="w-3 h-5 inline-block rounded-sm bg-red-600" /> Darurat
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-3 h-5 inline-block rounded-sm bg-gray-600" /> Permintaan Informasi
+                <span className="w-3 h-5 inline-block rounded-sm bg-white" /> Permintaan Informasi
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-3 h-5 inline-block rounded-sm bg-green-600" /> Berpengawasan
@@ -125,6 +134,9 @@ export default function MapPersebaran() {
               <li className="flex items-center gap-2">
                 <span className="w-3 h-5 inline-block rounded-sm bg-blue-400" /> Belum Diverifikasi
               </li>
+              <li className="flex items-center gap-2">
+                <span className="w-3 h-5 inline-block rounded-sm bg-black" /> Ditolak
+              </li>
             </ul>
           </div>
           <TileLayer
@@ -134,7 +146,8 @@ export default function MapPersebaran() {
 
           {reports.map((report) => {
             const situasi = report.tindakan?.situasi || '';
-            const icon = iconBySituasi[situasi] || iconBySituasi.default;
+            const status = report.tindakan?.status || '';
+            const icon = status === 'Ditolak' ? iconBySituasi['Ditolak'] : (iconBySituasi[situasi] || iconBySituasi.default);
 
             return (
               <Marker

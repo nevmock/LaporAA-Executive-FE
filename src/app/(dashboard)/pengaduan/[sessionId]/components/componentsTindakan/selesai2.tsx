@@ -112,7 +112,7 @@ export default function Selesai2({
                         <span>{data.opd || "-"}</span>
                     </div>
                     <div>
-                        <span className="font-medium">Kesimpulan:</span><br />
+                        <span className="font-medium">Tindakan:</span><br />
                         <ul className="list-disc list-inside">
                             {Array.isArray(data.kesimpulan) && data.kesimpulan.length > 0 ? (
                                 data.kesimpulan.map((item: any, idx: number) => (
