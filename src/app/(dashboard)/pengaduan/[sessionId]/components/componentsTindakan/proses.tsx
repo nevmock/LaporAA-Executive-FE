@@ -21,6 +21,8 @@ export default function Proses({
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [newKesimpulan, setNewKesimpulan] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -30,6 +32,7 @@ export default function Proses({
     // Tambah Kesimpulan
     const handleAddKesimpulan = async () => {
         if (!newKesimpulan.trim() || !data._id) return;
+        setIsSaving(true);
         try {
             const res = await axios.post(
                 `${API_URL}/tindakan/${data._id}/kesimpulan`,
@@ -37,9 +40,11 @@ export default function Proses({
             );
             onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
             setNewKesimpulan("");
+            setSaveSuccessModalVisible(true);
         } catch (err) {
             console.error("❌ Gagal menambahkan kesimpulan:", err);
         }
+        setIsSaving(false);
     };
 
     // Edit Kesimpulan
@@ -126,7 +131,6 @@ export default function Proses({
                     >
                         Ya, Tindak Lanjut Sudah Tersedia di SP4N Lapor
                     </button>
-
                 </div>
             </div>
         );
@@ -228,12 +232,25 @@ export default function Proses({
                         placeholder="Tempel atau Ketik Tindak Lanjut dari Halaman SP4N Lapor . . . . "
                     />
                     <div className="mt-2 flex justify-center">
-                        <button
-                            onClick={handleAddKesimpulan}
-                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm flex items-center gap-1"
-                        >
-                            Simpan Data Tindak Lanjut
-                        </button>
+                    <button
+                        onClick={handleAddKesimpulan}
+                        disabled={isSaving}
+                        className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${
+                            isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                        }`}
+                    >
+                        {isSaving ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Sedang menyimpan...</span>
+                            </div>
+                        ) : (
+                            "Simpan Data Tindak Lanjut dan Kirimkan Kepada Warga"
+                        )}
+                    </button>
                     </div>
                 </div>
             </div>
@@ -284,37 +301,43 @@ export default function Proses({
                                 onChange={handlePhotoSelect}
                             />
                         </div>
-                    )}
-
-                    {(data.photos || []).map((photo, idx) => {
-                        const isPdf = photo.toLowerCase().endsWith('.pdf');
-                        return (
-                            <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300 flex items-center justify-center bg-white">
-                                {isPdf ? (
-                                    <embed
-                                        src={`${API_URL}${photo}`}
-                                        type="application/pdf"
-                                        width="100%"
-                                        height="100%"
-                                    />
-                                ) : (
-                                    <img
-                                        src={`${API_URL}${photo}`}
-                                        className="w-full h-full object-cover"
-                                    />
-                                )}
-                                <button
-                                    onClick={() => handleRemovePhoto(idx)}
-                                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full text-xs w-5 h-5"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        );
-                    })}
+                    )}                    
                 </div>
                 <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
             </div>
+        {/* Modal Simpan Loading */}
+        {isSaving && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
+                        <svg className="animate-spin h-10 w-10 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <p className="text-gray-700 font-semibold">Sedang menyimpan...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Simpan Berhasil */}
+            {saveSuccessModalVisible && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10001]"
+                    onClick={() => setSaveSuccessModalVisible(false)}
+                >
+                    <div
+                        className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-gray-700 font-semibold">Data berhasil disimpan. Dan dikirimkan kepada Warga</p>
+                        <button
+                            onClick={() => setSaveSuccessModalVisible(false)}
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"
+                        >
+                            Oke
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

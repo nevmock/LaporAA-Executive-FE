@@ -60,16 +60,8 @@ export default function Profile({ sessionId }: { sessionId: string }) {
                     <p>: {data.user.name}</p>
                 </div>
                 <div className="flex">
-                    <p className="w-28 font-medium">NIK</p>
-                    <p>: {data.user.nik}</p>
-                </div>
-                <div className="flex">
                     <p className="w-28 font-medium">Jenis Kelamin</p>
                     <p>: {data.user.jenis_kelamin}</p>
-                </div>
-                <div className="flex">
-                    <p className="w-28 font-medium">Alamat</p>
-                    <p>: {data.user.address}</p>
                 </div>
                 <div className="flex">
                     <p className="w-28 font-medium">No. Telepon</p>

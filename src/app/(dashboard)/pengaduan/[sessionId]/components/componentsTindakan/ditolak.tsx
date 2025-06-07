@@ -1,15 +1,114 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import axios from "../../../../../../utils/axiosInstance";
 import { TindakanData } from "../../../../../../lib/types";
 
-export default function Ditolak({ data }: { data: Partial<TindakanData> }) {
+const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+
+export default function Ditolak({
+    data,
+}: {
+    data: Partial<TindakanData> & { sessionId: string };
+}) {
+    const [reportDetail, setReportDetail] = useState<any | null>(null);
+
+    useEffect(() => {
+        const fetchReport = async () => {
+            if (data.sessionId) {
+                try {
+                    const res = await axios.get(`${API_URL}/reports/${data.sessionId}`);
+                    setReportDetail(res.data);
+                } catch (err) {
+                    console.error("Gagal mengambil detail report:", err);
+                }
+            }
+        };
+
+        fetchReport();
+    }, [data.sessionId]);
+
     return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
-            <h3 className="font-semibold mb-2">Laporan Ditolak</h3>
-            <p>
-                Alasan penolakan:
-                <br />
-                <strong>{data.kesimpulan || "Tidak ada alasan yang diberikan."}</strong>
-            </p>
+        <div className="space-y-6 text-sm text-red-700">
+            {/* Alert Box */}
+            <div className="bg-red-50 border border-red-300 p-4 rounded-md">
+                <h3 className="font-semibold mb-2 text-red-700">Laporan Ditolak</h3>
+                <p>
+                    Alasan penolakan:
+                    <br />
+                    <strong>{data.keterangan || "Tidak ada alasan yang diberikan."}</strong>
+                </p>
+            </div>
+
+            {/* Dua kolom: Laporan dan Tindakan */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Kolom 1: Rangkuman Laporan */}
+                <div className="border rounded-md p-4 bg-red-50 space-y-2">
+                    <h4 className="font-semibold text-red-700">📄 Rangkuman Laporan</h4>
+                    <div>
+                        <span className="font-medium">Keluhan:</span><br />
+                        <span>{reportDetail?.message || "-"}</span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Lokasi:</span><br />
+                        <span>
+                            {reportDetail?.location
+                                ? `${reportDetail.location.desa}, ${reportDetail.location.kecamatan}, ${reportDetail.location.kabupaten}`
+                                : "-"}
+                        </span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Foto Pendukung:</span><br />
+                        {reportDetail?.photos?.length > 0 ? (
+                            <div className="flex gap-2 mt-1">
+                                {reportDetail.photos.map((url: string, idx: number) => (
+                                    <img
+                                        key={idx}
+                                        src={`${API_URL}${url}`}
+                                        alt={`Foto ${idx + 1}`}
+                                        className="w-24 h-24 object-cover rounded border"
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <span>- Tidak ada foto -</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Kolom 2: Rangkuman Tindakan */}
+                <div className="border rounded-md p-4 bg-red-50 space-y-2">
+                    <h4 className="font-semibold text-red-700">🛠️ Rangkuman Tindakan</h4>
+                    <div>
+                        <span className="font-medium">Status:</span><br />
+                        <span>{data.status || "-"}</span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Situasi:</span><br />
+                        <span>{data.situasi || "-"}</span>
+                    </div>
+                    <div>
+                        <span className="font-medium">OPD:</span><br />
+                        <span>{data.opd || "-"}</span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Tindakan:</span><br />
+                        <ul className="list-disc list-inside">
+                            {Array.isArray(data.kesimpulan) && data.kesimpulan.length > 0 ? (
+                                data.kesimpulan.map((item: any, idx: number) => (
+                                    <li key={idx}>{item.text}</li>
+                                ))
+                            ) : (
+                                <li>Tidak ada Tindakan yang dilakukan, Karena Laporan Ditolak</li>
+                            )}
+                        </ul>
+                    </div>
+                    <div>
+                        <span className="font-medium">Tanggal Tindakan:</span><br />
+                        <span>{data.updatedAt ? new Date(data.updatedAt).toLocaleString("id-ID") : "-"}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
