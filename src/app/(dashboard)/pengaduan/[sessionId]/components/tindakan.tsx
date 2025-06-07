@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios from "../../../../../utils/axiosInstance";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
@@ -76,7 +76,7 @@ export default function Tindakan({
         } else if (status === "Verifikasi Kelengkapan Berkas") {
             requiredFields = ["trackingId", "url", "status_laporan"];
         } else if (status === "Proses OPD Terkait") {
-            requiredFields = ["kesimpulan", "opd", "disposisi"];
+            requiredFields = ["kesimpulan", "opd"];
         }
 
         return requiredFields.every((field) =>
@@ -86,15 +86,22 @@ export default function Tindakan({
 
     const saveData = async (nextStatus?: string) => {
         try {
+            if (!formData.report) {
+                setNotif("❌ Data laporan tidak valid.");
+                return;
+            }
             const updatedData = {
                 ...formData,
                 updatedAt: new Date().toISOString(),
                 status: nextStatus || formData.status,
             };
-            await axios.put(`${API_URL}/tindakan/${formData.report}`, updatedData);
+            await axios.put(
+                `${API_URL}/tindakan/${formData.report}`,
+                updatedData
+            );
             setFormData(updatedData);
             setNotif("✅ Data berhasil disimpan.");
-        } catch (err) {
+        } catch (err: any) {
             console.error("❌ Gagal menyimpan:", err);
             setNotif("❌ Gagal menyimpan data.");
         } finally {
@@ -157,23 +164,23 @@ export default function Tindakan({
     ];
 
     const isButtonDisabled =
-    isLoading ||
-    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-    (currentStepIndex === 3 && !confirmedProses) ||
-    (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
-    (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
+        isLoading ||
+        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+        (currentStepIndex === 3 && !confirmedProses) ||
+        (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
+        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
 
-const tooltipMessage = isLoading
-    ? "Sedang memproses..."
-    : currentStepIndex === 2 && !confirmedVerifikasi2
-        ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
-        : currentStepIndex === 3 && !confirmedProses
-            ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
-            : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
-                ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
-                : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
-                    ? "Pastikan Status laporan SP4N Lapor sudah 'Telah Diproses OPD Terkait'"
-                    : "";
+    const tooltipMessage = isLoading
+        ? "Sedang memproses..."
+        : currentStepIndex === 2 && !confirmedVerifikasi2
+            ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
+            : currentStepIndex === 3 && !confirmedProses
+                ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
+                : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
+                    ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
+                    : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
+                        ? "Pastikan Status laporan SP4N Lapor sudah 'Telah Diproses OPD Terkait'"
+                        : "";
 
     return (
         <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
@@ -251,16 +258,16 @@ const tooltipMessage = isLoading
                         onChange={setFormData}
                         onConfirmChange={(val) => setConfirmedVerifikasi2(val)}
                     />
+                ) : STATUS_LIST[currentStepIndex] === "Proses OPD Terkait" ? (
+                    <Proses
+                        data={formData}
+                        onChange={setFormData}
+                        onConfirmChange={(val) => setConfirmedProses(val)}
+                    />
+                ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
+                    <Selesai2 data={{ ...formData, sessionId }} />
                 ) : (
-                    STATUS_LIST[currentStepIndex] === "Proses OPD Terkait" ? (
-                        <Proses
-                            data={formData}
-                            onChange={setFormData}
-                            onConfirmChange={(val) => setConfirmedProses(val)}
-                        />
-                    ) : (
-                        <StepComponent data={formData} onChange={setFormData} />
-                    )
+                    <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
                 )}
 
                 {/* Tombol Navigasi */}
@@ -277,7 +284,10 @@ const tooltipMessage = isLoading
                                             updatedAt: new Date().toISOString(),
                                             keterangan: `Pengaduan ditolak karena: ${reason}`,
                                         };
-                                        await axios.put(`${API_URL}/tindakan/${formData.report}`, updated);
+                                        await axios.put(
+                                            `${API_URL}/tindakan/${formData.report}`,
+                                            updated
+                                        );
                                         router.push("/pengaduan");
                                     });
                                 }}
@@ -324,8 +334,8 @@ const tooltipMessage = isLoading
                                     onClick={() => handleNextStep()}
                                     disabled={isButtonDisabled}
                                     className={`px-4 py-2 rounded-md text-white transition ${isButtonDisabled
-                                            ? "bg-gray-300 cursor-not-allowed"
-                                            : "bg-indigo-500 hover:bg-indigo-600"
+                                        ? "bg-gray-300 cursor-not-allowed"
+                                        : "bg-indigo-500 hover:bg-indigo-600"
                                         }`}
                                 >
                                     {isLoading ? <LoadingSpinner /> : (NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan")}

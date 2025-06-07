@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     return (
         <div
             className={`h-screen bg-gray-900 text-white flex flex-col justify-between shadow-lg transition-all duration-300 ${
-                isCollapsed ? "w-[72px]" : "w-64"
+                isCollapsed ? "w-[72px]" : "w-[180px]"
             }`}
         >
             {/* TOP SECTION: Brand & Toggle */}

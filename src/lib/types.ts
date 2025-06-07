@@ -88,4 +88,4 @@ export interface Chat {
     rating?: number;
 }
 
-export type SortKey = "sessionId" | "user" | "from" | "address" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
+export type SortKey = "sessionId" | "user" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";

@@ -3,14 +3,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import axios from "axios";
+import axios from "../../../../utils/axiosInstance";
 import { Switch } from "@headlessui/react";
 import {
     FaStar,
     FaIdCard,
     FaUser,
     FaPhone,
-    FaMapMarkerAlt,
     FaMap,
     FaExclamationCircle,
     FaCheckCircle,
@@ -36,6 +35,8 @@ function getElapsedTime(createdAt?: string): string {
     if (mins > 0) return `${mins} menit lalu`;
     return "Baru saja";
 }
+
+
 
 const statusOrder = [
     "Perlu Verifikasi",
@@ -181,7 +182,6 @@ export default function PengaduanTable() {
                     item.sessionId.toLowerCase().includes(lower) ||
                     item.user.toLowerCase().includes(lower) ||
                     item.from.toLowerCase().includes(lower) ||
-                    item.address.toLowerCase().includes(lower) ||
                     item.location.desa.toLowerCase().includes(lower) ||
                     item.location.kecamatan.toLowerCase().includes(lower) ||
                     item.location.kabupaten.toLowerCase().includes(lower)
@@ -205,6 +205,13 @@ export default function PengaduanTable() {
                         valA = a.tindakan?.opd || "";
                         valB = b.tindakan?.opd || "";
                     } else if (key === "timer") {
+                        valA = a.createdAt
+                            ? new Date(a.createdAt).getTime()
+                            : 0;
+                        valB = b.createdAt
+                            ? new Date(b.createdAt).getTime()
+                            : 0;
+                    } else if (key === "date") {
                         valA = a.createdAt
                             ? new Date(a.createdAt).getTime()
                             : 0;
@@ -325,6 +332,11 @@ export default function PengaduanTable() {
                                         label: "No. Pengaduan"
                                     },
                                     {
+                                        key: "date",
+                                        icon: <FaClock />,
+                                        label: "Tgl. Laporan"
+                                    },
+                                    {
                                         key: "user",
                                         icon: <FaUser />,
                                         label: "Nama"
@@ -333,11 +345,6 @@ export default function PengaduanTable() {
                                         key: "from",
                                         icon: <FaPhone />,
                                         label: "No. Kontak"
-                                    },
-                                    {
-                                        key: "address",
-                                        icon: <FaMapMarkerAlt />,
-                                        label: "Domisili"
                                     },
                                     {
                                         key: "lokasi_kejadian",
@@ -442,6 +449,21 @@ export default function PengaduanTable() {
                                                 </Tooltip>
                                             </td>
 
+                                            {/* Tanggal */}
+                                            <td className="px-4 py-2">
+                                                {chat.createdAt
+                                                    ? new Date(chat.createdAt).toLocaleString("id-ID", {
+                                                        day: "2-digit",
+                                                        month: "long",
+                                                        year: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                        timeZone: "Asia/Jakarta",
+                                                        hour12: false
+                                                    })
+                                                    : "-"}
+                                            </td>
+
                                             {/* Nama */}
                                             <td className="px-4 py-2">
                                                 {chat.user || "-"}
@@ -449,12 +471,9 @@ export default function PengaduanTable() {
 
                                             {/* No. kontak */}
                                             <td className="px-4 py-2">
-                                                {chat.from || "-"}
-                                            </td>
-
-                                            {/* Domisili */}
-                                            <td className="px-4 py-2">
-                                                {chat.address || "-"}
+                                                {chat.from?.startsWith("62")
+                                                    ? `0${chat.from.slice(2)}`
+                                                    : chat.from || "-"}
                                             </td>
 
                                             {/* Lokasi kejadian + tooltip */}

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { formatWIBDate } from "../../../../utils/dateFormater";
-import axios from "axios";
+import axios from "../../../../utils/axiosInstance"; // Ganti import axios
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 

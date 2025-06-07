@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../../../../../utils/axiosInstance";
 import dynamic from "next/dynamic";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
@@ -73,7 +73,7 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${data.location.latitude}&lon=${data.location.longitude}&zoom=18&addressdetails=1`,
                     {
                         headers: {
-                            "Accept-Language": "id", // Bahasa Indonesia
+                            "Accept-Language": "id",
                         },
                     }
                 );
@@ -86,7 +86,6 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
 
         fetchLocation();
     }, [data]);
-
 
     if (!data) {
         return <p className="text-center text-gray-500">Memuat data Laporan...</p>;

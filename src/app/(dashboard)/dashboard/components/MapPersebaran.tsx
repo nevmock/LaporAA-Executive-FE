@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import axios from 'axios';
+import axios from "../../../../utils/axiosInstance"; // Ganti import axios
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -104,6 +104,7 @@ export default function MapPersebaran() {
           zoom={12}
           scrollWheelZoom={false}
           style={{ height: '100%', width: '100%' }}
+          className="h-[400px]"
         >
           {/* Legend Warna */}
           <div className="absolute bottom-4 text-gray-800 right-4 bg-white bg-opacity-50 rounded shadow p-3 text-sm z-[1000]">
@@ -178,7 +179,7 @@ export default function MapPersebaran() {
           })}
         </MapContainer>
       ) : (
-        <div className="p-6 text-center text-gray-500">Sedang memuat peta...</div>
+        <div className="p-6 text-center text-gray-500 h-[400px] flex items-center justify-center">Sedang memuat peta...</div>
       )}
     </div>
   );
