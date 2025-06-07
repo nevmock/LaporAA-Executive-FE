@@ -1,13 +1,15 @@
 'use client';
 import dynamic from 'next/dynamic';
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from "../../../utils/axiosInstance"; // Ganti import axios
 
 import LeaderBoardCard from './components/LeaderBoardCard';
 import BarchartsOpd from './components/BarchartsOpd';
 import EfisiensiCard from './components/EfisiensiCard';
 import EffectivenessCard from './components/EffectivenessCard';
 import SpedoChart from './components/SpedoChart';
+import HorizontalBarWilayahChart from './components/BarWilayahChart';
 import LineChart from './components/LineChart';
 import DistribusiCard from './components/DistribusiCard';
 import KepuasanCard from './components/KepuasanCard';
@@ -24,6 +26,17 @@ const MapPersebaran = dynamic(() => import('./components/MapPersebaran'), {
 export default function Home() {
   const [countPending, setCountPending] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Tambah state ini
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+    } else {
+      setIsCheckingAuth(false); // Hanya lanjut render jika sudah cek token
+    }
+  }, [router]);
 
   useEffect(() => {
     axios.get(`${API_URL}/reports/summary`)
@@ -45,6 +58,8 @@ export default function Home() {
       });
   }, []);
 
+  if (isCheckingAuth) return null;
+
   return (
     <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
 
@@ -54,13 +69,13 @@ export default function Home() {
       </div>
 
       {/* Pie Chart + KPI Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
 
         <div className="rounded-xl drop-shadow-lg">
-          <SummaryPieChart statusCounts={statusCounts} />
+          <SummaryPieChart />
         </div>
-        <div className="bg-gray-200 rounded-xl drop-shadow-lg overflow-hidden h-[400px]">
-          <MapPersebaran />
+        <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
+          <LineChart />
         </div>
 
       </div>
@@ -68,9 +83,15 @@ export default function Home() {
       {/* Line Chart + Map */}
       <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
         <div>
-          <LineChart />
+          <MapPersebaran />
         </div>
 
+        <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
+          <HorizontalBarWilayahChart />
+        </div>
+      </div>
+
+      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
         <div className="space-y-4">
           <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
             <EfisiensiCard />
@@ -78,6 +99,9 @@ export default function Home() {
           <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
             <EffectivenessCard />
           </div>
+        </div>
+
+        <div className="space-y-4">
           <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
             <DistribusiCard />
           </div>
@@ -85,7 +109,6 @@ export default function Home() {
             <KepuasanCard />
           </div>
         </div>
-
       </div>
 
       {/* BarChart OPD & Leaderboard */}

@@ -1,13 +1,22 @@
 "use client";
 
 import Sidebar from "./sidebar";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../utils/axiosInstance";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const [countPending, setCountPending] = useState(0);
+    const router = useRouter();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            router.push("/login");
+        }
+    }, [router]);
 
     useEffect(() => {
         axios

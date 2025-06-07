@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { TindakanClientState } from "../../../../../../lib/types";
-import axios from "axios";
+import axios from "../../../../../../utils/axiosInstance";
 import { Plus } from "lucide-react";
 import OPDSelect from "./opdSelect"
 
@@ -31,9 +31,10 @@ export default function Proses({
     const handleAddKesimpulan = async () => {
         if (!newKesimpulan.trim() || !data._id) return;
         try {
-            const res = await axios.post(`${API_URL}/tindakan/${data._id}/kesimpulan`, {
-                text: newKesimpulan.trim(),
-            });
+            const res = await axios.post(
+                `${API_URL}/tindakan/${data._id}/kesimpulan`,
+                { text: newKesimpulan.trim() }
+            );
             onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
             setNewKesimpulan("");
         } catch (err) {
@@ -45,9 +46,10 @@ export default function Proses({
     const handleEditKesimpulan = async (index: number, newText: string) => {
         if (!data._id || !newText.trim()) return;
         try {
-            const res = await axios.put(`${API_URL}/tindakan/${data._id}/kesimpulan/${index}`, {
-                text: newText.trim(),
-            });
+            const res = await axios.put(
+                `${API_URL}/tindakan/${data._id}/kesimpulan/${index}`,
+                { text: newText.trim() }
+            );
             onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
         } catch (err) {
             console.error("❌ Gagal mengedit kesimpulan:", err);
@@ -58,7 +60,9 @@ export default function Proses({
     const handleDeleteKesimpulan = async (index: number) => {
         if (!data._id) return;
         try {
-            const res = await axios.delete(`${API_URL}/tindakan/${data._id}/kesimpulan/${index}`);
+            const res = await axios.delete(
+                `${API_URL}/tindakan/${data._id}/kesimpulan/${index}`
+            );
             onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
         } catch (err) {
             console.error("❌ Gagal menghapus kesimpulan:", err);
@@ -143,26 +147,10 @@ export default function Proses({
                 </div>
 
                 <ul className="space-y-2">
-                    {/* Form Terdisposisi ke */}
-                    <div className="grid grid-cols-4 items-center gap-2">
-                        <div className="col-span-1">
-                            <span className="font-medium text-gray-700">Terdisposisi ke</span><br />
-                            <span className="font-small text-gray-500">(Salin dari SP4N Lapor)</span>
-                        </div>
-                        <div className="col-span-3">
-                            <input
-                                name="disposisi"
-                                value={data.disposisi || ""}
-                                onChange={handleChange}
-                                className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500"
-                                placeholder="Tempel atau Ketik informasi disposisi dari SP4N Lapor"
-                            />
-                        </div>
-                    </div>
 
                     {/* Form OPD */}
                     <div className="grid grid-cols-4 items-start gap-2">
-                        <label className="col-span-1 font-medium text-gray-700 mt-2">OPD Terkait</label>
+                        <label className="col-span-1 font-medium text-gray-700 mt-2">Terdisposisi ke</label>
                         <div className="col-span-3">
                             <OPDSelect value={data.opd || ""} onChange={(val) => onChange((prev) => ({ ...prev, opd: val }))} />
                         </div>
@@ -179,8 +167,6 @@ export default function Proses({
                                 onChange={handleChange}
                                 className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
                             >
-                                <option value="">-- Pilih Status --</option>
-                                <option value="Menunggu Verifikasi Admin">Menunggu Verifikasi Admin</option>
                                 <option value="Sedang Diproses OPD Terkait">Sedang Diproses OPD Terkait</option>
                                 <option value="Telah Diproses OPD Terkait">Telah Diproses OPD Terkait</option>
                             </select>
@@ -279,7 +265,7 @@ export default function Proses({
                         <div
                             onClick={() => !loading && fileRef.current?.click()}
                             className={`w-24 h-24 border-2 border-yellow-300 bg-yellow-50 border-dashed rounded-md flex items-center justify-center cursor-pointer transition
-                                ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
+                        ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
                         >
                             {loading ? (
                                 <span className="text-xs text-gray-500">Mengunggah...</span>
@@ -291,7 +277,7 @@ export default function Proses({
                             )}
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,application/pdf"
                                 multiple
                                 className="hidden"
                                 ref={fileRef}
@@ -299,6 +285,33 @@ export default function Proses({
                             />
                         </div>
                     )}
+
+                    {(data.photos || []).map((photo, idx) => {
+                        const isPdf = photo.toLowerCase().endsWith('.pdf');
+                        return (
+                            <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300 flex items-center justify-center bg-white">
+                                {isPdf ? (
+                                    <embed
+                                        src={`${API_URL}${photo}`}
+                                        type="application/pdf"
+                                        width="100%"
+                                        height="100%"
+                                    />
+                                ) : (
+                                    <img
+                                        src={`${API_URL}${photo}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
+                                <button
+                                    onClick={() => handleRemovePhoto(idx)}
+                                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full text-xs w-5 h-5"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
                 <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
             </div>

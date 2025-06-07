@@ -100,10 +100,8 @@ export default function Verifikasi2({
                         onChange={handleChange}
                         className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
                     >
-                        <option value="">-- Pilih Status --</option>
-                        <option value="Menunggu Verifikasi Admin">Menunggu Verifikasi Admin</option>
+                        <option value="Menunggu Diproses OPD Terkait">Menunggu Diproses OPD Terkait</option>
                         <option value="Sedang Diproses OPD Terkait">Sedang Diproses OPD Terkait</option>
-                        <option value="Telah Diproses OPD Terkait">Telah Diproses OPD Terkait</option>
                     </select>
                 </div>
             </div>

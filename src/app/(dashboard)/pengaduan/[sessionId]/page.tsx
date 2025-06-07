@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Message from "./components/message";
 import Tindakan from "./components/tindakan";
 import { Data } from "../../../../lib/types";
-import axios from "axios";
+import axios from "../../../../utils/axiosInstance";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -16,6 +16,13 @@ export default function ChatPage() {
   const [data, setData] = useState<Data | null>(null);
   const [activeTab, setActiveTab] = useState<"pesan" | "tindakan">("tindakan");
   const [modeReady, setModeReady] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+    }
+  }, [router]);
 
   const fetchData = async () => {
     try {

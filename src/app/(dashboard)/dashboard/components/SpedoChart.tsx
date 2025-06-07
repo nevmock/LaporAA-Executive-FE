@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { MoreVertical } from 'react-feather';
 import { ApexOptions } from "apexcharts";
 import { formatWIBDate } from "../../../../utils/dateFormater";
-import axios from "axios";
+import axios from "../../../../utils/axiosInstance"; // Ganti import axios
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -17,6 +17,7 @@ const SpedoChart = () => {
     const [distribusi, setDistribusi] = useState({ value: 0, updated_at: "" });
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
         axios.get(`${API_URL}/dashboard/effectiveness`)
             .then(res => setEffectiveness(res.data ?? { value: 0, updated_at: "" }))
             .catch(() => setEffectiveness({ value: 0, updated_at: "" }));

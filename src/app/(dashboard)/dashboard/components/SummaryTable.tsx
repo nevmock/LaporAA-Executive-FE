@@ -29,10 +29,10 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         ? (statusCounts["Selesai Pengaduan"] / totalTanpaDitolak).toFixed(2)
         : "0";
 
-    const rhp =
-        statusCounts["Selesai Pengaduan"] && statusCounts["Proses OPD Terkait"]
-            ? (statusCounts["Selesai Pengaduan"] / statusCounts["Proses OPD Terkait"]).toFixed(2)
-            : "0";
+    // const rhp =
+    //     statusCounts["Selesai Pengaduan"] && statusCounts["Proses OPD Terkait"]
+    //         ? (statusCounts["Selesai Pengaduan"] / statusCounts["Proses OPD Terkait"]).toFixed(2)
+    //         : "0";
 
     return (
         <div className="bg-white shadow-md text-gray-700 rounded-lg p-4 overflow-y-auto max-h-[500px]">
@@ -50,7 +50,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             <th className="border px-3 py-2">Total (Tanpa Ditolak)</th>
                             <th className="border px-3 py-2">%TL</th>
                             <th className="border px-3 py-2">RTL</th>
-                            <th className="border px-3 py-2">RHP</th>
+                            {/* <th className="border px-3 py-2">RHP</th> */}
                         </tr>
                     </thead>
                     <tbody>
@@ -62,7 +62,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             <td className="border px-3 py-2">{totalTanpaDitolak}</td>
                             <td className="border px-3 py-2">{persenTL}</td>
                             <td className="border px-3 py-2">{rtl}</td>
-                            <td className="border px-3 py-2">{rhp}</td>
+                            {/* <td className="border px-3 py-2">{rhp}</td> */}
                         </tr>
                     </tbody>
                 </table>
@@ -93,10 +93,10 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                     <span>RTL</span>
                     <span>{rtl}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                {/* <div className="flex justify-between text-sm">
                     <span>RHP</span>
                     <span>{rhp}</span>
-                </div>
+                </div> */}
             </div>
         </div>
     );

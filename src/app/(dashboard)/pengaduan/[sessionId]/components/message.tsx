@@ -1,6 +1,5 @@
-"use client";
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import axios from "../../../../../utils/axiosInstance";
 import { io } from "socket.io-client";
 import { FaPaperPlane } from "react-icons/fa";
 
@@ -109,7 +108,10 @@ export default function Message({ from }: { from: string }) {
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
-        axios.post(`${API_URL}/chat/send/${from}`, { message: newMessage })
+        axios.post(
+            `${API_URL}/chat/send/${from}`,
+            { message: newMessage }
+        )
             .then(() => setNewMessage(""))
             .catch(err => console.error(err));
     };
@@ -143,6 +145,12 @@ export default function Message({ from }: { from: string }) {
         })}, ${time}`;
     };
 
+    const [imageLoaded, setImageLoaded] = useState(false);
+
+    const handleImageLoad = () => {
+        setImageLoaded(true);
+    };
+
     return (
         <div className="flex flex-col h-full relative">
             {/* Mode */}
@@ -169,14 +177,18 @@ export default function Message({ from }: { from: string }) {
                         >
                             <div className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Bot" ? "bg-[#128C7E]" : "bg-[#25D366]"}`}>
                                 {msg.type === "image" && msg.mediaUrl ? (
-                                    <img
-                                        src={msg.mediaUrl}
-                                        alt="Gambar"
-                                        className="rounded mb-2 max-w-full"
-                                        onError={(e) => {
-                                            e.currentTarget.src = "/no-image.png";
-                                        }}
-                                    />
+                                    <>
+                                        {!imageLoaded && <div className="skeleton-loader w-full h-48 bg-gray-200 rounded-md mb-2"></div>} {/* Skeleton Loader */}
+                                        <img
+                                            src={`${API_URL}${msg.mediaUrl}`}
+                                            alt="Gambar"
+                                            className={`rounded mb-2 max-w-full ${imageLoaded ? "" : "opacity-0"}`}
+                                            onLoad={handleImageLoad}
+                                            onError={(e) => {
+                                                e.currentTarget.src = "https://via.placeholder.com/150?text=No+Image"; // Default placeholder
+                                            }}
+                                        />
+                                    </>
                                 ) : (
                                     <p>{msg.message}</p>
                                 )}
