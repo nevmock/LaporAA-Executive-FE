@@ -32,15 +32,94 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
     const [showModal, setShowModal] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
+    // Editable states and edit mode toggles
+    const [isEditingMessage, setIsEditingMessage] = useState(false);
+    const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [editedMessage, setEditedMessage] = useState("");
+    const [editedLocation, setEditedLocation] = useState("");
+
+    const [isSavingMessage, setIsSavingMessage] = useState(false);
+    const [isSavingLocation, setIsSavingLocation] = useState(false);
+    const [saveMessageSuccess, setSaveMessageSuccess] = useState(false);
+    const [saveLocationSuccess, setSaveLocationSuccess] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
     useEffect(() => {
         axios
             .get(`${API_URL}/reports/${sessionId}`)
-            .then((res) => setData(res.data || null))
+            .then((res) => {
+                setData(res.data || null);
+                if (res.data) {
+                    setEditedMessage(res.data.message);
+                    setEditedLocation(res.data.location.description);
+                }
+            })
             .catch((err) => {
                 console.error("❌ API Error:", err);
                 setData(null);
             });
     }, [sessionId]);
+
+    // Save message update
+    const saveMessage = async () => {
+        if (!data) return;
+        setIsSavingMessage(true);
+        setSaveError(null);
+        try {
+            await axios.put(`${API_URL}/reports/${sessionId}`, {
+                ...data,
+                message: editedMessage,
+            });
+            setData((prev) => prev ? { ...prev, message: editedMessage } : prev);
+            setSaveMessageSuccess(true);
+            setIsEditingMessage(false);
+            setTimeout(() => setSaveMessageSuccess(false), 2000);
+        } catch (error) {
+            setSaveError("Gagal menyimpan Isi Laporan.");
+        } finally {
+            setIsSavingMessage(false);
+        }
+    };
+
+    // Save location update
+    const saveLocation = async () => {
+        if (!data) return;
+        setIsSavingLocation(true);
+        setSaveError(null);
+        try {
+            await axios.put(`${API_URL}/reports/${sessionId}`, {
+                ...data,
+                location: {
+                    ...data.location,
+                    description: editedLocation,
+                },
+            });
+            setData((prev) =>
+                prev ? { ...prev, location: { ...prev.location, description: editedLocation } } : prev
+            );
+            setSaveLocationSuccess(true);
+            setIsEditingLocation(false);
+            setTimeout(() => setSaveLocationSuccess(false), 2000);
+        } catch (error) {
+            setSaveError("Gagal menyimpan Lokasi Kejadian.");
+        } finally {
+            setIsSavingLocation(false);
+        }
+    };
+
+    // Copy to clipboard helper
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Teks berhasil disalin ke clipboard");
+        });
+    };
+
+    useEffect(() => {
+        if (saveError) {
+            alert(saveError);
+            setSaveError(null);
+        }
+    }, [saveError]);
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -97,16 +176,84 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
             {/* Detail Keluhan */}
             <div className="grid grid-cols-4 gap-2">
                 {/* Isi Laporan */}
-                <p className="col-span-1 font-medium">Isi Laporan</p>
-                <p className="col-span-3">: {data.message}</p>
+                <p className="col-span-1 font-medium flex items-center gap-2">
+                    Isi Laporan
+                    <button
+                        onClick={() => setIsEditingMessage((prev) => !prev)}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                    >
+                        {isEditingMessage ? "Batal" : "Edit"}
+                    </button>
+                    <button
+                        onClick={() => copyToClipboard(editedMessage)}
+                        className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                    >
+                        Salin
+                    </button>
+                </p>
+                <p className="col-span-3">
+                    {isEditingMessage ? (
+                        <div className="flex items-center gap-2">
+                            <textarea
+                                value={editedMessage}
+                                onChange={(e) => setEditedMessage(e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2 text-sm resize-y"
+                                rows={3}
+                            />
+                            <button
+                                onClick={saveMessage}
+                                disabled={isSavingMessage}
+                                className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                            >
+                                {isSavingMessage ? "Menyimpan..." : "Simpan"}
+                            </button>
+                        </div>
+                    ) : (
+                        `: ${data.message}`
+                    )}
+                </p>
+
+                <p className="col-span-1 font-medium flex items-center gap-2">
+                    Lokasi Kejadian
+                    <button
+                        onClick={() => setIsEditingLocation((prev) => !prev)}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                    >
+                        {isEditingLocation ? "Batal" : "Edit"}
+                    </button>
+                    <button
+                        onClick={() => copyToClipboard(editedLocation)}
+                        className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                    >
+                        Salin
+                    </button>
+                </p>
+                <p className="col-span-3">
+                    {isEditingLocation ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={editedLocation}
+                                onChange={(e) => setEditedLocation(e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2 text-sm"
+                            />
+                            <button
+                                onClick={saveLocation}
+                                disabled={isSavingLocation}
+                                className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                            >
+                                {isSavingLocation ? "Menyimpan..." : "Simpan"}
+                            </button>
+                        </div>
+                    ) : (
+                        `: ${data.location.description}`
+                    )}
+                </p>
 
                 <p className="col-span-1 font-medium">Tanggal Kejadian</p>
                 <p className="col-span-3">
                     : {new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                 </p>
-
-                <p className="col-span-1 font-medium">Lokasi Kejadian</p>
-                <p className="col-span-3">: {data.location.description}</p>
 
                 <p className="col-span-1 font-medium">Desa / Kelurahan</p>
                 <p className="col-span-3">: {data.location.desa || "-"}</p>

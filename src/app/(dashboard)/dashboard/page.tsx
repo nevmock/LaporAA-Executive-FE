@@ -112,14 +112,14 @@ export default function Home() {
       </div>
 
       {/* BarChart OPD & Leaderboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="drop-shadow-lg lg:col-span-2 min-w-[450px]">
           <BarchartsOpd />
         </div>
         <div className="drop-shadow-lg min-w-[150px]">
           <LeaderBoardCard />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
