@@ -142,6 +142,9 @@ export default function Tindakan({
         await saveData(nextStatus);
         setIsLoading(false);
         setCurrentStepIndex(nextIndex);
+
+        // Refresh the page after loading finishes
+        router.refresh();
     };
 
     const handlePreviousStep = async () => {
@@ -379,33 +382,33 @@ export default function Tindakan({
 
                         {/* Tombol Simpan Perubahan (hanya di index 2 dan 3) */}
                         {[2, 3].includes(currentStepIndex) && (
-                        <button
-                            onClick={async () => {
-                                setIsSaving(true);
-                                await saveData();
-                                setIsSaving(false);
-                            }}
-                            disabled={
-                                isSaving ||
-                                (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                (currentStepIndex === 3 && !confirmedProses)
-                            }
-                            className={`px-4 py-2 rounded-md text-white transition ${(
-                                (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                (currentStepIndex === 3 && !confirmedProses))
-                                ? "bg-gray-300 cursor-not-allowed"
-                                : "bg-emerald-500 hover:bg-emerald-600"
-                                }`}
-                        >
-                            {isSaving ? (
-                                <div className="flex items-center justify-center gap-2">
-                                    <LoadingSpinner />
-                                    <span>Sedang menyimpan...</span>
-                                </div>
-                            ) : (
-                                "Simpan Perubahan"
-                            )}
-                        </button>
+                            <button
+                                onClick={async () => {
+                                    setIsSaving(true);
+                                    await saveData();
+                                    setIsSaving(false);
+                                }}
+                                disabled={
+                                    isSaving ||
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses)
+                                }
+                                className={`px-4 py-2 rounded-md text-white transition ${(
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
+                                    (currentStepIndex === 3 && !confirmedProses))
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-emerald-500 hover:bg-emerald-600"
+                                    }`}
+                            >
+                                {isSaving ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <LoadingSpinner />
+                                        <span>Sedang menyimpan...</span>
+                                    </div>
+                                ) : (
+                                    "Simpan Perubahan"
+                                )}
+                            </button>
                         )}
 
                         {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
@@ -454,49 +457,49 @@ export default function Tindakan({
             )}
 
             {/* Modal Simpan Loading */}
-        {isSaving && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-                <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
-                    <LoadingSpinner />
-                    <p className="text-gray-700 font-semibold">Sedang menyimpan...</p>
-                </div>
-            </div>
-        )}
-
-        {/* Modal Konfirmasi Proses OPD Terkait */}
-        {showConfirmModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
-                    <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Lanjutkan Proses</h3>
-                    <p className="mb-2 text-sm text-gray-700">
-                        Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
-                    </p>
-                    <div className="flex justify-end gap-2 mt-4">
-                        <button
-                            onClick={() => setShowConfirmModal(false)}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            onClick={async () => {
-                                if (pendingNextStatus) {
-                                    setIsLoading(true);
-                                    await saveData(pendingNextStatus);
-                                    setCurrentStepIndex((prev) => prev + 1);
-                                    setPendingNextStatus(null);
-                                    setShowConfirmModal(false);
-                                    setIsLoading(false);
-                                }
-                            }}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
-                        >
-                            Lanjutkan
-                        </button>
+            {isSaving && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
+                        <LoadingSpinner />
+                        <p className="text-gray-700 font-semibold">Sedang menyimpan...</p>
                     </div>
                 </div>
-            </div>
-        )}
+            )}
+
+            {/* Modal Konfirmasi Proses OPD Terkait */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
+                        <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Lanjutkan Proses</h3>
+                        <p className="mb-2 text-sm text-gray-700">
+                            Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
+                        </p>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (pendingNextStatus) {
+                                        setIsLoading(true);
+                                        await saveData(pendingNextStatus);
+                                        setCurrentStepIndex((prev) => prev + 1);
+                                        setPendingNextStatus(null);
+                                        setShowConfirmModal(false);
+                                        setIsLoading(false);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
+                            >
+                                Lanjutkan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal Konfirmasi SP4N Lapor */}
             {showLaporModal && (

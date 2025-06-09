@@ -32,7 +32,7 @@ export default function LoginPage() {
 
     return (
         <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Login Admin / Bupati</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Lapor AA Kabupaten Bekasi</h2>
             {error && <p className="text-red-600 mb-4 text-sm text-center">{error}</p>}
 
             <form onSubmit={handleLogin} className="space-y-4">
