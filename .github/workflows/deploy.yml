@@ -42,7 +42,7 @@ jobs:
             cd ${{ secrets.PATH }}
             git reset --hard HEAD
             git pull origin main --rebase
-            npm install --production
+            npm install
             npm run build
             docker compose down
             docker compose up -d --build
