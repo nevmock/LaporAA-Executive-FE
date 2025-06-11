@@ -58,6 +58,10 @@ export default function Tindakan({
 
     const router = useRouter();
 
+    useEffect(() => {
+        console.info(formData)
+    }, [formData]);
+
     const showPrompt = (title: string, placeholder: string, callback: (input: string) => void) => {
         const input = window.prompt(title, placeholder);
         if (input && input.trim()) callback(input.trim());
@@ -98,7 +102,7 @@ export default function Tindakan({
             const updatedData = {
                 ...formData,
                 updatedAt: new Date().toISOString(),
-                status: nextStatus || formData.status,
+                status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : nextStatus || formData.status
             };
             await axios.put(
                 `${API_URL}/tindakan/${formData.report}`,
@@ -297,7 +301,7 @@ export default function Tindakan({
                 ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
                     <Selesai2 data={{ ...formData, sessionId }} />
                 ) : STATUS_LIST[currentStepIndex] === "Verifikasi Situasi" ? (
-                    <Verifikasi1 data={{ ...formData,status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : formData.status, sessionId }} onChange={setFormData} />
+                    <Verifikasi1 data={{ ...formData }} onChange={setFormData} />
                 ) 
                 : (
                     <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
@@ -510,7 +514,7 @@ export default function Tindakan({
                     <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
                         <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Tindak Lanjut</h3>
                         <p className="mb-2 text-sm text-gray-700">
-                            Yakin data sudah di croscheck, lanjutkan ke SP4N Lapor?
+                            Yakin data sudah di croscheck{formData.situasi === 'Darurat' ? '' : `, lanjutkan ke SP4N Lapor`}?
                         </p>
                         <div className="flex justify-end gap-2 mt-4">
                             <button
@@ -523,11 +527,11 @@ export default function Tindakan({
                                 onClick={async () => {
                                     if (pendingNextStatus) {
                                         await saveData(pendingNextStatus);
-                                        setCurrentStepIndex((prev) => prev + 1);
+                                        setCurrentStepIndex((prev) => formData.situasi === 'Darurat' ? 5 : prev + 1);
                                         setPendingNextStatus(null);
                                         setShowLaporModal(false);
 
-                                        if (currentStepIndex === 1) {
+                                        if (currentStepIndex === 1 && formData.situasi !== 'Darurat') {
                                             window.open("https://www.lapor.go.id/", "_blank", "noopener,noreferrer");
                                         }
                                     }
