@@ -36,8 +36,6 @@ function getElapsedTime(createdAt?: string): string {
     return "Baru saja";
 }
 
-
-
 const statusOrder = [
     "Perlu Verifikasi",
     "Verifikasi Kelengkapan Berkas",
@@ -72,6 +70,16 @@ export default function PengaduanTable() {
     const [limit, setLimit] = useState(15);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+
+    const statusColors: Record<string, string> = {
+        "Perlu Verifikasi": "#FF3131",
+        "Verifikasi Situasi": "#5E17EB",
+        "Verifikasi Kelengkapan Berkas": "#FF9F12",
+        "Proses OPD Terkait": "rgb(250 204 21)",
+        "Selesai Penanganan": "rgb(96 165 250)",
+        "Selesai Pengaduan": "rgb(74 222 128)",
+        "Ditolak": "black",
+    };
 
     /* ------------------ Status Tabs ----------------- */
     const statusTabs = [
@@ -183,8 +191,7 @@ export default function PengaduanTable() {
                     item.user.toLowerCase().includes(lower) ||
                     item.from.toLowerCase().includes(lower) ||
                     item.location.desa.toLowerCase().includes(lower) ||
-                    item.location.kecamatan.toLowerCase().includes(lower) ||
-                    item.location.kabupaten.toLowerCase().includes(lower)
+                    item.location.kecamatan.toLowerCase().includes(lower)
                 );
             })
             .sort((a, b) => {
@@ -201,6 +208,9 @@ export default function PengaduanTable() {
                     } else if (key === "situasi") {
                         valA = a.tindakan?.situasi || "";
                         valB = b.tindakan?.situasi || "";
+                    } else if (key === "lokasi_kejadian") {
+                        valA = a.location?.desa || "";
+                        valB = b.location?.desa || "";
                     } else if (key === "opd") {
                         valA = a.tindakan?.opd || "";
                         valB = b.tindakan?.opd || "";
@@ -260,12 +270,12 @@ export default function PengaduanTable() {
                     {/* Tabs */}
                     <div className="flex flex-wrap gap-3">
                         {statusTabs.map(status => {
-                            const label =
+                            const labelCount =
                                 status === "Semua"
-                                    ? `Semua (${Object.values(
-                                        statusCounts
-                                    ).reduce((a, b) => a + b, 0)})`
-                                    : `${status} (${statusCounts[status] || 0})`;
+                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                    : statusCounts[status] || 0;
+
+                            const color = statusColors[status];
 
                             return (
                                 <button
@@ -274,12 +284,20 @@ export default function PengaduanTable() {
                                         setSelectedStatus(status);
                                         setPage(1);
                                     }}
-                                    className={`rounded-full px-4 py-1 text-sm font-semibold border ${selectedStatus === status
-                                        ? "border-pink-600 bg-pink-600 text-white"
-                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-sm font-semibold border ${selectedStatus === status
+                                            ? "border-pink-600 bg-pink-600 text-white"
+                                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                                         }`}
                                 >
-                                    {label}
+                                    {status !== "Semua" && (
+                                        <span
+                                            className="w-3 h-3 rounded-full inline-block"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    )}
+                                    <span>
+                                        {status} ({labelCount})
+                                    </span>
                                 </button>
                             );
                         })}
@@ -329,7 +347,7 @@ export default function PengaduanTable() {
                                     {
                                         key: "sessionId",
                                         icon: <FaIdCard />,
-                                        label: "No. Pengaduan"
+                                        label: "No. Id"
                                     },
                                     {
                                         key: "date",
