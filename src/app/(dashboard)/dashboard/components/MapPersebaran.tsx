@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import axios from "../../../../utils/axiosInstance"; // Ganti import axios
@@ -93,16 +93,16 @@ export default function MapPersebaran() {
 
   useEffect(() => {
     axios
-        .get(`${API_URL}/reports`)
-        .then((res) => setReports(res.data.data || []))
-        .catch((err) => {
-          console.error('❌ Gagal ambil data laporan:', err);
-        });
+      .get(`${API_URL}/reports`)
+      .then((res) => setReports(res.data.data || []))
+      .catch((err) => {
+        console.error('❌ Gagal ambil data laporan:', err);
+      });
   }, []);
 
   const mapCenter = useMemo<[number, number]>(() => {
     const filtered = reports.filter(
-        (r) => r?.location?.latitude && r?.location?.longitude
+      (r) => r?.location?.latitude && r?.location?.longitude
     );
     if (filtered.length === 0) return [0, 0];
 
@@ -166,9 +166,9 @@ export default function MapPersebaran() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {reports.map((report) => {
-                  const status = report.tindakan?.status || '';
-                  const icon = iconByStatus[status] || iconByStatus.default;
+          {reports.map((report) => {
+            const status = report.tindakan?.status || '';
+            const icon = iconByStatus[status] || iconByStatus.default;
 
                   return (
                       <Marker
