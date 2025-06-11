@@ -93,16 +93,16 @@ export default function MapPersebaran() {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/reports`)
-      .then((res) => setReports(res.data.data || []))
-      .catch((err) => {
-        console.error('❌ Gagal ambil data laporan:', err);
-      });
+        .get(`${API_URL}/reports`)
+        .then((res) => setReports(res.data.data || []))
+        .catch((err) => {
+          console.error('❌ Gagal ambil data laporan:', err);
+        });
   }, []);
 
   const mapCenter = useMemo<[number, number]>(() => {
     const filtered = reports.filter(
-      (r) => r?.location?.latitude && r?.location?.longitude
+        (r) => r?.location?.latitude && r?.location?.longitude
     );
     if (filtered.length === 0) return [0, 0];
 
@@ -132,26 +132,29 @@ export default function MapPersebaran() {
                   zoom={12}
                   scrollWheelZoom={false}
                   style={{ height: '100%', width: '100%' }}
-                  className="h-100"
+                  className="h-[400px]"
               >
                 {/* Legend Warna */}
                 <div className="absolute bottom-4 text-gray-800 right-4 bg-white bg-opacity-50 rounded shadow p-3 text-sm z-[1000]">
                   {/* <h4 className="font-semibold mb-2">Keterangan Situasi</h4> */}
                   <ul className="space-y-1">
                     <li className="flex items-center gap-2">
-                      <span className="w-3 h-5 inline-block rounded-sm bg-red-600" /> Darurat
+                      <span className="w-3 h-5 inline-block rounded-sm bg-[#FF3131]" /> Perlu Verifikasi
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-3 h-5 inline-block rounded-sm bg-white" /> Permintaan Informasi
+                      <span className="w-3 h-5 inline-block rounded-sm bg-[#5E17EB]" /> Verifikasi Situasi
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-3 h-5 inline-block rounded-sm bg-green-600" /> Berpengawasan
+                      <span className="w-3 h-5 inline-block rounded-sm bg-[#FF9F12]" /> Verifikasi Kelengkapan Berkas
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-3 h-5 inline-block rounded-sm bg-yellow-400" /> Tidak Berpengawasan
+                      <span className="w-3 h-5 inline-block rounded-sm bg-yellow-400" /> Proses OPD Terkait
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="w-3 h-5 inline-block rounded-sm bg-blue-400" /> Belum Diverifikasi
+                      <span className="w-3 h-5 inline-block rounded-sm bg-blue-400" /> Selesai Penanganan
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-3 h-5 inline-block rounded-sm bg-green-400" /> Selesai Pengaduan
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-3 h-5 inline-block rounded-sm bg-black" /> Ditolak
@@ -163,9 +166,9 @@ export default function MapPersebaran() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-          {reports.map((report) => {
-            const status = report.tindakan?.status || '';
-            const icon = iconByStatus[status] || iconByStatus.default;
+                {reports.map((report) => {
+                  const status = report.tindakan?.status || '';
+                  const icon = iconByStatus[status] || iconByStatus.default;
 
                   return (
                       <Marker
@@ -214,9 +217,5 @@ export default function MapPersebaran() {
           )}
         </div>
       </div>
-
-    // <div className="w-full h-full rounded-xl overflow-hidden shadow">
-
-    // </div>
   );
 }
