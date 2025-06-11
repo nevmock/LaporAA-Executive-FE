@@ -296,7 +296,10 @@ export default function Tindakan({
                     />
                 ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
                     <Selesai2 data={{ ...formData, sessionId }} />
-                ) : (
+                ) : STATUS_LIST[currentStepIndex] === "Verifikasi Situasi" ? (
+                    <Verifikasi1 data={{ ...formData,status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : formData.status, sessionId }} onChange={setFormData} />
+                ) 
+                : (
                     <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
                 )}
 

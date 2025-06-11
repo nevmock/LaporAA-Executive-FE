@@ -63,6 +63,26 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
 
+      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+        <div className="space-y-4">
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <EfisiensiCard />
+          </div>
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <EffectivenessCard />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <DistribusiCard />
+          </div>
+          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
+            <KepuasanCard />
+          </div>
+        </div>
+      </div>
+
       {/* Summary Table - full width */}
       <div className="w-full">
         <SummaryTable statusCounts={statusCounts} />
@@ -91,35 +111,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
-        <div className="space-y-4">
-          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
-            <EfisiensiCard />
-          </div>
-          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
-            <EffectivenessCard />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
-            <DistribusiCard />
-          </div>
-          <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
-            <KepuasanCard />
-          </div>
-        </div>
-      </div>
-
-      {/* BarChart OPD & Leaderboard */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="drop-shadow-lg lg:col-span-2 min-w-[450px]">
-          <BarchartsOpd />
-        </div>
-        <div className="drop-shadow-lg min-w-[150px]">
-          <LeaderBoardCard />
-        </div>
-      </div> */}
+      
     </div>
   );
 }
