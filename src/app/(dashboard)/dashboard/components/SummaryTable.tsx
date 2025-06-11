@@ -48,8 +48,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             ))}
                             <th className="border px-3 py-2">Total</th>
                             <th className="border px-3 py-2">Total (Tanpa Ditolak)</th>
-                            <th className="border px-3 py-2">%TL</th>
-                            <th className="border px-3 py-2">RTL</th>
+                            
                             {/* <th className="border px-3 py-2">RHP</th> */}
                         </tr>
                     </thead>
@@ -60,8 +59,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             ))}
                             <td className="border px-3 py-2">{totalSemua}</td>
                             <td className="border px-3 py-2">{totalTanpaDitolak}</td>
-                            <td className="border px-3 py-2">{persenTL}</td>
-                            <td className="border px-3 py-2">{rtl}</td>
+                            
                             {/* <td className="border px-3 py-2">{rhp}</td> */}
                         </tr>
                     </tbody>
@@ -85,18 +83,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                     <span>Total (Tanpa Ditolak)</span>
                     <span>{totalTanpaDitolak}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                    <span>%TL</span>
-                    <span>{persenTL}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                    <span>RTL</span>
-                    <span>{rtl}</span>
-                </div>
-                {/* <div className="flex justify-between text-sm">
-                    <span>RHP</span>
-                    <span>{rhp}</span>
-                </div> */}
+                
             </div>
         </div>
     );
