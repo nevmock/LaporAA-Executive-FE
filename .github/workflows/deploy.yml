@@ -40,6 +40,8 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
             cd ${{ secrets.PATH }}
+            git reset --hard HEAD
+            git pull origin main --rebase
             npm install --production
             npm run build
             docker compose down
