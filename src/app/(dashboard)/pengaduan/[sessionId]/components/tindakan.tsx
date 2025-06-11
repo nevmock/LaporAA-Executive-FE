@@ -349,7 +349,7 @@ export default function Tindakan({
                                                                 ...formData,
                                                                 status: "Ditolak",
                                                                 updatedAt: new Date().toISOString(),
-                                                                keterangan: `Pengaduan ditolak karena: ${rejectReason.trim()}`,
+                                                                keterangan: `${rejectReason.trim()}`,
                                                             };
                                                             await axios.put(
                                                                 `${API_URL}/tindakan/${formData.report}`,
