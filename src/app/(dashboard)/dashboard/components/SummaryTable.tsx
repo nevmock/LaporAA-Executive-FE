@@ -29,11 +29,6 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         ? (statusCounts["Selesai Pengaduan"] / totalTanpaDitolak).toFixed(2)
         : "0";
 
-    // const rhp =
-    //     statusCounts["Selesai Pengaduan"] && statusCounts["Proses OPD Terkait"]
-    //         ? (statusCounts["Selesai Pengaduan"] / statusCounts["Proses OPD Terkait"]).toFixed(2)
-    //         : "0";
-
     return (
         <div className="bg-white shadow-md text-gray-700 rounded-lg p-4 overflow-y-auto max-h-[500px]">
             <h3 className="text-lg font-bold text-gray-700 mb-4">Ringkasan Status Pengaduan</h3>
@@ -46,10 +41,14 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             {orderedStatus.map((status) => (
                                 <th key={status} className="border px-3 py-2">{status}</th>
                             ))}
-                            <th className="border px-3 py-2">Total</th>
-                            <th className="border px-3 py-2">Total (Tanpa Ditolak)</th>
-                            
-                            {/* <th className="border px-3 py-2">RHP</th> */}
+                            <th className="border px-3 py-2">
+                                Total<br/>
+                                Laporan Masuk
+                            </th>
+                            <th className="border px-3 py-2">
+                                Total<br/>
+                                Tindak Lanjut
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
