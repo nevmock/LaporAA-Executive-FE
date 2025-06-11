@@ -4,6 +4,15 @@ import React from "react";
 interface SummaryTableProps {
     statusCounts: Record<string, number>;
 }
+const statusColors: Record<string, string> = {
+    "Perlu Verifikasi": "#FF3131",
+    "Verifikasi Situasi": "#5E17EB",
+    "Verifikasi Kelengkapan Berkas": "#FF9F12",
+    "Proses OPD Terkait": "rgb(250 204 21)", // yellow-400
+    "Selesai Penanganan": "rgb(96 165 250)", // blue-400
+    "Selesai Pengaduan": "rgb(74 222 128)", // green-400
+    "Ditolak": "black",
+};
 
 const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
     const orderedStatus = [
@@ -21,12 +30,8 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         .filter((s) => s !== "Ditolak")
         .reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
 
-    const persenTL = statusCounts["Selesai Pengaduan"]
-        ? ((statusCounts["Selesai Pengaduan"] / totalTanpaDitolak) * 100).toFixed(1)
-        : "0";
-
-    const rtl = statusCounts["Selesai Pengaduan"]
-        ? (statusCounts["Selesai Pengaduan"] / totalTanpaDitolak).toFixed(2)
+    const persenTL = totalSemua
+        ? ((totalTanpaDitolak / totalSemua) * 100).toFixed(1)
         : "0";
 
     return (
@@ -39,14 +44,23 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                     <thead>
                         <tr className="bg-gray-100">
                             {orderedStatus.map((status) => (
-                                <th key={status} className="border px-3 py-2">{status}</th>
+                                <th key={status} className="border px-3 py-2 text-left">
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className="w-3 h-3 rounded-full inline-block"
+                                            style={{ backgroundColor: statusColors[status] }}
+                                        />
+                                        {status}
+                                    </div>
+                                </th>
                             ))}
+
                             <th className="border px-3 py-2">
-                                Total<br/>
+                                Total<br />
                                 Laporan Masuk
                             </th>
                             <th className="border px-3 py-2">
-                                Total<br/>
+                                Total<br />
                                 Tindak Lanjut
                             </th>
                         </tr>
@@ -57,8 +71,8 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                                 <td key={i} className="border px-3 py-2">{statusCounts[status] || 0}</td>
                             ))}
                             <td className="border px-3 py-2">{totalSemua}</td>
-                            <td className="border px-3 py-2">{totalTanpaDitolak}</td>
-                            
+                            <td className="border px-3 py-2">{totalTanpaDitolak} ({persenTL}%)</td>
+
                             {/* <td className="border px-3 py-2">{rhp}</td> */}
                         </tr>
                     </tbody>
@@ -80,9 +94,9 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                 </div>
                 <div className="flex justify-between text-sm">
                     <span>Total (Tanpa Ditolak)</span>
-                    <span>{totalTanpaDitolak}</span>
+                    <span>{totalTanpaDitolak} ({persenTL}%)</span>
                 </div>
-                
+
             </div>
         </div>
     );

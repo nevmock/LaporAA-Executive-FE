@@ -86,8 +86,8 @@ const SummaryPieChart: React.FC = () => {
         const chart = echarts.init(chartRef.current!);
         chart.setOption({
             color: [
-                "#5470C6", "#91CC75", "#EE6666", "#FAC858",
-                "#73C0DE", "#3BA272", "#FC8452",
+                "#FF3131", "#5E17EB", "#FF9F12", "rgb(250, 204, 21)", // yellow-400
+                "rgb(96, 165, 250)", "rgb(74, 222, 128)", "black"
             ],
             tooltip: { trigger: "item" },
             legend: { orient: "vertical", left: "left" },
