@@ -96,7 +96,7 @@ export default function Tindakan({
     const saveData = async (nextStatus?: string) => {
         try {
             if (!formData.report) {
-                setNotif("❌ Data laporan tidak valid.");
+                // setNotif("❌ Data laporan tidak valid.");
                 return;
             }
             const updatedData = {
@@ -112,7 +112,7 @@ export default function Tindakan({
             setSaveSuccessModalVisible(true);
         } catch (err: any) {
             console.error("❌ Gagal menyimpan:", err);
-            setNotif("❌ Gagal menyimpan data.");
+            // setNotif("❌ Gagal menyimpan data.");
         } finally {
             setTimeout(() => setNotif(null), 3000);
         }
