@@ -33,20 +33,15 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Deploy app
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-            export NVM_DIR="/home/kanzen/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm use 20
-
-            cd /home/kanzen/LaporAA/FE
-            git reset --hard HEAD
-            git pull origin main --rebase
-            npm install
-            npm run build          
-            pm2 reload laporaa:service
+            cd ${{ secrets.PATH }}
+            npm install --production
+            npm run build
+            docker compose down
+            docker compose up -d --build
+            docker system prune -f
