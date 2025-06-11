@@ -163,7 +163,7 @@ export default function LineChart() {
             title: { text: filter === "yearly" ? "Bulan" : "Tanggal" },
             labels: { rotate: -45, style: { fontSize: '12px' } }
         },
-        yaxis: { title: { text: "Total Laporan" } },
+        yaxis: { title: { text: "Jumlah Laporan" } },
         dataLabels: { enabled: false },
         legend: { show: false },
         responsive: [{ breakpoint: 480, options: { chart: { height: 300 } } }],
@@ -177,7 +177,7 @@ export default function LineChart() {
     return (
         <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-800">Laporan Masuk</h4>
+                <h4 className="text-lg font-semibold text-gray-800">Grafik Laporan Masuk</h4>
                 <div className="flex flex-wrap gap-2 items-center">
                     <select
                         value={filter}
