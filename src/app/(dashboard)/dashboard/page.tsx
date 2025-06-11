@@ -63,7 +63,7 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
 
-      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+      {/* <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
         <div className="space-y-4">
           <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
             <EfisiensiCard />
@@ -81,7 +81,7 @@ export default function Home() {
             <KepuasanCard />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Summary Table - full width */}
       <div className="w-full">
