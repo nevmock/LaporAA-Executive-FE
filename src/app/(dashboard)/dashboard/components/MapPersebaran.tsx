@@ -118,6 +118,7 @@ export default function MapPersebaran() {
           <h4 className="text-lg font-semibold text-gray-800 ">Peta Persebaran</h4>
           {/* Baris 1: Periode & Download (kanan) */}
           <div className="flex flex-wrap gap-2 items-center justify-end">
+
           </div>
         </div>
         {/* Baris 2: Filter Kecamatan & Desa (kanan) */}
