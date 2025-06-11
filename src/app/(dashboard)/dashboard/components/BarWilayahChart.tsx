@@ -80,7 +80,7 @@ export default function HorizontalBarWilayahChart() {
                                 kab: kab as string,
                                 kec: kec as string,
                                 desa: desa as string,
-                                label: `${kab} / ${kec} / ${desa}`,
+                                label: `${kec} / ${desa}`,
                                 value: count as number
                             });
                         });
