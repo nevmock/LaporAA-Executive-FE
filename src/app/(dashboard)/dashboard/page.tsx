@@ -61,13 +61,13 @@ export default function Home() {
   if (isCheckingAuth) return null;
 
   return (
-    <div className="w-full min-h-screen overflow-y-auto bg-white m-3">
-
-      <h2 className="text-2xl font-bold text-gray-900">
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900 ml-3 mt-3">
         Daftar Pengaduan
       </h2>
 
-      {/* <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+      <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
+        {/* <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
         <div className="space-y-4">
           <div className="drop-shadow-lg transition-transform duration-200 hover:scale-[1.03]">
             <EfisiensiCard />
@@ -87,35 +87,34 @@ export default function Home() {
         </div>
       </div> */}
 
-      {/* Summary Table - full width */}
-      <div className="w-full">
-        <SummaryTable statusCounts={statusCounts} />
+        {/* Summary Table - full width */}
+        <div className="w-full">
+          <SummaryTable statusCounts={statusCounts} />
+        </div>
+
+        {/* Pie Chart + KPI Cards */}
+        <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+
+          <div className="rounded-xl drop-shadow-lg">
+            <SummaryPieChart />
+          </div>
+          <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
+            <LineChart />
+          </div>
+
+        </div>
+
+        {/* Line Chart + Map */}
+        <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
+          <div>
+            <MapPersebaran />
+          </div>
+
+          <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
+            <HorizontalBarWilayahChart />
+          </div>
+        </div>
       </div>
-
-      {/* Pie Chart + KPI Cards */}
-      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
-
-        <div className="rounded-xl drop-shadow-lg">
-          <SummaryPieChart />
-        </div>
-        <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
-          <LineChart />
-        </div>
-
-      </div>
-
-      {/* Line Chart + Map */}
-      <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
-        <div>
-          <MapPersebaran />
-        </div>
-
-        <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
-          <HorizontalBarWilayahChart />
-        </div>
-      </div>
-
-
     </div>
   );
 }

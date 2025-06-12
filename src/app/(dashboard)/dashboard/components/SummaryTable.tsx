@@ -25,6 +25,8 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         "Ditolak"
     ];
 
+    console.info("Status Counts:", statusCounts);
+    
     const totalSemua = orderedStatus.reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
     const totalTanpaDitolak = orderedStatus
         .filter((s) => s !== "Ditolak")
