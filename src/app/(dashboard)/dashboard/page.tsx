@@ -63,7 +63,7 @@ export default function Home() {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 ml-3 mt-3">
-        Daftar Pengaduan
+        Dashboard Lapor AA
       </h2>
 
       <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
