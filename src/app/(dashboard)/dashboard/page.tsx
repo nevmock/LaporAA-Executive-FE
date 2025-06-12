@@ -61,7 +61,11 @@ export default function Home() {
   if (isCheckingAuth) return null;
 
   return (
-    <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
+    <div className="w-full min-h-screen overflow-y-auto bg-white m-3">
+
+      <h2 className="text-2xl font-bold text-gray-900">
+        Daftar Pengaduan
+      </h2>
 
       {/* <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
         <div className="space-y-4">
@@ -111,7 +115,7 @@ export default function Home() {
         </div>
       </div>
 
-      
+
     </div>
   );
 }

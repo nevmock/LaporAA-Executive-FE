@@ -192,7 +192,7 @@ export default function Tindakan({
                 : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
                     ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
                     : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
-                        ? "Pastikan Status laporan SP4N Lapor sudah 'Telah Diproses OPD Terkait'"
+                        ? "Pastikan Status laporan SP4N Lapor sudah 'Selesai'"
                         : "";
 
     return (
