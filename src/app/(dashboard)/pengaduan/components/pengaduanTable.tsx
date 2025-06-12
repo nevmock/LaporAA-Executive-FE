@@ -489,9 +489,7 @@ export default function PengaduanTable() {
 
                                             {/* No. kontak */}
                                             <td className="px-4 py-2">
-                                                {chat.from?.startsWith("62")
-                                                    ? `0${chat.from.slice(2)}`
-                                                    : chat.from || "-"}
+                                                {chat.from || "-"}
                                             </td>
 
                                             {/* Lokasi kejadian + tooltip */}

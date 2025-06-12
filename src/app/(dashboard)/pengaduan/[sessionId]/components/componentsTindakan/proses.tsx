@@ -172,7 +172,7 @@ export default function Proses({
                                 className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md focus:ring-yellow-400 focus:border-yellow-500"
                             >
                                 <option value="Sedang Diproses OPD Terkait">Sedang Diproses OPD Terkait</option>
-                                <option value="Telah Diproses OPD Terkait">Telah Diproses OPD Terkait</option>
+                                <option value="Telah Diproses OPD Terkait">Selesai</option>
                             </select>
                         </div>
                     </div>
@@ -228,29 +228,32 @@ export default function Proses({
                         value={newKesimpulan}
                         onChange={(e) => setNewKesimpulan(e.target.value)}
                         rows={3}
-                        className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500 "
+                        maxLength={250}
+                        className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500"
                         placeholder="Tempel atau Ketik Tindak Lanjut dari Halaman SP4N Lapor . . . . "
                     />
+                    <p className="text-sm text-gray-500 text-right">
+                        {newKesimpulan.length}/250 karakter
+                    </p>
                     <div className="mt-2 flex justify-center">
-                    <button
-                        onClick={handleAddKesimpulan}
-                        disabled={isSaving}
-                        className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${
-                            isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-                        }`}
-                    >
-                        {isSaving ? (
-                            <div className="flex items-center justify-center gap-2">
-                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                </svg>
-                                <span>Sedang menyimpan...</span>
-                            </div>
-                        ) : (
-                            "Simpan Data Tindak Lanjut dan Kirimkan Kepada Warga"
-                        )}
-                    </button>
+                        <button
+                            onClick={handleAddKesimpulan}
+                            disabled={isSaving}
+                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                                }`}
+                        >
+                            {isSaving ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Sedang menyimpan...</span>
+                                </div>
+                            ) : (
+                                "Simpan Data Tindak Lanjut dan Kirimkan Kepada Warga"
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -301,12 +304,12 @@ export default function Proses({
                                 onChange={handlePhotoSelect}
                             />
                         </div>
-                    )}                    
+                    )}
                 </div>
                 <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
             </div>
-        {/* Modal Simpan Loading */}
-        {isSaving && (
+            {/* Modal Simpan Loading */}
+            {isSaving && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
                     <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
                         <svg className="animate-spin h-10 w-10 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

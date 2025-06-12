@@ -96,7 +96,7 @@ export default function Tindakan({
     const saveData = async (nextStatus?: string) => {
         try {
             if (!formData.report) {
-                setNotif("❌ Data laporan tidak valid.");
+                // setNotif("❌ Data laporan tidak valid.");
                 return;
             }
             const updatedData = {
@@ -112,7 +112,7 @@ export default function Tindakan({
             setSaveSuccessModalVisible(true);
         } catch (err: any) {
             console.error("❌ Gagal menyimpan:", err);
-            setNotif("❌ Gagal menyimpan data.");
+            // setNotif("❌ Gagal menyimpan data.");
         } finally {
             setTimeout(() => setNotif(null), 3000);
         }
@@ -192,7 +192,7 @@ export default function Tindakan({
                 : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
                     ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
                     : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
-                        ? "Pastikan Status laporan SP4N Lapor sudah 'Telah Diproses OPD Terkait'"
+                        ? "Pastikan Status laporan SP4N Lapor sudah 'Selesai'"
                         : "";
 
     return (
