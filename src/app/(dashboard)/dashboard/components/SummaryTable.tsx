@@ -26,14 +26,27 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
     ];
 
     console.info("Status Counts:", statusCounts);
-    
+
     const totalSemua = orderedStatus.reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
+    const totalTindakLanjut =
+        (statusCounts["Perlu Verifikasi"] || 0) +
+        (statusCounts["Verifikasi Situasi"] || 0) +
+        (statusCounts["Verifikasi Kelengkapan Berkas"] || 0) +
+        (statusCounts["Proses OPD Terkait"] || 0);
     const totalTanpaDitolak = orderedStatus
         .filter((s) => s !== "Ditolak")
         .reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
 
-    const persenTL = totalSemua
-        ? ((totalTanpaDitolak / totalSemua) * 100).toFixed(1)
+    const persenTL = totalTindakLanjut > 0
+        ? ((totalTindakLanjut / totalTanpaDitolak) * 100).toFixed(1)
+        : "0";
+
+    const persenPengaduan = (statusCounts["Selesai Pengaduan"] || 0) > 0
+        ? ((statusCounts["Selesai Pengaduan"] / totalTanpaDitolak) * 100).toFixed(1)
+        : "0";
+
+    const persenDitolak = (statusCounts["Ditolak"] || 0) > 0
+        ? ((statusCounts["Ditolak"] / totalSemua) * 100).toFixed(1)
         : "0";
 
     return (
@@ -69,9 +82,26 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                     </thead>
                     <tbody>
                         <tr className="font-semibold">
-                            {orderedStatus.map((status, i) => (
-                                <td key={i} className="border px-3 py-2">{statusCounts[status] || 0}</td>
-                            ))}
+                            {orderedStatus.map((status, i) => {
+                                const count = statusCounts[status] || 0;
+                                if (status === "Selesai Pengaduan") {
+                                    return (
+                                        <td key={i} className="border px-3 py-2">
+                                            {count} ({persenPengaduan}%)
+                                        </td>
+                                    );
+                                } else if (status === "Ditolak") {
+                                    return (
+                                        <td key={i} className="border px-3 py-2">
+                                            {count} ({persenDitolak}%)
+                                        </td>
+                                    );
+                                }
+                                return (
+                                    <td key={i} className="border px-3 py-2">{count}</td>
+                                );
+                            })}
+
                             <td className="border px-3 py-2">{totalSemua}</td>
                             <td className="border px-3 py-2">{totalTanpaDitolak} ({persenTL}%)</td>
 
@@ -83,19 +113,31 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
 
             {/* Mobile layout: vertical summary */}
             <div className="md:hidden flex flex-col gap-3">
-                {orderedStatus.map((status, i) => (
-                    <div key={i} className="flex justify-between border-b pb-1 text-sm">
-                        <span className="font-medium">{status}</span>
-                        <span>{statusCounts[status] || 0}</span>
-                    </div>
-                ))}
+                {orderedStatus.map((status, i) => {
+                    const count = statusCounts[status] || 0;
+                    return (
+                        <div key={i} className="flex justify-between items-center text-sm border-b py-2">
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-3 h-3 rounded-full inline-block"
+                                    style={{ backgroundColor: statusColors[status] }}
+                                />
+                                {status}
+                            </div>
+                            <span>
+                                {count} {status === "Selesai Pengaduan" ? `(${persenPengaduan}%)` : ""}
+                                {status === "Ditolak" ? ` (${persenDitolak}%)` : ""}
+                            </span>
+                        </div>
+                    );
+                })}
 
                 <div className="flex justify-between border-t pt-2 font-semibold text-sm mt-2">
-                    <span>Total</span>
+                    <span>Total Laporan Masuk</span>
                     <span>{totalSemua}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                    <span>Total (Tanpa Ditolak)</span>
+                    <span>Total Tindak Lanjut</span>
                     <span>{totalTanpaDitolak} ({persenTL}%)</span>
                 </div>
 
