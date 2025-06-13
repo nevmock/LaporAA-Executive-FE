@@ -57,7 +57,7 @@ export default function PengaduanTable() {
         { key: SortKey; order: "asc" | "desc" }[]
     >([
         { key: "prioritas", order: "desc" },
-        { key: "status", order: "asc" }
+        { key: "date", order: "desc" }
     ]);
     const [selectedLoc, setSelectedLoc] = useState<{
         lat: number;
@@ -67,7 +67,7 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(15);
+    const [limit, setLimit] = useState(50);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
 
@@ -191,7 +191,8 @@ export default function PengaduanTable() {
                     item.user.toLowerCase().includes(lower) ||
                     item.from.toLowerCase().includes(lower) ||
                     item.location.desa.toLowerCase().includes(lower) ||
-                    item.location.kecamatan.toLowerCase().includes(lower)
+                    item.location.kecamatan.toLowerCase().includes(lower) ||
+                    item.tindakan?.opd.toLowerCase().includes(lower)
                 );
             })
             .sort((a, b) => {
@@ -285,8 +286,8 @@ export default function PengaduanTable() {
                                         setPage(1);
                                     }}
                                     className={`flex items-center gap-2 rounded-full px-4 py-1 text-sm font-semibold border ${selectedStatus === status
-                                            ? "border-pink-600 bg-pink-600 text-white"
-                                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                        ? "border-pink-600 bg-pink-600 text-white"
+                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                                         }`}
                                 >
                                     {status !== "Semua" && (
@@ -321,7 +322,7 @@ export default function PengaduanTable() {
                             }}
                             className="hover:outline-grey-500 rounded border border-gray-300 px-2 py-1 text-sm text-gray-500 hover:ring-1"
                         >
-                            {[10, 15, 20, 30, 50].map(l => (
+                            {[50, 100, 200, 300, 500].map(l => (
                                 <option key={l} value={l}>
                                     Tampilkan {l}
                                 </option>
@@ -534,8 +535,25 @@ export default function PengaduanTable() {
                                             </td>
 
                                             {/* Status */}
-                                            <td className="px-4 py-2">
-                                                {chat.tindakan?.status || "-"}
+                                            <td className="px-4 py-2 align-middle">
+                                                {chat.tindakan?.status ? (
+                                                    <div className="flex items-center">
+                                                        {/* Kontainer lingkaran warna (fixed width) */}
+                                                        <div className="w-6 flex justify-center">
+                                                            <span
+                                                                className="w-2.5 h-2.5 rounded-full inline-block"
+                                                                style={{ backgroundColor: statusColors[chat.tindakan.status] || "gray" }}
+                                                            />
+                                                        </div>
+
+                                                        {/* Kontainer teks status */}
+                                                        <div className="flex-1 text-sm text-gray-800 font-medium">
+                                                            {chat.tindakan.status}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-gray-500">-</span>
+                                                )}
                                             </td>
 
                                             {/* OPD */}
