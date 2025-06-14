@@ -15,6 +15,16 @@ interface Data {
     _id: string;
     sessionId: string;
     message: string;
+    from: string;
+    user: {
+        _id: string;
+        name: string;
+        nik: string;
+        address: string;
+        email: string;
+        jenis_kelamin: string;
+        reportHistory: string[];
+    };
     location: {
         latitude: number;
         longitude: number;
@@ -35,13 +45,24 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
     // Editable states and edit mode toggles
     const [isEditingMessage, setIsEditingMessage] = useState(false);
     const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [isEditingSex, setIsEditingSex] = useState(false);
+
     const [editedMessage, setEditedMessage] = useState("");
     const [editedLocation, setEditedLocation] = useState("");
+    const [editedName, setEditedName] = useState("");
+    const [editedSex, setEditedSex] = useState("");
 
     const [isSavingMessage, setIsSavingMessage] = useState(false);
     const [isSavingLocation, setIsSavingLocation] = useState(false);
+    const [isSavingName, setIsSavingName] = useState(false);
+    const [isSavingSex, setIsSavingSex] = useState(false);
+
     const [saveMessageSuccess, setSaveMessageSuccess] = useState(false);
     const [saveLocationSuccess, setSaveLocationSuccess] = useState(false);
+    const [saveNameSuccess, setSaveNameSuccess] = useState(false);
+    const [saveSexSuccess, setSaveSexSuccess] = useState(false);
+
     const [saveError, setSaveError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -52,6 +73,8 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                 if (res.data) {
                     setEditedMessage(res.data.message);
                     setEditedLocation(res.data.location.description);
+                    setEditedName(res.data.user.name);
+                    setEditedSex(res.data.user.jenis_kelamin);
                 }
             })
             .catch((err) => {
@@ -59,6 +82,56 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                 setData(null);
             });
     }, [sessionId]);
+
+    // Save name update
+    const saveName = async () => {
+        if (!data) return;
+        setIsSavingName(true);
+        setSaveError(null);
+        try {
+            await axios.put(`${API_URL}/reports/${sessionId}`, {
+                ...data,
+                user: {
+                    ...data.user,
+                    name: editedSex,
+                }
+            });
+            setData((prev) =>
+                prev ? { ...prev, user: { ...prev.user, name: editedName } } : prev);
+            setSaveNameSuccess(true);
+            setIsEditingName(false);
+            setTimeout(() => setSaveNameSuccess(false), 2000);
+        } catch (error) {
+            setSaveError("Gagal menyimpan Isi Laporan.");
+        } finally {
+            setIsSavingName(false);
+        }
+    };
+
+    // Save sex update
+    const saveSex = async () => {
+        if (!data) return;
+        setIsSavingSex(true);
+        setSaveError(null);
+        try {
+            await axios.put(`${API_URL}/reports/${sessionId}`, {
+                ...data,
+                user: {
+                    ...data.user,
+                    jenis_kelamin: editedSex,
+                }
+            });
+            setData((prev) =>
+                prev ? { ...prev, user: { ...prev.user, jenis_kelamin: editedSex } } : prev);
+            setSaveSexSuccess(true);
+            setIsEditingSex(false);
+            setTimeout(() => setSaveSexSuccess(false), 2000);
+        } catch (error) {
+            setSaveError("Gagal menyimpan Isi Laporan.");
+        } finally {
+            setIsSavingSex(false);
+        }
+    };
 
     // Save message update
     const saveMessage = async () => {
@@ -171,28 +244,90 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
     }
 
     return (
-        <div className="space-y-6 text-sm text-gray-800">
-            <Profile sessionId={sessionId} />
-            {/* Detail Keluhan */}
-            <div className="grid grid-cols-4 gap-2">
-                {/* Isi Laporan */}
-                <p className="col-span-1 font-medium flex items-center gap-2">
-                    Isi Laporan
-                    <button
-                        onClick={() => setIsEditingMessage((prev) => !prev)}
-                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
-                    >
-                        {isEditingMessage ? "Batal" : "Edit"}
-                    </button>
-                    <button
-                        onClick={() => copyToClipboard(editedMessage)}
-                        className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
-                    >
-                        Salin
-                    </button>
-                </p>
-                <p className="col-span-3">
-                    {isEditingMessage ? (
+        <div className="space-y-1 text-sm text-gray-800">
+            {[
+                {
+                    label: "No. Telepon",
+                    value: data.from || "-",
+                },
+                {
+                    label: "Nama Pelapor",
+                    value: isEditingName ? (
+                        <div className="flex items-center gap-2">
+                            <textarea
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2 text-sm"
+                            />
+                            <button
+                                onClick={saveName}
+                                disabled={isSavingName}
+                                className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                            >
+                                {isSavingName ? "Menyimpan..." : "Simpan"}
+                            </button>
+                        </div>
+                    ) : (
+                        data.user.name
+                    ),
+                    action: (
+                        <>
+                            <button
+                                onClick={() => setIsEditingName((prev) => !prev)}
+                                className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                                {isEditingName ? "Batal" : "Edit"}
+                            </button>
+                            <button
+                                onClick={() => copyToClipboard(editedName)}
+                                className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                            >
+                                Salin
+                            </button>
+                        </>
+                    )
+                },
+                {
+                    label: "Jenis Kelamin",
+                    value: isEditingSex ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={editedSex}
+                                onChange={(e) => setEditedSex(e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2 text-sm"
+                            />
+                            <button
+                                onClick={saveSex}
+                                disabled={isSavingSex}
+                                className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                            >
+                                {isSavingSex ? "Menyimpan..." : "Simpan"}
+                            </button>
+                        </div>
+                    ) : (
+                        data.user.jenis_kelamin
+                    ),
+                    action: (
+                        <>
+                            <button
+                                onClick={() => setIsEditingSex((prev) => !prev)}
+                                className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                                {isEditingSex ? "Batal" : "Edit"}
+                            </button>
+                            <button
+                                onClick={() => copyToClipboard(editedSex)}
+                                className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                            >
+                                Salin
+                            </button>
+                        </>
+                    )
+                },
+                {
+                    label: "Isi Laporan",
+                    value: isEditingMessage ? (
                         <div className="flex items-center gap-2">
                             <textarea
                                 value={editedMessage}
@@ -209,27 +344,28 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                             </button>
                         </div>
                     ) : (
-                        `: ${data.message}`
-                    )}
-                </p>
-
-                <p className="col-span-1 font-medium flex items-center gap-2">
-                    Lokasi Kejadian
-                    <button
-                        onClick={() => setIsEditingLocation((prev) => !prev)}
-                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
-                    >
-                        {isEditingLocation ? "Batal" : "Edit"}
-                    </button>
-                    <button
-                        onClick={() => copyToClipboard(editedLocation)}
-                        className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
-                    >
-                        Salin
-                    </button>
-                </p>
-                <p className="col-span-3">
-                    {isEditingLocation ? (
+                        data.message
+                    ),
+                    action: (
+                        <>
+                            <button
+                                onClick={() => setIsEditingMessage((prev) => !prev)}
+                                className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                                {isEditingMessage ? "Batal" : "Edit"}
+                            </button>
+                            <button
+                                onClick={() => copyToClipboard(editedMessage)}
+                                className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                            >
+                                Salin
+                            </button>
+                        </>
+                    )
+                },
+                {
+                    label: "Lokasi Kejadian",
+                    value: isEditingLocation ? (
                         <div className="flex items-center gap-2">
                             <input
                                 type="text"
@@ -246,56 +382,84 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                             </button>
                         </div>
                     ) : (
-                        `: ${data.location.description}`
-                    )}
-                </p>
-
-                <p className="col-span-1 font-medium">Tanggal Kejadian</p>
-                <p className="col-span-3">
-                    : {new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
-                </p>
-
-                <p className="col-span-1 font-medium">Desa / Kelurahan</p>
-                <p className="col-span-3">: {data.location.desa || "-"}</p>
-
-                <p className="col-span-1 font-medium">Kecamatan</p>
-                <p className="col-span-3">: {data.location.kecamatan || "-"}</p>
-
-                <p className="col-span-1 font-medium">Kota / Kabupaten</p>
-                <p className="col-span-3">: {data.location.kabupaten || "-"}</p>
-
-                {/* Peta Lokasi */}
-                <p className="col-span-1 font-medium">Peta Lokasi Kejadian</p>
-                <div className="col-span-3">
-                    <MapView
-                        lat={data.location.latitude}
-                        lon={data.location.longitude}
-                        description={data.location.description}
-                    />
-                </div>
-
-                {/* Foto */}
-                <p className="col-span-1 font-medium">Bukti Kejadian</p>
-                <div className="col-span-3 flex gap-2 flex-wrap">
-                    {data.photos.length > 0 ? (
-                        data.photos.map((photo, index) => (
-                            <img
-                                key={index}
-                                src={`${API_URL}${photo}`}
-                                className="w-24 h-24 object-cover rounded-md cursor-pointer"
-                                onClick={() => {
-                                    setActivePhotoIndex(index);
-                                    setShowModal(true);
-                                }}
-                            />
-                        ))
+                        data.location.description
+                    ),
+                    action: (
+                        <>
+                            <button
+                                onClick={() => setIsEditingLocation((prev) => !prev)}
+                                className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                                {isEditingLocation ? "Batal" : "Edit"}
+                            </button>
+                            <button
+                                onClick={() => copyToClipboard(editedLocation)}
+                                className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                            >
+                                Salin
+                            </button>
+                        </>
+                    )
+                },
+                {
+                    label: "Tanggal Kejadian",
+                    value: new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
+                },
+                {
+                    label: "Desa / Kelurahan",
+                    value: data.location.desa || "-",
+                },
+                {
+                    label: "Kecamatan",
+                    value: data.location.kecamatan || "-",
+                },
+                {
+                    label: "Kota / Kabupaten",
+                    value: data.location.kabupaten || "-",
+                },
+                {
+                    label: "Peta Lokasi Kejadian",
+                    value: (
+                        <MapView
+                            lat={data.location.latitude}
+                            lon={data.location.longitude}
+                            description={data.location.description}
+                        />
+                    ),
+                },
+                {
+                    label: "Bukti Kejadian",
+                    value: data.photos.length > 0 ? (
+                        <div className="flex gap-2 flex-wrap">
+                            {data.photos.map((photo, index) => (
+                                <img
+                                    key={index}
+                                    src={`${API_URL}${photo}`}
+                                    className="w-24 h-24 object-cover rounded-md cursor-pointer"
+                                    onClick={() => {
+                                        setActivePhotoIndex(index);
+                                        setShowModal(true);
+                                    }}
+                                />
+                            ))}
+                        </div>
                     ) : (
                         <p className="text-gray-500">Tidak ada foto</p>
-                    )}
+                    )
+                }
+            ].map((item, index) => (
+                <div
+                    key={index}
+                    className={`grid grid-cols-12 items-start px-4 py-3 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        }`}
+                >
+                    <div className="col-span-3 font-medium">{item.label}</div>
+                    <div className="col-span-7 break-words">{item.value}</div>
+                    <div className="col-span-2 flex gap-1 justify-end">{item.action}</div>
                 </div>
-            </div>
+            ))}
 
-            {/* Modal Zoom & Swipe */}
+            {/* Modal Foto (tidak berubah) */}
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center"

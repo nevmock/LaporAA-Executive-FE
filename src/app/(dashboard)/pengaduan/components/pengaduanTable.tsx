@@ -38,6 +38,7 @@ function getElapsedTime(createdAt?: string): string {
 
 const statusOrder = [
     "Perlu Verifikasi",
+    "Verifikasi Situasi",
     "Verifikasi Kelengkapan Berkas",
     "Proses OPD Terkait",
     "Selesai Penanganan",
@@ -97,7 +98,8 @@ export default function PengaduanTable() {
     const getReports = async (
         statusParam = selectedStatus,
         pageParam = page,
-        limitParam = limit
+        limitParam = limit,
+        searchParam = search // <- search ini dari useState
     ) => {
         try {
             const res = await axios.get(
@@ -106,7 +108,8 @@ export default function PengaduanTable() {
                     params: {
                         page: pageParam,
                         limit: limitParam,
-                        status: statusParam !== "Semua" ? statusParam : undefined
+                        status: statusParam !== "Semua" ? statusParam : undefined,
+                        search: searchParam?.trim() || undefined
                     }
                 }
             );
@@ -162,7 +165,7 @@ export default function PengaduanTable() {
         const arrow = found.order === "asc" ? "↑" : "↓";
 
         return (
-            <span className="ml-1 text-cyan-500 font-semibold">
+            <span className="text-cyan-500 text-xs">
                 {arrow}
             </span>
         );
@@ -183,63 +186,39 @@ export default function PengaduanTable() {
 
     /* --------------- Filter + Sort ------------------ */
     const filteredData = useMemo(() => {
-        return [...data]
-            .filter(item => {
-                const lower = search.toLowerCase();
-                return (
-                    item.sessionId.toLowerCase().includes(lower) ||
-                    item.user.toLowerCase().includes(lower) ||
-                    item.from.toLowerCase().includes(lower) ||
-                    item.location.desa.toLowerCase().includes(lower) ||
-                    item.location.kecamatan.toLowerCase().includes(lower) ||
-                    item.tindakan?.opd.toLowerCase().includes(lower)
-                );
-            })
-            .sort((a, b) => {
-                for (const { key, order } of sorts) {
-                    let valA: any = "",
-                        valB: any = "";
+        return [...data].sort((a, b) => {
+            for (const { key, order } of sorts) {
+                let valA: any = "", valB: any = "";
 
-                    if (key === "prioritas") {
-                        valA = a.tindakan?.prioritas === "Ya" ? 1 : 0;
-                        valB = b.tindakan?.prioritas === "Ya" ? 1 : 0;
-                    } else if (key === "status") {
-                        valA = statusOrder.indexOf(a.tindakan?.status || "");
-                        valB = statusOrder.indexOf(b.tindakan?.status || "");
-                    } else if (key === "situasi") {
-                        valA = a.tindakan?.situasi || "";
-                        valB = b.tindakan?.situasi || "";
-                    } else if (key === "lokasi_kejadian") {
-                        valA = a.location?.desa || "";
-                        valB = b.location?.desa || "";
-                    } else if (key === "opd") {
-                        valA = a.tindakan?.opd || "";
-                        valB = b.tindakan?.opd || "";
-                    } else if (key === "timer") {
-                        valA = a.createdAt
-                            ? new Date(a.createdAt).getTime()
-                            : 0;
-                        valB = b.createdAt
-                            ? new Date(b.createdAt).getTime()
-                            : 0;
-                    } else if (key === "date") {
-                        valA = a.createdAt
-                            ? new Date(a.createdAt).getTime()
-                            : 0;
-                        valB = b.createdAt
-                            ? new Date(b.createdAt).getTime()
-                            : 0;
-                    } else {
-                        valA = (a as any)[key] || "";
-                        valB = (b as any)[key] || "";
-                    }
-
-                    if (valA < valB) return order === "asc" ? -1 : 1;
-                    if (valA > valB) return order === "asc" ? 1 : -1;
+                if (key === "prioritas") {
+                    valA = a.tindakan?.prioritas === "Ya" ? 1 : 0;
+                    valB = b.tindakan?.prioritas === "Ya" ? 1 : 0;
+                } else if (key === "status") {
+                    valA = statusOrder.indexOf(a.tindakan?.status || "");
+                    valB = statusOrder.indexOf(b.tindakan?.status || "");
+                } else if (key === "situasi") {
+                    valA = a.tindakan?.situasi || "";
+                    valB = b.tindakan?.situasi || "";
+                } else if (key === "lokasi_kejadian") {
+                    valA = a.location?.desa || "";
+                    valB = b.location?.desa || "";
+                } else if (key === "opd") {
+                    valA = a.tindakan?.opd || "";
+                    valB = b.tindakan?.opd || "";
+                } else if (key === "timer" || key === "date") {
+                    valA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    valB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                } else {
+                    valA = (a as any)[key] || "";
+                    valB = (b as any)[key] || "";
                 }
-                return 0;
-            });
-    }, [data, search, sorts]);
+
+                if (valA < valB) return order === "asc" ? -1 : 1;
+                if (valA > valB) return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    }, [data, sorts]);
 
     /* ---------------- Lifecycle --------------------- */
     useEffect(() => {
@@ -247,8 +226,22 @@ export default function PengaduanTable() {
     }, []);
 
     useEffect(() => {
-        getReports(selectedStatus, page, limit);
-    }, [selectedStatus, page, limit]);
+        setPage(1);
+        getReports(selectedStatus, 1, limit, search);
+    }, [selectedStatus]);
+
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            setPage(1);
+            getReports(selectedStatus, 1, limit, search);
+        }, 400); // debounce 400ms
+
+        return () => clearTimeout(delayDebounce);
+    }, [search]);
+
+    useEffect(() => {
+        getReports(selectedStatus, page, limit, search);
+    }, [page, limit]);
 
     /* =================== RENDER ===================== */
     return (
@@ -260,7 +253,7 @@ export default function PengaduanTable() {
                 </h2>
                 <input
                     type="text"
-                    placeholder="Cari data pengaduan..."
+                    placeholder="Cari data pengaduan berdasarkan nama, no. ID, atau lokasi..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="sticky top-0 w-full rounded-md border p-2 text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -285,7 +278,7 @@ export default function PengaduanTable() {
                                         setSelectedStatus(status);
                                         setPage(1);
                                     }}
-                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-sm font-semibold border ${selectedStatus === status
+                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border ${selectedStatus === status
                                         ? "border-pink-600 bg-pink-600 text-white"
                                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                                         }`}
@@ -306,13 +299,13 @@ export default function PengaduanTable() {
 
                     {/* Refresh & Page size */}
                     <div className="mr-3 flex items-center space-x-3">
-                        <button
+                        {/* <button
                             onClick={() => getReports()}
                             title="Refresh data"
                             className="hover:outline-grey-500 hover:bg-gray-100 hover:text-black flex items-center rounded border border-gray-300 px-2 py-1 text-gray-500 hover:ring-1"
                         >
                             <IoIosRefresh />
-                        </button>
+                        </button> */}
 
                         <select
                             value={limit}
@@ -334,26 +327,25 @@ export default function PengaduanTable() {
 
             {/* ----------------- TABLE ------------------ */}
             <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
-                <div className="w-full overflow-x-auto box-border rounded-lg border border-gray-400">
+                <div className="w-full max-h-[600px] overflow-auto box-border rounded-lg border border-gray-400">
                     <table className="min-w-full table-fixed text-left text-sm">
-                        {/* Head */}
-                        <thead className="sticky top-0 z-[500] bg-gray-800 text-center text-white">
+                        <thead className="sticky top-0 z-[500] bg-gray-800 text-white">
                             <tr>
                                 {[
                                     {
                                         key: "prioritas",
                                         icon: <FaStar />,
-                                        label: "Prioritas Bupati"
+                                        label: "Prioritas\nBupati"
                                     },
                                     {
                                         key: "sessionId",
                                         icon: <FaIdCard />,
-                                        label: "No. Id"
+                                        label: "No. Ticket"
                                     },
                                     {
                                         key: "date",
                                         icon: <FaClock />,
-                                        label: "Tgl. Laporan"
+                                        label: "Tgl.\nLaporan"
                                     },
                                     {
                                         key: "user",
@@ -368,7 +360,7 @@ export default function PengaduanTable() {
                                     {
                                         key: "lokasi_kejadian",
                                         icon: <FaMap />,
-                                        label: "Lokasi Kejadian"
+                                        label: "Lokasi\nKejadian"
                                     },
                                     {
                                         key: "situasi",
@@ -383,22 +375,39 @@ export default function PengaduanTable() {
                                     {
                                         key: "opd",
                                         icon: <FaBuilding />,
-                                        label: "OPD Terkait"
+                                        label: "OPD\nTerkait"
                                     },
                                     {
                                         key: "timer",
                                         icon: <FaClock />,
-                                        label: "Waktu Berjalan"
+                                        label: "Waktu\nBerjalan"
                                     },
                                     { key: "photo", icon: null, label: "Foto" } // 🔧 kolom foto
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        onClick={() => toggleSort(key as SortKey)}
-                                        className="px-4 py-2 cursor-pointer select-none whitespace-nowrap"
+                                        className="sticky top-0 z-[500] px-4 py-2 select-none bg-gray-800 text-white"
                                     >
-                                        <div className="flex items-center justify-center gap-1">
-                                            {icon} {label} {renderSortArrow(key as SortKey)}
+                                        <div className="flex items-center justify-between gap-2">
+                                            {/* Kiri: ICON */}
+                                            <div className="flex items-center justify-center w-6">{icon}</div>
+
+                                            {/* Tengah: LABEL */}
+                                            <div className="flex flex-col items-center text-[12px] leading-tight text-center">
+                                                {label.split(" ").length === 1 ? (
+                                                    <span>{label}</span>
+                                                ) : (
+                                                    label.split(" ").map((word, i) => <span key={i}>{word}</span>)
+                                                )}
+                                            </div>
+
+                                            {/* Kanan: SORT TOGGLE */}
+                                            <button
+                                                onClick={() => toggleSort(key as SortKey)}
+                                                className="text-xs rounded px-1 py-[2px] hover:bg-white/20 transition"
+                                            >
+                                                {renderSortArrow(key as SortKey) || "↕"}
+                                            </button>
                                         </div>
                                     </th>
                                 ))}

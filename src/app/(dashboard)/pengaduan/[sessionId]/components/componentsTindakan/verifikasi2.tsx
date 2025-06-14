@@ -68,7 +68,7 @@ export default function Verifikasi2({
                         value={data.trackingId || ""}
                         onChange={handleChange}
                         className="w-full border border-yellow-300 bg-yellow-50 text-gray-800 p-2 rounded-md placeholder:text-yellow-700 focus:ring-yellow-400 focus:border-yellow-500"
-                        placeholder="Tempel atau Ketik Tracking ID dari SP4N Lapor"
+                        placeholder="Tempel atau Ketik Tracking ID dari SP4N Lapor (contoh: 1234567890)"
                     />
                 </div>
             </div>

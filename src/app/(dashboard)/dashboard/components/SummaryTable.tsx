@@ -29,20 +29,22 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
 
     const totalSemua = orderedStatus.reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
     const totalTindakLanjut =
-        (statusCounts["Perlu Verifikasi"] || 0) +
         (statusCounts["Verifikasi Situasi"] || 0) +
         (statusCounts["Verifikasi Kelengkapan Berkas"] || 0) +
-        (statusCounts["Proses OPD Terkait"] || 0);
+        (statusCounts["Proses OPD Terkait"] || 0) +
+        (statusCounts["Selesai Penanganan"] || 0) +
+        (statusCounts["Selesai Pengaduan"] || 0);
+
+    const persenTL = totalTindakLanjut > 0
+        ? ((totalTindakLanjut / totalSemua) * 100).toFixed(1)
+        : "0";
+
     const totalTanpaDitolak = orderedStatus
         .filter((s) => s !== "Ditolak")
         .reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
 
-    const persenTL = totalTindakLanjut > 0
-        ? ((totalTindakLanjut / totalTanpaDitolak) * 100).toFixed(1)
-        : "0";
-
     const persenPengaduan = (statusCounts["Selesai Pengaduan"] || 0) > 0
-        ? ((statusCounts["Selesai Pengaduan"] / totalTanpaDitolak) * 100).toFixed(1)
+        ? ((statusCounts["Selesai Pengaduan"] / totalSemua) * 100).toFixed(1)
         : "0";
 
     const persenDitolak = (statusCounts["Ditolak"] || 0) > 0
@@ -103,7 +105,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             })}
 
                             <td className="border px-3 py-2">{totalSemua}</td>
-                            <td className="border px-3 py-2">{totalTanpaDitolak} ({persenTL}%)</td>
+                            <td className="border px-3 py-2">{totalTindakLanjut} ({persenTL}%)</td>
 
                             {/* <td className="border px-3 py-2">{rhp}</td> */}
                         </tr>
@@ -138,7 +140,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                 </div>
                 <div className="flex justify-between text-sm">
                     <span>Total Tindak Lanjut</span>
-                    <span>{totalTanpaDitolak} ({persenTL}%)</span>
+                    <span>{totalTindakLanjut} ({persenTL}%)</span>
                 </div>
 
             </div>
