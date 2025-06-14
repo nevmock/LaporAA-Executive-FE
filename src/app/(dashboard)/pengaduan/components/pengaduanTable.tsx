@@ -327,7 +327,7 @@ export default function PengaduanTable() {
 
             {/* ----------------- TABLE ------------------ */}
             <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
-                <div className="w-full max-h-[600px] overflow-auto box-border rounded-lg border border-gray-400">
+                <div className="w-full h-screen box-border rounded-lg border border-gray-400">
                     <table className="min-w-full table-fixed text-left text-sm">
                         <thead className="sticky top-0 z-[500] bg-gray-800 text-white">
                             <tr>
