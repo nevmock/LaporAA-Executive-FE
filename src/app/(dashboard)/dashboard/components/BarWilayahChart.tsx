@@ -200,7 +200,7 @@ export default function HorizontalBarWilayahChart() {
     return (
         <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-2">
-                <h4 className="text-lg font-semibold text-gray-800 ">Distribusi Laporan per Wilayah</h4>
+                <h4 className="text-lg font-semibold text-gray-800 ">Penanganan Perangkat Daerah</h4>
                 {/* Baris 1: Periode & Download (kanan) */}
                 <div className="flex flex-wrap gap-2 items-center justify-end">
                     <select

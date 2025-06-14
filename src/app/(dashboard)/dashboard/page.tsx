@@ -9,7 +9,7 @@ import BarchartsOpd from './components/BarchartsOpd';
 import EfisiensiCard from './components/EfisiensiCard';
 import EffectivenessCard from './components/EffectivenessCard';
 import SpedoChart from './components/SpedoChart';
-import HorizontalBarWilayahChart from './components/BarWilayahChart';
+import BarOpdChart from './components/BarOpdChart';
 import LineChart from './components/LineChart';
 import DistribusiCard from './components/DistribusiCard';
 import KepuasanCard from './components/KepuasanCard';
@@ -111,7 +111,7 @@ export default function Home() {
           </div>
 
           <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
-            <HorizontalBarWilayahChart />
+            <BarOpdChart />
           </div>
         </div>
       </div>

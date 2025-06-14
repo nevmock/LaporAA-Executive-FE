@@ -4,6 +4,7 @@ import { TindakanClientState } from "../../../../../../lib/types";
 import axios from "../../../../../../utils/axiosInstance";
 import { Plus } from "lucide-react";
 import OPDSelect from "./opdSelect"
+import { Tooltip } from "../../../components/Tooltip";
 
 const MAX_PHOTOS = 5;
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -105,7 +106,7 @@ export default function Proses({
         onChange(prev => ({ ...prev, photos: updated }));
     };
 
-    if (!isConfirmed) {
+    if (!isConfirmed && !data.opd) {
         return (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
                 <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>
@@ -115,13 +116,14 @@ export default function Proses({
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
+                    <Tooltip text="Klik disini untuk langsung membuka laporan">
                     <button
                         onClick={() => window.open(`${data.url}`, "_blank")}
                         className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                     >
-                        Buka Laporan SP4N Lapor
+                        Buka Laporan #{data.trackingId}
                     </button>
-
+                    </Tooltip>
                     <button
                         onClick={() => {
                             setIsConfirmed(true);
@@ -142,12 +144,14 @@ export default function Proses({
             <div className="col-span-4">
                 <h3 className="font-semibold text-gray-700 mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
+                    <Tooltip text="Klik disini untuk langsung membuka laporan">
                     <button
                         onClick={() => window.open(`${data.url}`, "_blank")}
                         className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                     >
-                        Buka Laporan SP4N Lapor
+                        Buka Laporan #{data.trackingId}
                     </button>
+                    </Tooltip>
                 </div>
 
                 <ul className="space-y-2">

@@ -92,7 +92,7 @@ export default function MapPersebaran() {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/reports`)
+      .get(`${API_URL}/reports/map`)
       .then((res) => setReports(res.data.data || []))
       .catch((err) => {
         console.error('❌ Gagal ambil data laporan:', err);
