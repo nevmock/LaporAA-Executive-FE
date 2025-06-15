@@ -10,6 +10,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Tooltip } from "../components/Tooltip";
+import Image from "next/image";
 
 interface SidebarProps {
     countPending: number;
@@ -26,28 +27,34 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     };
 
     const navItemClass = (isActive: boolean) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition ${
-            isActive
-                ? "bg-red-100 text-red-500 font-semibold"
-                : "hover:bg-gray-800 text-white"
+        `flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition ${isActive
+            ? "bg-red-100 text-red-500 font-semibold"
+            : "hover:bg-gray-800 text-white"
         }`;
 
     return (
         <div
-            className={`h-screen bg-gray-900 text-white flex flex-col justify-between shadow-lg transition-all duration-300 ${
-                isCollapsed ? "w-[72px]" : "w-[180px]"
-            }`}
+            className={`h-screen bg-gray-900 text-white flex flex-col justify-between shadow-lg transition-all duration-300 ${isCollapsed ? "w-[72px]" : "w-[180px]"
+                }`}
         >
             {/* TOP SECTION: Brand & Toggle */}
             <div className="w-full">
                 <div
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className={`flex items-center gap-2 cursor-pointer px-4 py-3 ${
-                        isCollapsed ? "justify-center" : "justify-between"
-                    } hover:bg-gray-800 transition`}
+                    className={`flex items-center gap-2 cursor-pointer px-4 py-3 ${isCollapsed ? "justify-center" : "justify-between"
+                        } hover:bg-gray-800 transition`}
                 >
                     <span className="text-lg font-bold tracking-wide">
-                        {isCollapsed ? "L" : "LaporAA"}
+                        {isCollapsed ? (
+                            <img
+                                src="/LAPOR AA BUPATI.png"
+                                alt="Logo LaporAA"
+                                style={{ width: "40px", height: "40px" }}
+                            />
+                        ) : (
+                            "LaporAA"
+                        )}
+
                     </span>
                     {!isCollapsed && (
                         <FiChevronLeft size={20} className="text-white" />

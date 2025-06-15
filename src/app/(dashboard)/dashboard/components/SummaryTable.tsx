@@ -57,28 +57,34 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
 
             {/* Desktop layout: table */}
             <div className="hidden md:block overflow-auto">
-                <table className="w-full text-sm text-center whitespace-nowrap border border-gray-300">
+                <table className="w-full text-xs text-center whitespace-nowrap border border-gray-300">
                     <thead>
                         <tr className="bg-gray-100">
                             {orderedStatus.map((status) => (
-                                <th key={status} className="border px-3 py-2 text-left">
+                                <th
+                                    key={status}
+                                    className="border px-3 py-2 text-center whitespace-normal max-w-[160px]"
+                                >
                                     <div className="flex items-center gap-2">
-                                        <span
-                                            className="w-3 h-3 rounded-full inline-block"
+                                        {/* Kontainer 1: lingkaran */}
+                                        <div className="w-3 h-3 rounded-full shrink-0"
                                             style={{ backgroundColor: statusColors[status] }}
                                         />
-                                        {status}
+
+                                        {/* Kontainer 2: teks status */}
+                                        <div className="break-words leading-tight">
+                                            {status}
+                                        </div>
                                     </div>
                                 </th>
                             ))}
 
-                            <th className="border px-3 py-2">
-                                Total<br />
-                                Laporan Masuk
+                            {/* Kolom total */}
+                            <th className="border px-3 py-2 text-center whitespace-normal max-w-[120px]">
+                                Total<br />Laporan Masuk
                             </th>
-                            <th className="border px-3 py-2">
-                                Total<br />
-                                Tindak Lanjut
+                            <th className="border px-3 py-2 text-center whitespace-normal max-w-[120px]">
+                                Total<br />Tindak Lanjut
                             </th>
                         </tr>
                     </thead>

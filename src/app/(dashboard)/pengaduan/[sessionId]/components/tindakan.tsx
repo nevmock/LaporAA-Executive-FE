@@ -20,6 +20,16 @@ import Ditolak from "./componentsTindakan/ditolak";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+const statusColors: Record<string, string> = {
+    "Perlu Verifikasi": "#FF3131",
+    "Verifikasi Situasi": "#5E17EB",
+    "Verifikasi Kelengkapan Berkas": "#FF9F12",
+    "Proses OPD Terkait": "rgb(250 204 21)",
+    "Selesai Penanganan": "rgb(96 165 250)",
+    "Selesai Pengaduan": "rgb(74 222 128)",
+    "Ditolak": "black",
+};
+
 const STATUS_LIST = [
     "Perlu Verifikasi",
     "Verifikasi Situasi",
@@ -52,7 +62,9 @@ export default function Tindakan({
     const [confirmedProses, setConfirmedProses] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showSelesaiModal, setShowSelesaiModal] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
+    const [selesaiReason, setSelesaiReason] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -178,16 +190,16 @@ export default function Tindakan({
 
     const isButtonDisabled =
         isLoading ||
-        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-        (currentStepIndex === 3 && !confirmedProses) ||
+        (currentStepIndex === 2 && !confirmedVerifikasi2) && !formData.trackingId ||
+        (currentStepIndex === 3 && !confirmedProses) && !formData.opd ||
         (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
         (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
 
     const tooltipMessage = isLoading
         ? "Sedang memproses..."
-        : currentStepIndex === 2 && !confirmedVerifikasi2
+        : currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId
             ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
-            : currentStepIndex === 3 && !confirmedProses
+            : currentStepIndex === 3 && !confirmedProses && !formData.opd
                 ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
                 : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
                     ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
@@ -235,30 +247,79 @@ export default function Tindakan({
                     </div>
                 </div>
             ) : (
-                <div className="flex justify-between items-center">
-                    {STATUS_LIST.slice(0, -1).map((status, idx) => {
-                        const current = idx === currentStepIndex;
-                        const done = idx < currentStepIndex;
-                        return (
-                            <div key={status} className="flex-1 flex flex-col items-center text-xs relative">
-                                <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10
-                                        ${current ? "bg-green-700 text-white" : done ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"}`}
-                                >
-                                    {idx + 1}
-                                </div>
-                                <span className={`mt-1 text-center ${current ? "text-green-700 font-semibold" : "text-gray-400"}`}>
-                                    {status}
-                                </span>
-                                {idx < STATUS_LIST.length - 2 && (
-                                    <div className={`absolute top-4 left-1/2 w-full h-1 ${done ? "bg-green-500" : "bg-gray-300"}`} />
-                                )}
-                            </div>
-                        );
-                    })}
+                <div className="overflow-x-auto">
+                    <div className="relative flex justify-between px-6">
+                        {(() => {
+                            // Filter status "Ditolak" dari list
+                            const STATUS_LIST_FILTERED = STATUS_LIST.filter((s) => s !== "Ditolak");
+                            const status = formData.status ?? ""; // Pastikan string
+                            const currentStepIndexFiltered = Math.max(
+                                0,
+                                STATUS_LIST_FILTERED.indexOf(status)
+                            );
+
+                            return (
+                                <>
+                                    {/* Garis dasar (abu-abu) */}
+                                    <div
+                                        className="absolute top-4 h-1 bg-gray-300 z-0"
+                                        style={{
+                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                            right: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                        }}
+                                    />
+
+                                    {/* Garis progress (hijau) */}
+                                    <div
+                                        className="absolute top-4 h-1 bg-green-500 z-0 transition-all duration-300"
+                                        style={{
+                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                            width: `calc(((100% / ${STATUS_LIST_FILTERED.length}) * ${currentStepIndexFiltered}))`,
+                                        }}
+                                    />
+
+                                    {/* Titik-titik progress */}
+                                    {STATUS_LIST_FILTERED.map((status, idx) => {
+                                        const isDone = idx < currentStepIndexFiltered;
+                                        const isCurrent = idx === currentStepIndexFiltered;
+                                        const color = statusColors[status] || "#D1D5DB";
+
+                                        return (
+                                            <div
+                                                key={status}
+                                                className="relative flex flex-col items-center min-w-[80px] z-10"
+                                            >
+                                                {/* Lingkaran */}
+                                                <div
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                                                    style={{
+                                                        backgroundColor: isDone || isCurrent ? color : "#D1D5DB",
+                                                        color: isDone || isCurrent ? "white" : "#6B7280",
+                                                    }}
+                                                >
+                                                    {idx + 1}
+                                                </div>
+
+                                                {/* Label */}
+                                                <div className="mt-2 text-xs break-words text-center max-w-[80px]">
+                                                    <span
+                                                        className="font-semibold"
+                                                        style={{
+                                                            color: isCurrent ? color : "#9CA3AF",
+                                                        }}
+                                                    >
+                                                        {status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            );
+                        })()}
+                    </div>
                 </div>
             )}
-
 
             {/* Detail Laporan */}
             <div className="border-b pb-4">
@@ -297,15 +358,16 @@ export default function Tindakan({
                         data={formData}
                         onChange={setFormData}
                         onConfirmChange={(val) => setConfirmedProses(val)}
+                        saveData={saveData}
                     />
                 ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
                     <Selesai2 data={{ ...formData, sessionId }} />
                 ) : STATUS_LIST[currentStepIndex] === "Verifikasi Situasi" ? (
                     <Verifikasi1 data={{ ...formData }} onChange={setFormData} />
-                ) 
-                : (
-                    <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
-                )}
+                )
+                    : (
+                        <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
+                    )}
 
                 {/* Tombol Navigasi */}
                 {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(formData.status || "") && (
@@ -387,8 +449,8 @@ export default function Tindakan({
                             </button>
                         )}
 
-                        {/* Tombol Simpan Perubahan (hanya di index 2 dan 3) */}
-                        {[2, 3].includes(currentStepIndex) && (
+                        {/* Tombol Simpan Perubahan (hanya di index 2) */}
+                        {[2].includes(currentStepIndex) && (
                             <button
                                 onClick={async () => {
                                     setIsSaving(true);
@@ -397,12 +459,10 @@ export default function Tindakan({
                                 }}
                                 disabled={
                                     isSaving ||
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses)
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId)
                                 }
                                 className={`px-4 py-2 rounded-md text-white transition ${(
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses))
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId))
                                     ? "bg-gray-300 cursor-not-allowed"
                                     : "bg-emerald-500 hover:bg-emerald-600"
                                     }`}
@@ -438,6 +498,72 @@ export default function Tindakan({
                                     </div>
                                 )}
                             </div>
+                        )}
+
+                        {/* Tombol Selesai (hanya di step pertama) */}
+                        {currentStepIndex === 0 && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setSelesaiReason("");
+                                        setShowSelesaiModal(true);
+                                    }}
+                                    className="bg-[rgb(96,165,250)] text-white px-4 py-2 rounded-md"
+                                >
+                                    Selesai Penanganan
+                                </button>
+
+                                {/* Modal Selesai Penanganan */}
+                                {showSelesaiModal && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                                        <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
+                                            <h3 className="text-lg font-semibold text-[rgb(96,165,250)]">Alasan Penyelesaian</h3>
+                                            <textarea
+                                                value={selesaiReason}
+                                                onChange={(e) => setSelesaiReason(e.target.value)}
+                                                placeholder="Masukkan alasan penyelesaian pengaduan"
+                                                className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
+                                                rows={4}
+                                            />
+                                            <div className="flex justify-end gap-2 mt-4">
+                                                <button
+                                                    onClick={() => setShowSelesaiModal(false)}
+                                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                                                >
+                                                    Batal
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!selesaiReason.trim()) {
+                                                            alert("Alasan penyelesaian harus diisi.");
+                                                            return;
+                                                        }
+                                                        try {
+                                                            const updated = {
+                                                                ...formData,
+                                                                status: "Selesai Penanganan",
+                                                                updatedAt: new Date().toISOString(),
+                                                                keterangan: `${selesaiReason.trim()}`,
+                                                            };
+                                                            await axios.put(
+                                                                `${API_URL}/tindakan/${formData.report}`,
+                                                                updated
+                                                            );
+                                                            setShowSelesaiModal(false);
+                                                            router.push("/pengaduan");
+                                                        } catch (error) {
+                                                            alert("Gagal menyelesaikan pengaduan. Silakan coba lagi.");
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 bg-[rgb(96,165,250)] text-white rounded-md text-sm"
+                                                >
+                                                    Selesai
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                     </div>

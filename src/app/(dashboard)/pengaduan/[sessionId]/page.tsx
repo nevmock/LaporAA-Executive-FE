@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { FaWhatsapp } from "react-icons/fa";
 import Message from "./components/message";
 import Tindakan from "./components/tindakan";
 import { Data } from "../../../../lib/types";
@@ -125,9 +126,18 @@ export default function ChatPage() {
           {["tindakan", "pesan"].map((tab) => (
             <button
               key={tab}
-              className={`py-2 px-4 font-medium ${activeTab === tab ? "border-b-2 border-gray-800 text-gray-800" : "text-gray-500"}`}
+              className={`py-2 px-4 font-medium flex items-center gap-2 transition
+        ${activeTab === tab
+                  ? tab === "pesan"
+                    ? "border-b-2 border-green-600 text-green-600 bg-green-50"
+                    : "border-b-2 border-gray-800 text-gray-800 bg-gray-100"
+                  : tab === "pesan"
+                    ? "text-green-600 bg-green-100 hover:bg-green-50"
+                    : "text-gray-500 bg-gray-50 hover:bg-gray-100"}
+      `}
               onClick={() => setActiveTab(tab as "pesan" | "tindakan")}
             >
+              {tab === "pesan" && <FaWhatsapp className="text-lg" />}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}

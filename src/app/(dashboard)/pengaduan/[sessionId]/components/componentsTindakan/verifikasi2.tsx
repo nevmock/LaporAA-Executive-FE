@@ -19,7 +19,7 @@ export default function Verifikasi2({
         onChange((prev) => ({ ...prev, [name]: value }));
     };
 
-    if (!isConfirmed) {
+    if (!isConfirmed && !data.trackingId) {
         return (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
                 <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>

@@ -16,9 +16,12 @@ import {
     FaBuilding,
     FaClock
 } from "react-icons/fa";
+import { Search } from "lucide-react";
 import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
 import { Tooltip } from "./Tooltip";
+import { Listbox } from "@headlessui/react";
+import { Fragment } from "react";
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
 /* ------------------------- Utils ------------------------- */
@@ -68,9 +71,10 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(50);
+    const [limit, setLimit] = useState(100);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
 
     const statusColors: Record<string, string> = {
         "Perlu Verifikasi": "#FF3131",
@@ -165,7 +169,7 @@ export default function PengaduanTable() {
         const arrow = found.order === "asc" ? "↑" : "↓";
 
         return (
-            <span className="text-cyan-500 text-xs">
+            <span className="text-cyan-500 text-sm">
                 {arrow}
             </span>
         );
@@ -243,79 +247,135 @@ export default function PengaduanTable() {
         getReports(selectedStatus, page, limit, search);
     }, [page, limit]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+
+        handleResize(); // inisialisasi
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     /* =================== RENDER ===================== */
     return (
         <div className="flex h-screen flex-col">
             {/* ------------ Header & Search ------------- */}
-            <div className="sticky top-0 z-50 m-3">
-                <h2 className="mb-2 text-2xl font-bold text-gray-900">
+            <div className="z-[400] sticky top-0 z-50 m-3">
+                <h2 className="z-[400] mb-2 text-2xl font-bold text-gray-900">
                     Daftar Pengaduan
                 </h2>
-                <input
-                    type="text"
-                    placeholder="Cari data pengaduan berdasarkan nama, no. ID, atau lokasi..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="sticky top-0 w-full rounded-md border p-2 text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="relative w-full z-[400]">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari No. ID, Nama, OPD, atau Lokasi..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
 
-                {/* ------------- Tabs & Controls ------------ */}
-                <div className="mb-3 mt-5 flex items-center justify-between">
-                    {/* Tabs */}
-                    <div className="flex flex-wrap gap-3">
-                        {statusTabs.map(status => {
-                            const labelCount =
-                                status === "Semua"
-                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                    : statusCounts[status] || 0;
+                {/* ----------- Tabs & Controls ----------- */}
+                <div className="mb-3 mt-5 z-[400] grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
+                    {/* Kiri: Filter Status */}
+                    <div className="md:col-span-2 lg:col-span-3 flex flex-col space-y-2">
+                        <p className="text-sm font-semibold text-gray-700">Filter Status Laporan</p>
+                        {isMobile ? (
+                            <Listbox
+                                value={selectedStatus}
+                                onChange={(val) => {
+                                    setSelectedStatus(val);
+                                    setPage(1);
+                                }}
+                            >
+                                <div className="relative w-full max-w-xs">
+                                    <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-xs bg-white text-left shadow-sm">
+                                        {selectedStatus}
+                                    </Listbox.Button>
+                                    <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
+                                        {statusTabs.map((status) => {
+                                            const labelCount =
+                                                status === "Semua"
+                                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                                    : statusCounts[status] || 0;
+                                            const color = statusColors[status];
+                                            return (
+                                                <Listbox.Option key={status} value={status} as={Fragment}>
+                                                    {({ active }) => (
+                                                        <li
+                                                            className={`px-3 py-2 flex items-center gap-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""
+                                                                }`}
+                                                        >
+                                                            {status !== "Semua" && (
+                                                                <span
+                                                                    className="w-2.5 h-2.5 rounded-full inline-block"
+                                                                    style={{ backgroundColor: color }}
+                                                                />
+                                                            )}
+                                                            <span>
+                                                                {status} ({labelCount})
+                                                            </span>
+                                                        </li>
+                                                    )}
+                                                </Listbox.Option>
+                                            );
+                                        })}
+                                    </Listbox.Options>
+                                </div>
+                            </Listbox>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {statusTabs.map((status) => {
+                                    const labelCount =
+                                        status === "Semua"
+                                            ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                            : statusCounts[status] || 0;
+                                    const color = statusColors[status];
 
-                            const color = statusColors[status];
-
-                            return (
-                                <button
-                                    key={status}
-                                    onClick={() => {
-                                        setSelectedStatus(status);
-                                        setPage(1);
-                                    }}
-                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border ${selectedStatus === status
-                                        ? "border-pink-600 bg-pink-600 text-white"
-                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    {status !== "Semua" && (
-                                        <span
-                                            className="w-3 h-3 rounded-full inline-block"
-                                            style={{ backgroundColor: color }}
-                                        />
-                                    )}
-                                    <span>
-                                        {status} ({labelCount})
-                                    </span>
-                                </button>
-                            );
-                        })}
+                                    return (
+                                        <button
+                                            key={status}
+                                            onClick={() => {
+                                                setSelectedStatus(status);
+                                                setPage(1);
+                                            }}
+                                            className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border 
+                ${selectedStatus === status
+                                                    ? "border-pink-600 bg-pink-600 text-white"
+                                                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {status !== "Semua" && (
+                                                <span
+                                                    className="w-3 h-3 rounded-full inline-block"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            )}
+                                            <span>
+                                                {status} ({labelCount})
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Refresh & Page size */}
-                    <div className="mr-3 flex items-center space-x-3">
-                        {/* <button
-                            onClick={() => getReports()}
-                            title="Refresh data"
-                            className="hover:outline-grey-500 hover:bg-gray-100 hover:text-black flex items-center rounded border border-gray-300 px-2 py-1 text-gray-500 hover:ring-1"
-                        >
-                            <IoIosRefresh />
-                        </button> */}
-
+                    {/* Kanan: Jumlah yang Ditampilkan */}
+                    <div className="md:col-span-1 lg:col-span-1 flex flex-col space-y-2 w-full max-w-xs md:w-full">
+                        <p className="text-sm font-semibold text-gray-700">Jumlah yang Ditampilkan</p>
                         <select
                             value={limit}
-                            onChange={e => {
+                            onChange={(e) => {
                                 setLimit(Number(e.target.value));
                                 setPage(1);
                             }}
-                            className="hover:outline-grey-500 rounded border border-gray-300 px-2 py-1 text-sm text-gray-500 hover:ring-1"
+                            className="w-full border rounded px-3 py-2 text-xs bg-white text-gray-700 shadow-sm"
                         >
-                            {[50, 100, 200, 300, 500].map(l => (
+                            {[100, 200, 300, 500].map((l) => (
                                 <option key={l} value={l}>
                                     Tampilkan {l}
                                 </option>
@@ -329,23 +389,23 @@ export default function PengaduanTable() {
             <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
                 <div className="w-full h-screen box-border rounded-lg border border-gray-400">
                     <table className="min-w-full table-fixed text-left text-sm">
-                        <thead className="sticky top-0 z-[500] bg-gray-800 text-white">
+                        <thead className="sticky top-0 z-[300] bg-gray-800 text-white">
                             <tr>
                                 {[
                                     {
                                         key: "prioritas",
                                         icon: <FaStar />,
-                                        label: "Prioritas\nBupati"
+                                        label: "Prioritas"
                                     },
                                     {
                                         key: "sessionId",
                                         icon: <FaIdCard />,
-                                        label: "No. Ticket"
+                                        label: "No. Id"
                                     },
                                     {
                                         key: "date",
                                         icon: <FaClock />,
-                                        label: "Tgl.\nLaporan"
+                                        label: "Tgl. Laporan"
                                     },
                                     {
                                         key: "user",
@@ -360,7 +420,7 @@ export default function PengaduanTable() {
                                     {
                                         key: "lokasi_kejadian",
                                         icon: <FaMap />,
-                                        label: "Lokasi\nKejadian"
+                                        label: "Lokasi Kejadian"
                                     },
                                     {
                                         key: "situasi",
@@ -375,20 +435,24 @@ export default function PengaduanTable() {
                                     {
                                         key: "opd",
                                         icon: <FaBuilding />,
-                                        label: "OPD\nTerkait"
+                                        label: "OPD Terkait"
                                     },
                                     {
                                         key: "timer",
                                         icon: <FaClock />,
-                                        label: "Waktu\nBerjalan"
+                                        label: "Waktu Berjalan"
                                     },
                                     { key: "photo", icon: null, label: "Foto" } // 🔧 kolom foto
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        className="sticky top-0 z-[500] px-4 py-2 select-none bg-gray-800 text-white"
+                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white hover:bg-white/20 transition"
+                                        onClick={() => toggleSort(key as SortKey)}
                                     >
-                                        <div className="flex items-center justify-between gap-2">
+                                        <div
+                                            className="flex items-center justify-between gap-2"
+
+                                        >
                                             {/* Kiri: ICON */}
                                             <div className="flex items-center justify-center w-6">{icon}</div>
 
@@ -403,10 +467,10 @@ export default function PengaduanTable() {
 
                                             {/* Kanan: SORT TOGGLE */}
                                             <button
-                                                onClick={() => toggleSort(key as SortKey)}
-                                                className="text-xs rounded px-1 py-[2px] hover:bg-white/20 transition"
+                                                // onClick={() => toggleSort(key as SortKey)}
+                                                className="text-sm rounded px-1 py-[2px]"
                                             >
-                                                {renderSortArrow(key as SortKey) || "↕"}
+                                                {renderSortArrow(key as SortKey) || ""}
                                             </button>
                                         </div>
                                     </th>
