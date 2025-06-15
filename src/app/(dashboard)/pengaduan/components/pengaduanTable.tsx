@@ -394,7 +394,7 @@ export default function PengaduanTable() {
                                     {
                                         key: "prioritas",
                                         icon: <FaStar />,
-                                        label: "Prioritas Bupati"
+                                        label: "Prioritas"
                                     },
                                     {
                                         key: "sessionId",
