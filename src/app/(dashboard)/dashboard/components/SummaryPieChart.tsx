@@ -90,13 +90,25 @@ const SummaryPieChart: React.FC = () => {
                 "rgb(96, 165, 250)", "rgb(74, 222, 128)", "black"
             ],
             tooltip: { trigger: "item" },
-            legend: { orient: "vertical", left: "left" },
+            legend: { orient: "horizontal", bottom: "bottom" },
             series: [
                 {
                     name: "Status",
                     type: "pie",
-                    radius: "60%",
-                    data,
+                    radius: "60%", // Bisa juga jadi ['40%', '70%'] untuk donut
+                    center: ["50%", "50%"], // Posisi pie chart dalam container
+                    data, // array of { name, value }
+                    avoidLabelOverlap: true, // Biar label gak tumpuk
+                    label: {
+                        show: true,
+                        position: "outside", // "inside", "center", "outside"
+                        formatter: "{b}", // atau "{b}: {d}%" untuk nama + persentase
+                    },
+                    labelLine: {
+                        show: true,
+                        length: 10,
+                        length2: 10,
+                    },
                     emphasis: {
                         itemStyle: {
                             shadowBlur: 10,
@@ -113,7 +125,7 @@ const SummaryPieChart: React.FC = () => {
             chart.dispose();
             window.removeEventListener("resize", resize);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [JSON.stringify(statusCounts)]);
 
     // Download CSV
