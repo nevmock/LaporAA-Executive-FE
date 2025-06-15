@@ -13,6 +13,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white text-center p-6">
+      <img
+        src="/LAPOR AA BUPATI.png"
+        alt="Logo LaporAA"
+        style={{ width: "400px", height: "400px" }}
+      />
       <h1 className="text-3xl font-bold text-gray-800 mb-4">Selamat datang di Dashboard Lapor AA👋</h1>
       <p className="text-gray-600 mb-6">Silakan masuk untuk melihat data laporan.</p>
 

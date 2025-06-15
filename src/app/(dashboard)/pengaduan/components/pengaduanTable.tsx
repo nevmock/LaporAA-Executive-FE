@@ -19,6 +19,8 @@ import {
 import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
 import { Tooltip } from "./Tooltip";
+import { Listbox } from "@headlessui/react";
+import { Fragment } from "react";
 const MapPopup = dynamic(() => import("./mapPopup"), { ssr: false });
 
 /* ------------------------- Utils ------------------------- */
@@ -68,9 +70,10 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(50);
+    const [limit, setLimit] = useState(500);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
 
     const statusColors: Record<string, string> = {
         "Perlu Verifikasi": "#FF3131",
@@ -243,6 +246,16 @@ export default function PengaduanTable() {
         getReports(selectedStatus, page, limit, search);
     }, [page, limit]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+
+        handleResize(); // inisialisasi
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     /* =================== RENDER ===================== */
     return (
         <div className="flex h-screen flex-col">
@@ -260,52 +273,92 @@ export default function PengaduanTable() {
                 />
 
                 {/* ------------- Tabs & Controls ------------ */}
-                <div className="mb-3 mt-5 flex items-center justify-between">
+                <div className="mb-3 mt-5 z-[400] flex items-center justify-between">
                     {/* Tabs */}
-                    <div className="flex flex-wrap gap-3">
-                        {statusTabs.map(status => {
-                            const labelCount =
-                                status === "Semua"
-                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                    : statusCounts[status] || 0;
+                    {isMobile ? (
+                        <Listbox value={selectedStatus} onChange={(val) => {
+                            setSelectedStatus(val);
+                            setPage(1);
+                        }}>
+                            <div className="relative w-full max-w-xs">
+                                <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-sm bg-white text-left">
+                                    {selectedStatus}
+                                </Listbox.Button>
+                                <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
+                                    {statusTabs.map((status) => {
+                                        const labelCount =
+                                            status === "Semua"
+                                                ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                                : statusCounts[status] || 0;
+                                        const color = statusColors[status];
+                                        return (
+                                            <Listbox.Option key={status} value={status} as={Fragment}>
+                                                {({ active, selected }) => (
+                                                    <li
+                                                        className={`px-3 py-2 z-[400] flex items-center gap-2 text-sm cursor-pointer ${active ? "bg-gray-100" : ""
+                                                            }`}
+                                                    >
+                                                        {status !== "Semua" && (
+                                                            <span
+                                                                className="w-2.5 h-2.5 z-[400] rounded-full inline-block"
+                                                                style={{ backgroundColor: color }}
+                                                            />
+                                                        )}
+                                                        <span>{status} ({labelCount})</span>
+                                                    </li>
+                                                )}
+                                            </Listbox.Option>
+                                        );
+                                    })}
+                                </Listbox.Options>
+                            </div>
+                        </Listbox>
+                    ) : (
+                        <div className="flex flex-wrap gap-3">
+                            {statusTabs.map(status => {
+                                const labelCount =
+                                    status === "Semua"
+                                        ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                        : statusCounts[status] || 0;
 
-                            const color = statusColors[status];
+                                const color = statusColors[status];
 
-                            return (
-                                <button
-                                    key={status}
-                                    onClick={() => {
-                                        setSelectedStatus(status);
-                                        setPage(1);
-                                    }}
-                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border ${selectedStatus === status
-                                        ? "border-pink-600 bg-pink-600 text-white"
-                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    {status !== "Semua" && (
-                                        <span
-                                            className="w-3 h-3 rounded-full inline-block"
-                                            style={{ backgroundColor: color }}
-                                        />
-                                    )}
-                                    <span>
-                                        {status} ({labelCount})
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
+                                return (
+                                    <button
+                                        key={status}
+                                        onClick={() => {
+                                            setSelectedStatus(status);
+                                            setPage(1);
+                                        }}
+                                        className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border ${selectedStatus === status
+                                            ? "border-pink-600 bg-pink-600 text-white"
+                                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                            }`}
+                                    >
+                                        {status !== "Semua" && (
+                                            <span
+                                                className="w-3 h-3 rounded-full inline-block"
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        )}
+                                        <span>
+                                            {status} ({labelCount})
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* Refresh & Page size */}
-                    <div className="mr-3 flex items-center space-x-3">
-                        {/* <button
+                    {/* <div className="mr-3 flex items-center space-x-3">
+                        <button
                             onClick={() => getReports()}
                             title="Refresh data"
                             className="hover:outline-grey-500 hover:bg-gray-100 hover:text-black flex items-center rounded border border-gray-300 px-2 py-1 text-gray-500 hover:ring-1"
                         >
                             <IoIosRefresh />
-                        </button> */}
+                        </button>
 
                         <select
                             value={limit}
@@ -321,7 +374,7 @@ export default function PengaduanTable() {
                                 </option>
                             ))}
                         </select>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
@@ -329,7 +382,7 @@ export default function PengaduanTable() {
             <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
                 <div className="w-full h-screen box-border rounded-lg border border-gray-400">
                     <table className="min-w-full table-fixed text-left text-sm">
-                        <thead className="sticky top-0 z-[500] bg-gray-800 text-white">
+                        <thead className="sticky top-0 z-[300] bg-gray-800 text-white">
                             <tr>
                                 {[
                                     {
@@ -386,7 +439,7 @@ export default function PengaduanTable() {
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        className="sticky top-0 z-[500] px-4 py-2 select-none bg-gray-800 text-white"
+                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white"
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             {/* Kiri: ICON */}

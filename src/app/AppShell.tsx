@@ -1,6 +1,7 @@
 "use client";
 
 import Sidebar from "./sidebar";
+import SidebarHorizontal from "./sidebarHorizontal";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
@@ -9,6 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const [countPending, setCountPending] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -23,20 +25,36 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             .get(`${API_URL}/reportCount`)
             .then((res) => {
                 const data = res.data?.count ?? 0;
-                console.info("Jumlah laporan:", data);
                 setCountPending(data);
             })
-            .catch((err) => {
-                console.error("Gagal mengambil jumlah laporan:", err);
+            .catch(() => {
                 setCountPending(0);
             });
     }, []);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.clear();
+        router.push("/login");
+    };
+
     return (
-        <div className="flex h-screen w-screen overflow-hidden">
-            <div className="bg-gray-900 text-white">
+        <div className="flex h-screen w-screen overflow-hidden flex-col sm:flex-row">
+            {isMobile ? (
+                <SidebarHorizontal countPending={countPending} onLogout={handleLogout} />
+            ) : (
                 <Sidebar countPending={countPending} />
-            </div>
+            )}
+
             <main className="flex-1 overflow-y-auto bg-white">
                 {children}
             </main>
