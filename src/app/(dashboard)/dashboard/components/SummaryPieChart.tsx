@@ -96,7 +96,7 @@ const SummaryPieChart: React.FC = () => {
                     name: "Status",
                     type: "pie",
                     radius: "60%", // Bisa juga jadi ['40%', '70%'] untuk donut
-                    center: ["50%", "50%"], // Posisi pie chart dalam container
+                    center: ["50%", "40%"], // Posisi pie chart dalam container
                     data, // array of { name, value }
                     avoidLabelOverlap: true, // Biar label gak tumpuk
                     label: {
