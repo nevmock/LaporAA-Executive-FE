@@ -62,7 +62,9 @@ export default function Tindakan({
     const [confirmedProses, setConfirmedProses] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showSelesaiModal, setShowSelesaiModal] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
+    const [selesaiReason, setSelesaiReason] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -496,6 +498,72 @@ export default function Tindakan({
                                     </div>
                                 )}
                             </div>
+                        )}
+
+                        {/* Tombol Selesai (hanya di step pertama) */}
+                        {currentStepIndex === 0 && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setSelesaiReason("");
+                                        setShowSelesaiModal(true);
+                                    }}
+                                    className="bg-[rgb(96,165,250)] text-white px-4 py-2 rounded-md"
+                                >
+                                    Selesai Penanganan
+                                </button>
+
+                                {/* Modal Selesai Penanganan */}
+                                {showSelesaiModal && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                                        <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
+                                            <h3 className="text-lg font-semibold text-[rgb(96,165,250)]">Alasan Penyelesaian</h3>
+                                            <textarea
+                                                value={selesaiReason}
+                                                onChange={(e) => setSelesaiReason(e.target.value)}
+                                                placeholder="Masukkan alasan penyelesaian pengaduan"
+                                                className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
+                                                rows={4}
+                                            />
+                                            <div className="flex justify-end gap-2 mt-4">
+                                                <button
+                                                    onClick={() => setShowSelesaiModal(false)}
+                                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                                                >
+                                                    Batal
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!selesaiReason.trim()) {
+                                                            alert("Alasan penyelesaian harus diisi.");
+                                                            return;
+                                                        }
+                                                        try {
+                                                            const updated = {
+                                                                ...formData,
+                                                                status: "Selesai Penanganan",
+                                                                updatedAt: new Date().toISOString(),
+                                                                keterangan: `${selesaiReason.trim()}`,
+                                                            };
+                                                            await axios.put(
+                                                                `${API_URL}/tindakan/${formData.report}`,
+                                                                updated
+                                                            );
+                                                            setShowSelesaiModal(false);
+                                                            router.push("/pengaduan");
+                                                        } catch (error) {
+                                                            alert("Gagal menyelesaikan pengaduan. Silakan coba lagi.");
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 bg-[rgb(96,165,250)] text-white rounded-md text-sm"
+                                                >
+                                                    Selesai
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                     </div>
