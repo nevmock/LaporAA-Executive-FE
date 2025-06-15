@@ -235,89 +235,89 @@ export default function Tindakan({
             )}
 
             {/* Progress Bar */}
-{formData.status === "Ditolak" ? (
-  <div className="flex justify-center">
-    <div className="flex flex-col items-center text-xs">
-      <div className="w-8 h-8 rounded-full bg-red-300 text-white flex items-center justify-center font-bold">
-        ❌
-      </div>
-      <span className="mt-1 text-red-600 font-semibold">Ditolak</span>
-    </div>
-  </div>
-) : (
-  <div className="overflow-x-auto">
-    <div className="relative flex justify-between px-6">
-      {(() => {
-        // Filter status "Ditolak" dari list
-        const STATUS_LIST_FILTERED = STATUS_LIST.filter((s) => s !== "Ditolak");
-        const status = formData.status ?? ""; // Pastikan string
-        const currentStepIndexFiltered = Math.max(
-          0,
-          STATUS_LIST_FILTERED.indexOf(status)
-        );
-
-        return (
-          <>
-            {/* Garis dasar (abu-abu) */}
-            <div
-              className="absolute top-4 h-1 bg-gray-300 z-0"
-              style={{
-                left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-                right: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-              }}
-            />
-
-            {/* Garis progress (hijau) */}
-            <div
-              className="absolute top-4 h-1 bg-green-500 z-0 transition-all duration-300"
-              style={{
-                left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-                width: `calc(((100% / ${STATUS_LIST_FILTERED.length}) * ${currentStepIndexFiltered}))`,
-              }}
-            />
-
-            {/* Titik-titik progress */}
-            {STATUS_LIST_FILTERED.map((status, idx) => {
-              const isDone = idx < currentStepIndexFiltered;
-              const isCurrent = idx === currentStepIndexFiltered;
-              const color = statusColors[status] || "#D1D5DB";
-
-              return (
-                <div
-                  key={status}
-                  className="relative flex flex-col items-center min-w-[80px] z-10"
-                >
-                  {/* Lingkaran */}
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{
-                      backgroundColor: isDone || isCurrent ? color : "#D1D5DB",
-                      color: isDone || isCurrent ? "white" : "#6B7280",
-                    }}
-                  >
-                    {idx + 1}
-                  </div>
-
-                  {/* Label */}
-                  <div className="mt-2 text-xs break-words text-center max-w-[80px]">
-                    <span
-                      className="font-semibold"
-                      style={{
-                        color: isCurrent ? color : "#9CA3AF",
-                      }}
-                    >
-                      {status}
-                    </span>
-                  </div>
+            {formData.status === "Ditolak" ? (
+                <div className="flex justify-center">
+                    <div className="flex flex-col items-center text-xs">
+                        <div className="w-8 h-8 rounded-full bg-red-300 text-white flex items-center justify-center font-bold">
+                            ❌
+                        </div>
+                        <span className="mt-1 text-red-600 font-semibold">Ditolak</span>
+                    </div>
                 </div>
-              );
-            })}
-          </>
-        );
-      })()}
-    </div>
-  </div>
-)}
+            ) : (
+                <div className="overflow-x-auto">
+                    <div className="relative flex justify-between px-6">
+                        {(() => {
+                            // Filter status "Ditolak" dari list
+                            const STATUS_LIST_FILTERED = STATUS_LIST.filter((s) => s !== "Ditolak");
+                            const status = formData.status ?? ""; // Pastikan string
+                            const currentStepIndexFiltered = Math.max(
+                                0,
+                                STATUS_LIST_FILTERED.indexOf(status)
+                            );
+
+                            return (
+                                <>
+                                    {/* Garis dasar (abu-abu) */}
+                                    <div
+                                        className="absolute top-4 h-1 bg-gray-300 z-0"
+                                        style={{
+                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                            right: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                        }}
+                                    />
+
+                                    {/* Garis progress (hijau) */}
+                                    <div
+                                        className="absolute top-4 h-1 bg-green-500 z-0 transition-all duration-300"
+                                        style={{
+                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                                            width: `calc(((100% / ${STATUS_LIST_FILTERED.length}) * ${currentStepIndexFiltered}))`,
+                                        }}
+                                    />
+
+                                    {/* Titik-titik progress */}
+                                    {STATUS_LIST_FILTERED.map((status, idx) => {
+                                        const isDone = idx < currentStepIndexFiltered;
+                                        const isCurrent = idx === currentStepIndexFiltered;
+                                        const color = statusColors[status] || "#D1D5DB";
+
+                                        return (
+                                            <div
+                                                key={status}
+                                                className="relative flex flex-col items-center min-w-[80px] z-10"
+                                            >
+                                                {/* Lingkaran */}
+                                                <div
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                                                    style={{
+                                                        backgroundColor: isDone || isCurrent ? color : "#D1D5DB",
+                                                        color: isDone || isCurrent ? "white" : "#6B7280",
+                                                    }}
+                                                >
+                                                    {idx + 1}
+                                                </div>
+
+                                                {/* Label */}
+                                                <div className="mt-2 text-xs break-words text-center max-w-[80px]">
+                                                    <span
+                                                        className="font-semibold"
+                                                        style={{
+                                                            color: isCurrent ? color : "#9CA3AF",
+                                                        }}
+                                                    >
+                                                        {status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
 
             {/* Detail Laporan */}
             <div className="border-b pb-4">
