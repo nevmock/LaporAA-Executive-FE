@@ -235,27 +235,51 @@ export default function Tindakan({
                     </div>
                 </div>
             ) : (
-                <div className="flex justify-between items-center">
-                    {STATUS_LIST.slice(0, -1).map((status, idx) => {
-                        const current = idx === currentStepIndex;
-                        const done = idx < currentStepIndex;
-                        return (
-                            <div key={status} className="flex-1 flex flex-col items-center text-xs relative">
-                                <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10
+                <div className="overflow-x-auto">
+                    <div className="relative flex justify-between px-2">
+                        {/* Garis horizontal global */}
+                        <div
+                            className="absolute top-4 h-1 bg-gray-300 z-0"
+                            style={{
+                                left: 'calc(40px + 0.5rem)', // 40px = half of w-20 step, 0.5rem = px-2
+                                right: 'calc(40px + 0.5rem)', // sama seperti kiri
+                            }}
+                        />
+
+                        {STATUS_LIST.slice(0, -1).map((status, idx) => {
+                            const current = idx === currentStepIndex;
+                            const done = idx < currentStepIndex;
+
+                            return (
+                                <div key={status} className="relative flex flex-col items-center min-w-[80px] px-2 z-10">
+                                    {/* Lingkaran */}
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
                                         ${current ? "bg-green-700 text-white" : done ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"}`}
-                                >
-                                    {idx + 1}
+                                    >
+                                        {idx + 1}
+                                    </div>
+
+                                    {/* Label */}
+                                    <div className="mt-2 text-xs break-words text-center max-w-[80px]">
+                                        <span className={`${current ? "text-green-700 font-semibold" : "text-gray-400"}`}>
+                                            {status}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className={`mt-1 text-center ${current ? "text-green-700 font-semibold" : "text-gray-400"}`}>
-                                    {status}
-                                </span>
-                                {idx < STATUS_LIST.length - 2 && (
-                                    <div className={`absolute top-4 left-1/2 w-full h-1 ${done ? "bg-green-500" : "bg-gray-300"}`} />
-                                )}
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+
+                        {/* Garis progress overlay (di atas garis dasar) */}
+                        <div
+                            className="absolute top-4 left-0 h-1 bg-green-500 z-0 transition-all duration-300"
+                            style={{
+                                left: 'calc(40px + 0.5rem)', // 40px = half of w-20 step, 0.5rem = px-2
+                                right: 'calc(40px + 0.5rem)', // sama seperti kiri
+                                width: `${(currentStepIndex / (STATUS_LIST.length - 2)) * 100}%`,
+                            }}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -297,15 +321,16 @@ export default function Tindakan({
                         data={formData}
                         onChange={setFormData}
                         onConfirmChange={(val) => setConfirmedProses(val)}
+                        saveData={saveData}
                     />
                 ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
                     <Selesai2 data={{ ...formData, sessionId }} />
                 ) : STATUS_LIST[currentStepIndex] === "Verifikasi Situasi" ? (
                     <Verifikasi1 data={{ ...formData }} onChange={setFormData} />
-                ) 
-                : (
-                    <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
-                )}
+                )
+                    : (
+                        <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
+                    )}
 
                 {/* Tombol Navigasi */}
                 {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(formData.status || "") && (
@@ -388,7 +413,7 @@ export default function Tindakan({
                         )}
 
                         {/* Tombol Simpan Perubahan (hanya di index 2 dan 3) */}
-                        {[2, 3].includes(currentStepIndex) && (
+                        {[2].includes(currentStepIndex) && (
                             <button
                                 onClick={async () => {
                                     setIsSaving(true);
@@ -397,12 +422,10 @@ export default function Tindakan({
                                 }}
                                 disabled={
                                     isSaving ||
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses)
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2)
                                 }
                                 className={`px-4 py-2 rounded-md text-white transition ${(
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-                                    (currentStepIndex === 3 && !confirmedProses))
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2))
                                     ? "bg-gray-300 cursor-not-allowed"
                                     : "bg-emerald-500 hover:bg-emerald-600"
                                     }`}

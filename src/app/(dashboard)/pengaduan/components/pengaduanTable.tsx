@@ -16,6 +16,7 @@ import {
     FaBuilding,
     FaClock
 } from "react-icons/fa";
+import { Search } from "lucide-react";
 import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
 import { Tooltip } from "./Tooltip";
@@ -260,17 +261,22 @@ export default function PengaduanTable() {
     return (
         <div className="flex h-screen flex-col">
             {/* ------------ Header & Search ------------- */}
-            <div className="sticky top-0 z-50 m-3">
-                <h2 className="mb-2 text-2xl font-bold text-gray-900">
+            <div className="z-[400] sticky top-0 z-50 m-3">
+                <h2 className="z-[400] mb-2 text-2xl font-bold text-gray-900">
                     Daftar Pengaduan
                 </h2>
-                <input
-                    type="text"
-                    placeholder="Cari data pengaduan berdasarkan nama, no. ID, atau lokasi..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="sticky top-0 w-full rounded-md border p-2 text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="relative w-full z-[400]">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari data pengaduan berdasarkan nama, no. ID, atau lokasi..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
 
                 {/* ------------- Tabs & Controls ------------ */}
                 <div className="mb-3 mt-5 z-[400] flex items-center justify-between">
@@ -388,17 +394,17 @@ export default function PengaduanTable() {
                                     {
                                         key: "prioritas",
                                         icon: <FaStar />,
-                                        label: "Prioritas\nBupati"
+                                        label: "Prioritas Bupati"
                                     },
                                     {
                                         key: "sessionId",
                                         icon: <FaIdCard />,
-                                        label: "No. Ticket"
+                                        label: "No. Id"
                                     },
                                     {
                                         key: "date",
                                         icon: <FaClock />,
-                                        label: "Tgl.\nLaporan"
+                                        label: "Tgl. Laporan"
                                     },
                                     {
                                         key: "user",
@@ -413,7 +419,7 @@ export default function PengaduanTable() {
                                     {
                                         key: "lokasi_kejadian",
                                         icon: <FaMap />,
-                                        label: "Lokasi\nKejadian"
+                                        label: "Lokasi Kejadian"
                                     },
                                     {
                                         key: "situasi",
@@ -428,12 +434,12 @@ export default function PengaduanTable() {
                                     {
                                         key: "opd",
                                         icon: <FaBuilding />,
-                                        label: "OPD\nTerkait"
+                                        label: "OPD Terkait"
                                     },
                                     {
                                         key: "timer",
                                         icon: <FaClock />,
-                                        label: "Waktu\nBerjalan"
+                                        label: "Waktu Berjalan"
                                     },
                                     { key: "photo", icon: null, label: "Foto" } // 🔧 kolom foto
                                 ].map(({ key, icon, label }) => (

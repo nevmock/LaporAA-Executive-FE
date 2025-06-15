@@ -6,6 +6,8 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useSwipeable } from "react-swipeable";
 import Profile from "./profile";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
@@ -83,51 +85,44 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
             });
     }, [sessionId]);
 
-    // Save name update
     const saveName = async () => {
         if (!data) return;
         setIsSavingName(true);
         setSaveError(null);
         try {
             await axios.put(`${API_URL}/reports/${sessionId}`, {
-                ...data,
-                user: {
-                    ...data.user,
-                    name: editedSex,
-                }
+                name: editedName, // ✅ langsung
             });
             setData((prev) =>
-                prev ? { ...prev, user: { ...prev.user, name: editedName } } : prev);
+                prev ? { ...prev, user: { ...prev.user, name: editedName } } : prev
+            );
             setSaveNameSuccess(true);
             setIsEditingName(false);
             setTimeout(() => setSaveNameSuccess(false), 2000);
+            window.location.reload();
         } catch (error) {
-            setSaveError("Gagal menyimpan Isi Laporan.");
+            setSaveError("Gagal menyimpan Nama.");
         } finally {
             setIsSavingName(false);
         }
     };
 
-    // Save sex update
     const saveSex = async () => {
         if (!data) return;
         setIsSavingSex(true);
         setSaveError(null);
         try {
             await axios.put(`${API_URL}/reports/${sessionId}`, {
-                ...data,
-                user: {
-                    ...data.user,
-                    jenis_kelamin: editedSex,
-                }
+                jenis_kelamin: editedSex, // ✅ langsung
             });
             setData((prev) =>
-                prev ? { ...prev, user: { ...prev.user, jenis_kelamin: editedSex } } : prev);
+                prev ? { ...prev, user: { ...prev.user, jenis_kelamin: editedSex } } : prev
+            );
             setSaveSexSuccess(true);
             setIsEditingSex(false);
             setTimeout(() => setSaveSexSuccess(false), 2000);
         } catch (error) {
-            setSaveError("Gagal menyimpan Isi Laporan.");
+            setSaveError("Gagal menyimpan Jenis Kelamin.");
         } finally {
             setIsSavingSex(false);
         }
@@ -291,22 +286,26 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                     label: "Jenis Kelamin",
                     value: isEditingSex ? (
                         <div className="flex items-center gap-2">
-                            <input
-                                type="text"
+                            <select
                                 value={editedSex}
                                 onChange={(e) => setEditedSex(e.target.value)}
                                 className="w-full border border-gray-300 rounded p-2 text-sm"
-                            />
+                            >
+                                <option value="">-- Pilih Jenis Kelamin --</option>
+                                <option value="pria">pria</option>
+                                <option value="wanita">wanita</option>
+                            </select>
                             <button
                                 onClick={saveSex}
                                 disabled={isSavingSex}
+                                type="button"
                                 className="text-xs bg-green-500 text-white px-2 py-1 rounded"
                             >
                                 {isSavingSex ? "Menyimpan..." : "Simpan"}
                             </button>
                         </div>
                     ) : (
-                        data.user.jenis_kelamin
+                        data.user.jenis_kelamin || "-"
                     ),
                     action: (
                         <>
@@ -403,7 +402,7 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                 },
                 {
                     label: "Tanggal Kejadian",
-                    value: new Date(data.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
+                    value: dayjs(data.createdAt).locale("id").format("D MMMM YYYY, HH:mm") + " WIB"
                 },
                 {
                     label: "Desa / Kelurahan",
@@ -414,7 +413,7 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                     value: data.location.kecamatan || "-",
                 },
                 {
-                    label: "Kota / Kabupaten",
+                    label: "Kabupaten",
                     value: data.location.kabupaten || "-",
                 },
                 {

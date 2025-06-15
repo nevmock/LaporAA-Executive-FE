@@ -12,11 +12,13 @@ const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 export default function Proses({
     data,
     onChange,
-    onConfirmChange
+    onConfirmChange,
+    saveData
 }: {
     data: Partial<TindakanClientState>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanClientState>>>;
     onConfirmChange?: (val: boolean) => void;
+    saveData?: () => Promise<void>;
 }) {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const fileRef = useRef<HTMLInputElement | null>(null);
@@ -117,12 +119,12 @@ export default function Proses({
 
                 <div className="flex flex-wrap gap-2 mt-4">
                     <Tooltip text="Klik disini untuk langsung membuka laporan">
-                    <button
-                        onClick={() => window.open(`${data.url}`, "_blank")}
-                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
-                    >
-                        Buka Laporan #{data.trackingId}
-                    </button>
+                        <button
+                            onClick={() => window.open(`${data.url}`, "_blank")}
+                            className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                        >
+                            Buka Laporan #{data.trackingId}
+                        </button>
                     </Tooltip>
                     <button
                         onClick={() => {
@@ -145,12 +147,12 @@ export default function Proses({
                 <h3 className="font-semibold text-gray-700 mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
                     <Tooltip text="Klik disini untuk langsung membuka laporan">
-                    <button
-                        onClick={() => window.open(`${data.url}`, "_blank")}
-                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
-                    >
-                        Buka Laporan #{data.trackingId}
-                    </button>
+                        <button
+                            onClick={() => window.open(`${data.url}`, "_blank")}
+                            className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                        >
+                            Buka Laporan #{data.trackingId}
+                        </button>
                     </Tooltip>
                 </div>
 
@@ -179,6 +181,30 @@ export default function Proses({
                                 <option value="Telah Diproses OPD Terkait">Selesai</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div className="mt-2 flex justify-center">
+                        <button
+                            onClick={() => {
+                                setIsSaving(true);
+                                saveData?.().finally(() => setIsSaving(false));
+                            }}
+                            disabled={isSaving}
+                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                                }`}
+                        >
+                            {isSaving ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Sedang menyimpan...</span>
+                                </div>
+                            ) : (
+                                "Simpan Perubahan"
+                            )}
+                        </button>
                     </div>
 
 
@@ -255,7 +281,7 @@ export default function Proses({
                                     <span>Sedang menyimpan...</span>
                                 </div>
                             ) : (
-                                "Simpan Data Tindak Lanjut dan Kirimkan Kepada Warga"
+                                "Kirimkan Kepada Warga"
                             )}
                         </button>
                     </div>
