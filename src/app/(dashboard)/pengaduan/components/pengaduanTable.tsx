@@ -71,7 +71,7 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(500);
+    const [limit, setLimit] = useState(100);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -169,7 +169,7 @@ export default function PengaduanTable() {
         const arrow = found.order === "asc" ? "↑" : "↓";
 
         return (
-            <span className="text-cyan-500 text-xs">
+            <span className="text-cyan-500 text-sm">
                 {arrow}
             </span>
         );
@@ -271,116 +271,117 @@ export default function PengaduanTable() {
                     </div>
                     <input
                         type="text"
-                        placeholder="Cari data pengaduan berdasarkan nama, no. ID, atau lokasi..."
+                        placeholder="Cari No. ID, Nama, OPD, atau Lokasi..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
-                {/* ------------- Tabs & Controls ------------ */}
-                <div className="mb-3 mt-5 z-[400] flex items-center justify-between">
-                    {/* Tabs */}
-                    {isMobile ? (
-                        <Listbox value={selectedStatus} onChange={(val) => {
-                            setSelectedStatus(val);
-                            setPage(1);
-                        }}>
-                            <div className="relative w-full max-w-xs">
-                                <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-sm bg-white text-left">
-                                    {selectedStatus}
-                                </Listbox.Button>
-                                <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
-                                    {statusTabs.map((status) => {
-                                        const labelCount =
-                                            status === "Semua"
-                                                ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                                : statusCounts[status] || 0;
-                                        const color = statusColors[status];
-                                        return (
-                                            <Listbox.Option key={status} value={status} as={Fragment}>
-                                                {({ active, selected }) => (
-                                                    <li
-                                                        className={`px-3 py-2 z-[400] flex items-center gap-2 text-sm cursor-pointer ${active ? "bg-gray-100" : ""
-                                                            }`}
-                                                    >
-                                                        {status !== "Semua" && (
-                                                            <span
-                                                                className="w-2.5 h-2.5 z-[400] rounded-full inline-block"
-                                                                style={{ backgroundColor: color }}
-                                                            />
-                                                        )}
-                                                        <span>{status} ({labelCount})</span>
-                                                    </li>
-                                                )}
-                                            </Listbox.Option>
-                                        );
-                                    })}
-                                </Listbox.Options>
+                {/* ----------- Tabs & Controls ----------- */}
+                <div className="mb-3 mt-5 z-[400] grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
+                    {/* Kiri: Filter Status */}
+                    <div className="md:col-span-2 lg:col-span-3 flex flex-col space-y-2">
+                        <p className="text-sm font-semibold text-gray-700">Filter Status Laporan</p>
+                        {isMobile ? (
+                            <Listbox
+                                value={selectedStatus}
+                                onChange={(val) => {
+                                    setSelectedStatus(val);
+                                    setPage(1);
+                                }}
+                            >
+                                <div className="relative w-full max-w-xs">
+                                    <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-xs bg-white text-left shadow-sm">
+                                        {selectedStatus}
+                                    </Listbox.Button>
+                                    <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
+                                        {statusTabs.map((status) => {
+                                            const labelCount =
+                                                status === "Semua"
+                                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                                    : statusCounts[status] || 0;
+                                            const color = statusColors[status];
+                                            return (
+                                                <Listbox.Option key={status} value={status} as={Fragment}>
+                                                    {({ active }) => (
+                                                        <li
+                                                            className={`px-3 py-2 flex items-center gap-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""
+                                                                }`}
+                                                        >
+                                                            {status !== "Semua" && (
+                                                                <span
+                                                                    className="w-2.5 h-2.5 rounded-full inline-block"
+                                                                    style={{ backgroundColor: color }}
+                                                                />
+                                                            )}
+                                                            <span>
+                                                                {status} ({labelCount})
+                                                            </span>
+                                                        </li>
+                                                    )}
+                                                </Listbox.Option>
+                                            );
+                                        })}
+                                    </Listbox.Options>
+                                </div>
+                            </Listbox>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {statusTabs.map((status) => {
+                                    const labelCount =
+                                        status === "Semua"
+                                            ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                            : statusCounts[status] || 0;
+                                    const color = statusColors[status];
+
+                                    return (
+                                        <button
+                                            key={status}
+                                            onClick={() => {
+                                                setSelectedStatus(status);
+                                                setPage(1);
+                                            }}
+                                            className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border 
+                ${selectedStatus === status
+                                                    ? "border-pink-600 bg-pink-600 text-white"
+                                                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {status !== "Semua" && (
+                                                <span
+                                                    className="w-3 h-3 rounded-full inline-block"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            )}
+                                            <span>
+                                                {status} ({labelCount})
+                                            </span>
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        </Listbox>
-                    ) : (
-                        <div className="flex flex-wrap gap-3">
-                            {statusTabs.map(status => {
-                                const labelCount =
-                                    status === "Semua"
-                                        ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                        : statusCounts[status] || 0;
+                        )}
+                    </div>
 
-                                const color = statusColors[status];
-
-                                return (
-                                    <button
-                                        key={status}
-                                        onClick={() => {
-                                            setSelectedStatus(status);
-                                            setPage(1);
-                                        }}
-                                        className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border ${selectedStatus === status
-                                            ? "border-pink-600 bg-pink-600 text-white"
-                                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                            }`}
-                                    >
-                                        {status !== "Semua" && (
-                                            <span
-                                                className="w-3 h-3 rounded-full inline-block"
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        )}
-                                        <span>
-                                            {status} ({labelCount})
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* Refresh & Page size */}
-                    {/* <div className="mr-3 flex items-center space-x-3">
-                        <button
-                            onClick={() => getReports()}
-                            title="Refresh data"
-                            className="hover:outline-grey-500 hover:bg-gray-100 hover:text-black flex items-center rounded border border-gray-300 px-2 py-1 text-gray-500 hover:ring-1"
-                        >
-                            <IoIosRefresh />
-                        </button>
-
+                    {/* Kanan: Jumlah yang Ditampilkan */}
+                    <div className="md:col-span-1 lg:col-span-1 flex flex-col space-y-2 w-full max-w-xs md:w-full">
+                        <p className="text-sm font-semibold text-gray-700">Jumlah yang Ditampilkan</p>
                         <select
                             value={limit}
-                            onChange={e => {
+                            onChange={(e) => {
                                 setLimit(Number(e.target.value));
                                 setPage(1);
                             }}
-                            className="hover:outline-grey-500 rounded border border-gray-300 px-2 py-1 text-sm text-gray-500 hover:ring-1"
+                            className="w-full border rounded px-3 py-2 text-xs bg-white text-gray-700 shadow-sm"
                         >
-                            {[50, 100, 200, 300, 500].map(l => (
+                            {[100, 200, 300, 500].map((l) => (
                                 <option key={l} value={l}>
                                     Tampilkan {l}
                                 </option>
                             ))}
                         </select>
-                    </div> */}
+                    </div>
                 </div>
             </div>
 
@@ -445,9 +446,13 @@ export default function PengaduanTable() {
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white"
+                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white hover:bg-white/20 transition"
+                                        onClick={() => toggleSort(key as SortKey)}
                                     >
-                                        <div className="flex items-center justify-between gap-2">
+                                        <div
+                                            className="flex items-center justify-between gap-2"
+
+                                        >
                                             {/* Kiri: ICON */}
                                             <div className="flex items-center justify-center w-6">{icon}</div>
 
@@ -462,10 +467,10 @@ export default function PengaduanTable() {
 
                                             {/* Kanan: SORT TOGGLE */}
                                             <button
-                                                onClick={() => toggleSort(key as SortKey)}
-                                                className="text-xs rounded px-1 py-[2px] hover:bg-white/20 transition"
+                                                // onClick={() => toggleSort(key as SortKey)}
+                                                className="text-sm rounded px-1 py-[2px]"
                                             >
-                                                {renderSortArrow(key as SortKey) || "↕"}
+                                                {renderSortArrow(key as SortKey) || ""}
                                             </button>
                                         </div>
                                     </th>

@@ -20,6 +20,16 @@ import Ditolak from "./componentsTindakan/ditolak";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+const statusColors: Record<string, string> = {
+    "Perlu Verifikasi": "#FF3131",
+    "Verifikasi Situasi": "#5E17EB",
+    "Verifikasi Kelengkapan Berkas": "#FF9F12",
+    "Proses OPD Terkait": "rgb(250 204 21)",
+    "Selesai Penanganan": "rgb(96 165 250)",
+    "Selesai Pengaduan": "rgb(74 222 128)",
+    "Ditolak": "black",
+};
+
 const STATUS_LIST = [
     "Perlu Verifikasi",
     "Verifikasi Situasi",
@@ -178,16 +188,16 @@ export default function Tindakan({
 
     const isButtonDisabled =
         isLoading ||
-        (currentStepIndex === 2 && !confirmedVerifikasi2) ||
-        (currentStepIndex === 3 && !confirmedProses) ||
+        (currentStepIndex === 2 && !confirmedVerifikasi2) && !formData.trackingId ||
+        (currentStepIndex === 3 && !confirmedProses) && !formData.opd ||
         (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
         (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
 
     const tooltipMessage = isLoading
         ? "Sedang memproses..."
-        : currentStepIndex === 2 && !confirmedVerifikasi2
+        : currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId
             ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
-            : currentStepIndex === 3 && !confirmedProses
+            : currentStepIndex === 3 && !confirmedProses && !formData.opd
                 ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
                 : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
                     ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
@@ -225,64 +235,89 @@ export default function Tindakan({
             )}
 
             {/* Progress Bar */}
-            {formData.status === "Ditolak" ? (
-                <div className="flex justify-center">
-                    <div className="flex flex-col items-center text-xs">
-                        <div className="w-8 h-8 rounded-full bg-red-300 text-white flex items-center justify-center font-bold">
-                            ❌
-                        </div>
-                        <span className="mt-1 text-red-600 font-semibold">Ditolak</span>
-                    </div>
+{formData.status === "Ditolak" ? (
+  <div className="flex justify-center">
+    <div className="flex flex-col items-center text-xs">
+      <div className="w-8 h-8 rounded-full bg-red-300 text-white flex items-center justify-center font-bold">
+        ❌
+      </div>
+      <span className="mt-1 text-red-600 font-semibold">Ditolak</span>
+    </div>
+  </div>
+) : (
+  <div className="overflow-x-auto">
+    <div className="relative flex justify-between px-6">
+      {(() => {
+        // Filter status "Ditolak" dari list
+        const STATUS_LIST_FILTERED = STATUS_LIST.filter((s) => s !== "Ditolak");
+        const status = formData.status ?? ""; // Pastikan string
+        const currentStepIndexFiltered = Math.max(
+          0,
+          STATUS_LIST_FILTERED.indexOf(status)
+        );
+
+        return (
+          <>
+            {/* Garis dasar (abu-abu) */}
+            <div
+              className="absolute top-4 h-1 bg-gray-300 z-0"
+              style={{
+                left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                right: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+              }}
+            />
+
+            {/* Garis progress (hijau) */}
+            <div
+              className="absolute top-4 h-1 bg-green-500 z-0 transition-all duration-300"
+              style={{
+                left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
+                width: `calc(((100% / ${STATUS_LIST_FILTERED.length}) * ${currentStepIndexFiltered}))`,
+              }}
+            />
+
+            {/* Titik-titik progress */}
+            {STATUS_LIST_FILTERED.map((status, idx) => {
+              const isDone = idx < currentStepIndexFiltered;
+              const isCurrent = idx === currentStepIndexFiltered;
+              const color = statusColors[status] || "#D1D5DB";
+
+              return (
+                <div
+                  key={status}
+                  className="relative flex flex-col items-center min-w-[80px] z-10"
+                >
+                  {/* Lingkaran */}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{
+                      backgroundColor: isDone || isCurrent ? color : "#D1D5DB",
+                      color: isDone || isCurrent ? "white" : "#6B7280",
+                    }}
+                  >
+                    {idx + 1}
+                  </div>
+
+                  {/* Label */}
+                  <div className="mt-2 text-xs break-words text-center max-w-[80px]">
+                    <span
+                      className="font-semibold"
+                      style={{
+                        color: isCurrent ? color : "#9CA3AF",
+                      }}
+                    >
+                      {status}
+                    </span>
+                  </div>
                 </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <div className="relative flex justify-between px-2">
-                        {/* Garis horizontal global */}
-                        <div
-                            className="absolute top-4 h-1 bg-gray-300 z-0"
-                            style={{
-                                left: 'calc(40px + 0.5rem)', // 40px = half of w-20 step, 0.5rem = px-2
-                                right: 'calc(40px + 0.5rem)', // sama seperti kiri
-                            }}
-                        />
-
-                        {STATUS_LIST.slice(0, -1).map((status, idx) => {
-                            const current = idx === currentStepIndex;
-                            const done = idx < currentStepIndex;
-
-                            return (
-                                <div key={status} className="relative flex flex-col items-center min-w-[80px] px-2 z-10">
-                                    {/* Lingkaran */}
-                                    <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                                        ${current ? "bg-green-700 text-white" : done ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"}`}
-                                    >
-                                        {idx + 1}
-                                    </div>
-
-                                    {/* Label */}
-                                    <div className="mt-2 text-xs break-words text-center max-w-[80px]">
-                                        <span className={`${current ? "text-green-700 font-semibold" : "text-gray-400"}`}>
-                                            {status}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Garis progress overlay (di atas garis dasar) */}
-                        <div
-                            className="absolute top-4 left-0 h-1 bg-green-500 z-0 transition-all duration-300"
-                            style={{
-                                left: 'calc(40px + 0.5rem)', // 40px = half of w-20 step, 0.5rem = px-2
-                                right: 'calc(40px + 0.5rem)', // sama seperti kiri
-                                width: `${(currentStepIndex / (STATUS_LIST.length - 2)) * 100}%`,
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
-
+              );
+            })}
+          </>
+        );
+      })()}
+    </div>
+  </div>
+)}
 
             {/* Detail Laporan */}
             <div className="border-b pb-4">
@@ -412,7 +447,7 @@ export default function Tindakan({
                             </button>
                         )}
 
-                        {/* Tombol Simpan Perubahan (hanya di index 2 dan 3) */}
+                        {/* Tombol Simpan Perubahan (hanya di index 2) */}
                         {[2].includes(currentStepIndex) && (
                             <button
                                 onClick={async () => {
@@ -422,10 +457,10 @@ export default function Tindakan({
                                 }}
                                 disabled={
                                     isSaving ||
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2)
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId)
                                 }
                                 className={`px-4 py-2 rounded-md text-white transition ${(
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2))
+                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId))
                                     ? "bg-gray-300 cursor-not-allowed"
                                     : "bg-emerald-500 hover:bg-emerald-600"
                                     }`}

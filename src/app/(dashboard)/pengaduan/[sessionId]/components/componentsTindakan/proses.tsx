@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { TindakanClientState } from "../../../../../../lib/types";
 import axios from "../../../../../../utils/axiosInstance";
 import { Plus } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import OPDSelect from "./opdSelect"
 import { Tooltip } from "../../../components/Tooltip";
 
@@ -269,8 +270,7 @@ export default function Proses({
                         <button
                             onClick={handleAddKesimpulan}
                             disabled={isSaving}
-                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-                                }`}
+                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"}`}
                         >
                             {isSaving ? (
                                 <div className="flex items-center justify-center gap-2">
@@ -281,7 +281,10 @@ export default function Proses({
                                     <span>Sedang menyimpan...</span>
                                 </div>
                             ) : (
-                                "Kirimkan Kepada Warga"
+                                <>
+                                    <FaWhatsapp className="text-lg" />
+                                    <span>Kirimkan Tindak Lanjut</span>
+                                </>
                             )}
                         </button>
                     </div>
