@@ -10,6 +10,7 @@ import EfisiensiCard from './components/EfisiensiCard';
 import EffectivenessCard from './components/EffectivenessCard';
 import SpedoChart from './components/SpedoChart';
 import BarOpdChart from './components/BarOpdChart';
+import BarWilayahChartKecamatan from './components/BarWilayahChartKecamatan';
 import LineChart from './components/LineChart';
 import DistribusiCard from './components/DistribusiCard';
 import KepuasanCard from './components/KepuasanCard';
@@ -104,16 +105,22 @@ export default function Home() {
 
         </div>
 
+        <div>
+            <MapPersebaran />
+          </div>
+
         {/* Line Chart + Map */}
         <div className="drop-shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-4 h-auto">
-          <div>
-            <MapPersebaran />
+          <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
+            <BarWilayahChartKecamatan />
           </div>
 
           <div className="rounded-xl drop-shadow-lg h-auto bg-gray-200 overflow-hidden flex">
             <BarOpdChart />
           </div>
         </div>
+
+        
       </div>
     </div>
   );

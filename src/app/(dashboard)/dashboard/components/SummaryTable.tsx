@@ -52,8 +52,8 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         : "0";
 
     return (
-        <div className="bg-white shadow-md text-gray-700 rounded-lg p-4 overflow-y-auto max-h-[500px]">
-            <h3 className="text-lg font-bold text-gray-700 mb-4">Ringkasan Status Pengaduan</h3>
+        <div className="bg-white shadow-md text-gray-800 rounded-lg p-4 overflow-y-auto max-h-[500px]">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Ringkasan Status Pengaduan</h3>
 
             {/* Desktop layout: table */}
             <div className="hidden md:block overflow-auto">
@@ -112,8 +112,6 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
 
                             <td className="border px-3 py-2">{totalSemua}</td>
                             <td className="border px-3 py-2">{totalTindakLanjut} ({persenTL}%)</td>
-
-                            {/* <td className="border px-3 py-2">{rhp}</td> */}
                         </tr>
                     </tbody>
                 </table>

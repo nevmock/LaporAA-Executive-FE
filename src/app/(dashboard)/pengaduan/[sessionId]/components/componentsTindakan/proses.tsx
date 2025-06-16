@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import OPDSelect from "./opdSelect"
 import { Tooltip } from "../../../components/Tooltip";
+import { RiSave3Fill } from "react-icons/ri";
 
 const MAX_PHOTOS = 5;
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -14,7 +15,7 @@ export default function Proses({
     data,
     onChange,
     onConfirmChange,
-    saveData
+    saveData,
 }: {
     data: Partial<TindakanClientState>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanClientState>>>;
@@ -145,13 +146,32 @@ export default function Proses({
         <div className="grid grid-cols-4 gap-2">
             {/* ✅ Kesimpulan */}
             <div className="col-span-4">
-                <h3 className="font-semibold text-gray-700 mb-2">Tindak Lanjut</h3>
+
+                <div className="grid grid-cols-4 items-center gap-2 mb-5">
+                    <div className="relative col-span-1">
+                        <label className="text-lg font-medium">
+                            Tingkat Kedaruratan
+                        </label>
+                    </div>
+                    <div className="col-span-3">
+                        {data.situasi || ""}
+                    </div>
+                </div>
+
+                <hr className="border-t border-gray-200 my-4" />
+
+                <h3 className="text-lg font-medium mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
                     <Tooltip text="Klik disini untuk langsung membuka laporan">
                         <button
                             onClick={() => window.open(`${data.url}`, "_blank")}
-                            className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                            className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                         >
+                            <img
+                                src="/Spanlapor-icon.png"
+                                alt="Icon"
+                                className="w-5 h-5 mr-2"
+                            />
                             Buka Laporan #{data.trackingId}
                         </button>
                     </Tooltip>
@@ -161,7 +181,7 @@ export default function Proses({
 
                     {/* Form OPD */}
                     <div className="grid grid-cols-4 items-start gap-2">
-                        <label className="col-span-1 font-medium text-gray-700 mt-2">Terdisposisi ke</label>
+                        <label className="col-span-1 font-medium mt-2">Terdisposisi ke</label>
                         <div className="col-span-3">
                             <OPDSelect value={data.opd || ""} onChange={(val) => onChange((prev) => ({ ...prev, opd: val }))} />
                         </div>
@@ -169,7 +189,7 @@ export default function Proses({
 
                     <div className="grid grid-cols-4 items-center gap-2">
                         <div className="col-span-1">
-                            <span className="font-medium text-gray-800">Status Laporan SP4N Lapor</span><br />
+                            <span className="font-medium">Status Laporan SP4N Lapor</span><br />
                         </div>
                         <div className="col-span-3">
                             <select
@@ -186,28 +206,47 @@ export default function Proses({
 
                     <div className="mt-2 flex justify-center">
                         <button
-                            onClick={() => {
-                                setIsSaving(true);
-                                saveData?.().finally(() => setIsSaving(false));
-                            }}
-                            disabled={isSaving}
-                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-                                }`}
-                        >
-                            {isSaving ? (
-                                <div className="flex items-center justify-center gap-2">
-                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                    </svg>
-                                    <span>Sedang menyimpan...</span>
-                                </div>
-                            ) : (
-                                "Simpan Perubahan"
-                            )}
-                        </button>
+    onClick={() => {
+        setIsSaving(true);
+        saveData?.().finally(() => setIsSaving(false));
+    }}
+    disabled={isSaving}
+    className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
+        isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+    }`}
+>
+    {isSaving ? (
+        <div className="flex items-center justify-center gap-2">
+            <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+            >
+                <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                ></circle>
+                <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+            </svg>
+            <span>Sedang menyimpan...</span>
+        </div>
+    ) : (
+        <>
+            <RiSave3Fill size={16} />
+            <span>Simpan Perubahan</span>
+        </>
+    )}
+</button>
                     </div>
-
 
                     {/* Tindak Lanjut List */}
                     <ul className="relative border-l-2 border-yellow-300 pl-6">
