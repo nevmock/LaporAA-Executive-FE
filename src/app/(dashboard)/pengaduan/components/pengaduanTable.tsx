@@ -16,6 +16,7 @@ import {
     FaBuilding,
     FaClock
 } from "react-icons/fa";
+import { IoTrashBin } from "react-icons/io5";
 import { Search } from "lucide-react";
 import { IoIosRefresh } from "react-icons/io";
 import { Chat, SortKey } from "../../../../lib/types";
@@ -75,6 +76,8 @@ export default function PengaduanTable() {
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [role, setRole] = useState<string | null>(null);
 
     const statusColors: Record<string, string> = {
         "Perlu Verifikasi": "#FF3131",
@@ -175,6 +178,21 @@ export default function PengaduanTable() {
         );
     };
 
+    // Toggle satu ID (jika checkbox diklik)
+    const toggleSingleSelect = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (allSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredData.map(chat => chat.sessionId));
+        }
+    };
+
     /* ----------------- Toggle Mode ------------------ */
     const toggleMode = async (tindakanId: string, prioritas: boolean) => {
         try {
@@ -224,7 +242,38 @@ export default function PengaduanTable() {
         });
     }, [data, sorts]);
 
+    // Toggle semua ID (checkbox di header)
+    const allSelected =
+        filteredData.length > 0 &&
+        selectedIds.length === filteredData.length;
+
+    const handleDeleteSelected = async () => {
+        const confirm = window.confirm("Yakin ingin menghapus laporan yang dipilih?");
+        if (!confirm) return;
+
+        try {
+            await axios.delete(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
+                data: { sessionIds: selectedIds }, // <- sesuai backend kamu
+            });
+
+            setSelectedIds([]);      // Reset selection
+            await getReports();      // Refresh data
+            await getSummary();      // Refresh summary/statistik
+        } catch (err) {
+            console.error("❌ Gagal menghapus:", err);
+            alert("Terjadi kesalahan saat menghapus laporan.");
+        }
+    };
+
     /* ---------------- Lifecycle --------------------- */
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const storedRole = localStorage.getItem("role");
+            setRole(storedRole);
+        }
+    }, []);
+
     useEffect(() => {
         getSummary();
     }, []);
@@ -249,7 +298,7 @@ export default function PengaduanTable() {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 640);
+            setIsMobile(window.innerWidth < 1200);
         };
 
         handleResize(); // inisialisasi
@@ -279,6 +328,7 @@ export default function PengaduanTable() {
                 </div>
 
                 {/* ----------- Tabs & Controls ----------- */}
+                {/* ----------- Tabs & Controls ----------- */}
                 <div className="mb-3 mt-5 z-[400] grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
                     {/* Kiri: Filter Status */}
                     <div className="md:col-span-2 lg:col-span-3 flex flex-col space-y-2">
@@ -292,8 +342,20 @@ export default function PengaduanTable() {
                                 }}
                             >
                                 <div className="relative w-full max-w-xs">
-                                    <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-xs bg-white text-left shadow-sm">
-                                        {selectedStatus}
+                                    <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-xs bg-white text-left shadow-sm flex items-center gap-2">
+                                        {selectedStatus !== "Semua" && (
+                                            <span
+                                                className="w-2.5 h-2.5 rounded-full inline-block"
+                                                style={{ backgroundColor: statusColors[selectedStatus] }}
+                                            />
+                                        )}
+                                        <span className="truncate">
+                                            {selectedStatus} (
+                                            {selectedStatus === "Semua"
+                                                ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                                : statusCounts[selectedStatus] || 0}
+                                            )
+                                        </span>
                                     </Listbox.Button>
                                     <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
                                         {statusTabs.map((status) => {
@@ -343,7 +405,7 @@ export default function PengaduanTable() {
                                                 setPage(1);
                                             }}
                                             className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border 
-                ${selectedStatus === status
+                                ${selectedStatus === status
                                                     ? "border-pink-600 bg-pink-600 text-white"
                                                     : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                                                 }`}
@@ -446,7 +508,7 @@ export default function PengaduanTable() {
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
-                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white hover:bg-white/20 transition"
+                                        className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white hover:bg-white/20 transition cursor-pointer"
                                         onClick={() => toggleSort(key as SortKey)}
                                     >
                                         <div
@@ -475,7 +537,25 @@ export default function PengaduanTable() {
                                         </div>
                                     </th>
                                 ))}
+                                {/* Kolom checkbox (paling kanan) */}
+                                {role === "SuperAdmin" && (
+                                    <th className="sticky top-0 z-[300] px-4 py-2 bg-gray-800 text-white text-center">
+                                        {selectedIds.length > 0 ? (
+                                            <button
+                                                className="flex items-center gap-1 justify-center bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded transition"
+                                                onClick={handleDeleteSelected}
+                                                title="Hapus Terpilih"
+                                            >
+                                                <IoTrashBin className="w-4 h-4" />
+                                                ({selectedIds.length})
+                                            </button>
+                                        ) : (
+                                            <span>Hapus</span> // fallback teks jika tidak ada yang dipilih
+                                        )}
+                                    </th>
+                                )}
                             </tr>
+
                         </thead>
 
                         {/* Body */}
@@ -497,8 +577,7 @@ export default function PengaduanTable() {
                                             className={`border-b border-gray-300 ${rowClass}`}
                                         >
                                             {/* Prioritas switch / label */}
-                                            {localStorage.getItem("role") ===
-                                                "Bupati" ? (
+                                            {role === "Bupati" ? (
                                                 <td className="px-4 py-2">
                                                     <Switch
                                                         checked={isPrioritas}
@@ -662,6 +741,17 @@ export default function PengaduanTable() {
                                                 )}
                                             </td>
 
+                                            {/* Checkbox untuk SuperAdmin */}
+                                            {role === "SuperAdmin" && (
+                                                <td className="px-4 py-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(chat.sessionId)}
+                                                        onChange={() => toggleSingleSelect(chat.sessionId)}
+                                                    />
+                                                </td>
+                                            )}
+
                                         </tr>
                                     );
                                 })
@@ -686,17 +776,17 @@ export default function PengaduanTable() {
                     <button
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
-                        className="rounded bg-gray-200 px-3 py-1 text-gray-800 disabled:opacity-50"
+                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
                     >
                         ← Prev
                     </button>
-                    <span className="text-sm text-gray-600">
-                        Halaman {page} dari {totalPages}
+                    <span className="text-xs text-gray-600">
+                        {page} dari {totalPages}
                     </span>
                     <button
                         disabled={page === totalPages}
                         onClick={() => setPage(page + 1)}
-                        className="rounded bg-gray-200 px-3 py-1 text-gray-800 disabled:opacity-50"
+                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
                     >
                         Next →
                     </button>

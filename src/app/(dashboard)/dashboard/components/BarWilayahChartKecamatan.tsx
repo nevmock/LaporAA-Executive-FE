@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import axios from "../../../../utils/axiosInstance";
 import dayjs from "dayjs";
-import 'dayjs/locale/id';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -22,17 +21,19 @@ const months = [
 
 const now = dayjs();
 
-export default function HorizontalBarPerangkatDaerahChart() {
+export default function HorizontalBarWilayahChart() {
     const [filter, setFilter] = useState("monthly");
     const [year, setYear] = useState(now.year());
     const [month, setMonth] = useState(now.month() + 1);
     const [week, setWeek] = useState(1);
 
+    const [selectedKecamatan, setSelectedKecamatan] = useState("");
+
     const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
 
     const [categories, setCategories] = useState<string[]>([]);
     const [totals, setTotals] = useState<number[]>([]);
-    const [fullLabels, setFullLabels] = useState<string[]>([]);
+    const [allKecamatan, setAllKecamatan] = useState<string[]>([]);
 
     const getWeeksInMonth = (year: number, month: number) => {
         const firstDay = dayjs(`${year}-${month}-01`);
@@ -47,37 +48,51 @@ export default function HorizontalBarPerangkatDaerahChart() {
     };
 
     useEffect(() => {
-        let url = `${API_URL}/dashboard/perangkat-daerah-summary?mode=${filter}&year=${year}`;
+        let url = `${API_URL}/dashboard/wilayah-summary?mode=${filter}&year=${year}`;
         if (filter === "monthly" || filter === "weekly") url += `&month=${month}`;
         if (filter === "weekly") url += `&week=${week}`;
-
         axios.get(url)
             .then(res => {
                 const data = res.data ?? {};
-                const flat: { opd: string, value: number }[] = [];
+                const flat: { kec: string, value: number }[] = [];
+                const kecSet = new Set<string>();
+                const kecValueMap: Record<string, number> = {};
 
-                Object.entries(data).forEach(([opd, count]) => {
-                    flat.push({ opd, value: Number(count) });
+                Object.entries(data).forEach(([kab, kecs]) => {
+                    Object.entries(kecs as any).forEach(([kec, desas]) => {
+                        kecSet.add(kec);
+                        let total = 0;
+                        Object.values(desas as any).forEach((count) => {
+                            total += Number(count);
+                        });
+                        kecValueMap[kec] = (kecValueMap[kec] || 0) + total;
+                    });
                 });
 
-                flat.sort((a, b) => b.value - a.value);
-                setCategories(flat.map(f => f.opd));
-                setTotals(flat.map(f => f.value));
-                setFullLabels(flat.map(f => f.opd));
+                setAllKecamatan(Array.from(kecSet).sort());
+
+                let entries = Object.entries(kecValueMap);
+                if (selectedKecamatan) {
+                    entries = entries.filter(([kec]) => kec === selectedKecamatan);
+                }
+
+                entries.sort((a, b) => b[1] - a[1]);
+                setCategories(entries.map(([kec]) => kec));
+                setTotals(entries.map(([_, val]) => val));
             })
             .catch(() => {
                 setCategories([]);
                 setTotals([]);
-                setFullLabels([]);
+                setAllKecamatan([]);
             });
-    }, [filter, year, month, week]);
+    }, [filter, year, month, week, selectedKecamatan]);
 
     useEffect(() => {
         setWeek(1);
     }, [month, year, filter]);
 
     const handleDownloadCSV = () => {
-        let csv = "Perangkat Daerah,Total\n";
+        let csv = "Kecamatan,Total\n";
         categories.forEach((cat, i) => {
             csv += `"${cat}",${totals[i] ?? 0}\n`;
         });
@@ -85,19 +100,15 @@ export default function HorizontalBarPerangkatDaerahChart() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `perangkat-daerah-summary-${filter}-${year}${filter !== "yearly" ? `-${month}` : ""}${filter === "weekly" ? `-minggu${week}` : ""}.csv`;
+        a.download = `wilayah-summary-${filter}-${year}${filter !== "yearly" ? `-${month}` : ""}${filter === "weekly" ? `-minggu${week}` : ""}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
 
-    const isAllZero = totals.length === 0 || totals.every(v => v === 0);
+    const isAllZero = totals.length === 0 || totals.every((v) => v === 0);
 
     const chartOptions = {
-        chart: {
-            type: 'bar' as const,
-            height: 400,
-            toolbar: { show: false },
-        },
+        chart: { type: 'bar' as const, height: 400, toolbar: { show: false } },
         plotOptions: {
             bar: {
                 horizontal: true,
@@ -112,18 +123,15 @@ export default function HorizontalBarPerangkatDaerahChart() {
             labels: { style: { fontSize: '12px' } }
         },
         yaxis: {
-            title: { text: "Perangkat Daerah" },
+            title: { text: "Kecamatan" },
             labels: { style: { fontSize: '12px' } }
         },
-        colors: ['#6366f1'],
+        colors: ['#0ea5e9'],
         grid: { borderColor: '#eee' },
         tooltip: {
             enabled: true,
             y: {
-                formatter: (val: number, opts: any) => {
-                    const idx = opts.dataPointIndex;
-                    return `${fullLabels[idx] || ''}: ${val}`;
-                }
+                formatter: (val: number, opts: any) => `${categories[opts.dataPointIndex]}: ${val}`,
             }
         },
         responsive: [{ breakpoint: 480, options: { chart: { height: 300 } } }],
@@ -133,8 +141,8 @@ export default function HorizontalBarPerangkatDaerahChart() {
 
     return (
         <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-800">Penanganan Berdasarkan Perangkat Daerah</h4>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-2">
+                <h4 className="text-lg font-semibold text-gray-800">Lokasi Kejadian Berdasakan Kecamatan</h4>
                 <div className="flex flex-wrap gap-2 items-center justify-end">
                     <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
                         {FILTERS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -154,7 +162,21 @@ export default function HorizontalBarPerangkatDaerahChart() {
                             ))}
                         </select>
                     )}
-                    <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
+                    <select
+                    value={selectedKecamatan}
+                    onChange={e => setSelectedKecamatan(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                >
+                    <option value="">Semua Kecamatan</option>
+                    {allKecamatan.map(kec => (
+                        <option key={kec} value={kec}>{kec}</option>
+                    ))}
+                </select>
+                    <button
+                        onClick={handleDownloadCSV}
+                        className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600"
+                        type="button"
+                    >
                         Download CSV
                     </button>
                 </div>

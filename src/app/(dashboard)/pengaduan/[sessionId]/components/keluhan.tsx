@@ -343,7 +343,9 @@ export default function Keluhan({ sessionId }: { sessionId: string }) {
                             </button>
                         </div>
                     ) : (
-                        data.message
+                        <div className="whitespace-pre-wrap text-sm">
+                            {data.message}
+                        </div>
                     ),
                     action: (
                         <>

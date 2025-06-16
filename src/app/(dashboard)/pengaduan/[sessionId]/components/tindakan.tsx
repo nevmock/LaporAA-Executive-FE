@@ -9,6 +9,12 @@ import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../../../lib/types";
 import LoadingSpinner from "../../../../../components/LoadingSpinner"
 
+// Icons
+import { IoMdCloseCircle } from "react-icons/io";
+import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
+import { FaCheckDouble } from "react-icons/fa";
+import { RiSave3Fill } from "react-icons/ri";
+
 // Step Components
 import Verifikasi from "./componentsTindakan/verifikasi";
 import Verifikasi1 from "./componentsTindakan/verifikasi1";
@@ -180,7 +186,7 @@ export default function Tindakan({
     });
 
     const NEXT_STEP_LABELS = [
-        "Terima Laporan",
+        "Lanjut Verifikasi",
         "Konfirmasi Tindak Lanjut",
         "Tindak Lanjut OPD Terkait",
         "Selesai Penanganan",
@@ -326,23 +332,19 @@ export default function Tindakan({
                 <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-medium flex items-center gap-2">
                         Detail Keluhan
-                        {!["Ditolak", "Selesai Penanganan", "Selesai Pengaduan"].includes(STATUS_LIST[currentStepIndex]) && (
-                            <button
-                                onClick={() => setShowKeluhan((prev) => !prev)}
-                                className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
-                            >
-                                {showKeluhan ? "Sembunyikan Detail" : "Lihat Detail"}
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setShowKeluhan((prev) => !prev)}
+                            className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                        >
+                            {showKeluhan ? "Sembunyikan Detail" : "Lihat Detail"}
+                        </button>
                     </h2>
                 </div>
 
-                {(showKeluhan ||
-                    (["Perlu Verifikasi", "Verifikasi Kelengkapan Berkas"].includes(STATUS_LIST[currentStepIndex]) && !confirmedVerifikasi2)) && (
-                        <Keluhan sessionId={sessionId} />
-                    )}
+                {showKeluhan && (
+                    <Keluhan sessionId={sessionId} />
+                )}
             </div>
-
 
             {/* Step Form */}
             <div className="border-b pb-4">
@@ -380,9 +382,10 @@ export default function Tindakan({
                                         setRejectReason("");
                                         setShowRejectModal(true);
                                     }}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-md"
+                                    className="bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
                                 >
-                                    Tolak Pengaduan
+                                    <IoMdCloseCircle size={18} />
+                                    Tutup Pengaduan
                                 </button>
 
                                 {/* Modal Tolak Pengaduan */}
@@ -442,9 +445,10 @@ export default function Tindakan({
                         {currentStepIndex > 0 && (
                             <button
                                 onClick={handlePreviousStep}
-                                className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md"
+                                className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2"
 
                             >
+                                <GrLinkPrevious size={18} />
                                 Kembali
                             </button>
                         )}
@@ -461,7 +465,7 @@ export default function Tindakan({
                                     isSaving ||
                                     (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId)
                                 }
-                                className={`px-4 py-2 rounded-md text-white transition ${(
+                                className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 ${(
                                     (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId))
                                     ? "bg-gray-300 cursor-not-allowed"
                                     : "bg-emerald-500 hover:bg-emerald-600"
@@ -473,23 +477,34 @@ export default function Tindakan({
                                         <span>Sedang menyimpan...</span>
                                     </div>
                                 ) : (
-                                    "Simpan Perubahan"
+                                    <>
+                                        <RiSave3Fill size={18} />
+                                        <span>Simpan Perubahan</span>
+                                    </>
                                 )}
                             </button>
                         )}
 
                         {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
                         {currentStepIndex < NEXT_STEP_LABELS.length && (
+
                             <div className="relative group inline-block">
                                 <button
                                     onClick={() => handleNextStep()}
                                     disabled={isButtonDisabled}
-                                    className={`px-4 py-2 rounded-md text-white transition ${isButtonDisabled
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-indigo-500 hover:bg-indigo-600"
+                                    className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 ${isButtonDisabled
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-indigo-500 hover:bg-indigo-600"
                                         }`}
                                 >
-                                    {isLoading ? <LoadingSpinner /> : (NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan")}
+                                    {isLoading ? (
+                                        <LoadingSpinner />
+                                    ) : (
+                                        <>
+                                            {NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan"}
+                                            <GrLinkNext size={16} />
+                                        </>
+                                    )}
                                 </button>
 
                                 {isButtonDisabled && tooltipMessage && (
@@ -498,6 +513,7 @@ export default function Tindakan({
                                     </div>
                                 )}
                             </div>
+
                         )}
 
                         {/* Tombol Selesai (hanya di step pertama) */}
@@ -508,8 +524,9 @@ export default function Tindakan({
                                         setSelesaiReason("");
                                         setShowSelesaiModal(true);
                                     }}
-                                    className="bg-[rgb(96,165,250)] text-white px-4 py-2 rounded-md"
+                                    className="bg-[rgb(96,165,250)] text-white px-4 py-2 rounded-md flex items-center gap-2"
                                 >
+                                    <FaCheckDouble size={18} />
                                     Selesai Penanganan
                                 </button>
 

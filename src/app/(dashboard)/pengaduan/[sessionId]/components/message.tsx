@@ -37,6 +37,18 @@ export default function Message({ from }: { from: string }) {
         }, 100);
     };
 
+    function parseWhatsAppFormatting(text: string): string {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;") // biar aman dari XSS
+            .replace(/>/g, "&gt;")
+            .replace(/\*(.*?)\*/g, "<strong>$1</strong>") // *bold*
+            .replace(/_(.*?)_/g, "<em>$1</em>")           // _italic_
+            .replace(/~(.*?)~/g, "<s>$1</s>")             // ~strikethrough~
+            .replace(/```/g, "")                          // fallback kalau tidak ditutup
+            .replace(/`([^`]+)`/g, "<code>$1</code>");    // `inline code`
+    }
+
     const fetchMessages = async (initial = false) => {
         try {
             const skip = initial ? 0 : messages.length;
@@ -175,7 +187,7 @@ export default function Message({ from }: { from: string }) {
                             key={msg._id || `${msg.sessionId}-${msg.senderName}-${index}`}
                             className={`flex ${msg.senderName === "Bot" ? "justify-end" : "justify-start"}`}
                         >
-                            <div className={`max-w-xs md:max-w-sm p-3 rounded-lg text-white ${msg.senderName === "Bot" ? "bg-[#128C7E]" : "bg-[#25D366]"}`}>
+                            <div className={`max-w-xs md:max-w-sm p-3 rounded-lg ${msg.senderName === "Bot" ? "bg-[#128C7E] text-white" : "bg-white text-gray-800"}`}>
                                 {msg.type === "image" && msg.mediaUrl ? (
                                     <>
                                         {!imageLoaded && <div className="skeleton-loader w-full h-48 bg-gray-200 rounded-md mb-2"></div>} {/* Skeleton Loader */}
@@ -190,9 +202,12 @@ export default function Message({ from }: { from: string }) {
                                         />
                                     </>
                                 ) : (
-                                    <p>{msg.message}</p>
+                                    <div
+                                        className="whitespace-pre-wrap text-sm"
+                                        dangerouslySetInnerHTML={{ __html: parseWhatsAppFormatting(msg.message) }}
+                                    />
                                 )}
-                                <p className="text-xs text-gray-200 mt-1">{formatDate(msg.timestamp)}</p>
+                                <p className={`text-xs mt-1 ${msg.senderName === "Bot" ? "text-gray-300" : "text-gray-400"}`}>{formatDate(msg.timestamp)}</p>
                             </div>
                         </div>
                     ))
