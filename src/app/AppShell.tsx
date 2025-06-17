@@ -91,9 +91,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
                     <button
                         onClick={handleLogout}
-                        className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200"
+                        className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 flex items-center gap-1"
                     >
-                        <FiLogOut />
+                        Logout <FiLogOut size={14} />
                     </button>
                 </div>
 

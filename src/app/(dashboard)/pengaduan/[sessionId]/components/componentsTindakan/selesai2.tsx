@@ -18,6 +18,7 @@ export default function Selesai2({
 }: {
     data: Partial<TindakanData> & { sessionId: string };
 }) {
+
     const [reportDetail, setReportDetail] = useState<any | null>(null);
 
     useEffect(() => {
@@ -122,8 +123,11 @@ export default function Selesai2({
                         <ul className="list-disc list-inside">
                             {Array.isArray(data.kesimpulan) && data.kesimpulan.length > 0 ? (
                                 data.kesimpulan.map((item: any, idx: number) => (
-                                    <li key={idx}>{item.timestamp}
-                                    <br/>{item.text}</li>  // ✅ hanya tampilkan teks-nya
+                                    <li key={idx}>
+                                        {dayjs(item.timestamp).tz("Asia/Jakarta").format("DD MMMM YYYY HH:mm") + " WIB"}
+                                        <br />
+                                        {item.text}
+                                    </li>
                                 ))
                             ) : (
                                 <li>- Tidak ada kesimpulan -</li>
@@ -134,7 +138,9 @@ export default function Selesai2({
                         <span className="font-semibold font-medium">Tanggal Tindakan:</span><br />
                         <span>
                             {data.updatedAt
-                                ? dayjs(data.updatedAt).tz("Asia/Jakarta").format("DD MMMM YYYY HH:mm:ss")
+                                ? dayjs(data.updatedAt)
+                                    .tz("Asia/Jakarta")
+                                    .format("DD MMMM YYYY HH:mm") + " WIB"
                                 : "-"}
                         </span>
                     </div>

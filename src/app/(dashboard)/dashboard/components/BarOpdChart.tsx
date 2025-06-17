@@ -132,23 +132,26 @@ export default function HorizontalBarPerangkatDaerahChart() {
     const chartSeries = [{ name: 'Total Laporan', data: totals }];
 
     return (
-        <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-800">Penanganan Berdasarkan Perangkat Daerah</h4>
-                <div className="flex flex-wrap gap-2 items-center justify-end">
-                    <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
+        <div className="w-full h-full flex flex-col">
+            {/* Header */}
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <h4 className="text-lg font-semibold text-gray-800">
+                    Penanganan Berdasarkan Perangkat Daerah
+                </h4>
+                <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
+                    <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
                         {FILTERS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
-                    <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                    <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                     {(filter === "monthly" || filter === "weekly") && (
-                        <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                        <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                         </select>
                     )}
                     {filter === "weekly" && (
-                        <select value={week} onChange={e => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                        <select value={week} onChange={e => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
                                 <option key={w} value={w}>Minggu ke-{w}</option>
                             ))}
@@ -159,13 +162,23 @@ export default function HorizontalBarPerangkatDaerahChart() {
                     </button>
                 </div>
             </div>
+
             {isAllZero ? (
-                <div className="flex items-center justify-center h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
+                <div className="flex items-center justify-center flex-1 min-h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
                     Tidak ada data
                 </div>
             ) : (
-                <Chart options={chartOptions} series={chartSeries} type="bar" width="100%" height={800} />
+                <div className="flex-1 w-full h-full">
+                    <Chart
+                        options={chartOptions}
+                        series={chartSeries}
+                        type="bar"
+                        width="100%"
+                        height="100%"
+                    />
+                </div>
             )}
         </div>
     );
+
 }
