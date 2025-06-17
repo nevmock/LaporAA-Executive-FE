@@ -300,6 +300,7 @@ export default function PengaduanTable() {
         getReports(selectedStatus, 1, limit, search);
     }, [sorts]);
 
+
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 1200);
