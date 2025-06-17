@@ -59,7 +59,7 @@ export default function Tindakan({
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [showModal, setShowModal] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-    const [showKeluhan, setShowKeluhan] = useState(false);
+    const [showKeluhan, setShowKeluhan] = useState(true);
     const [notif, setNotif] = useState<string | null>(null);
     const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
     const [showLaporModal, setShowLaporModal] = useState(false);
