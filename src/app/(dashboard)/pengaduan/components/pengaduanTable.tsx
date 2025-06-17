@@ -72,7 +72,7 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(100);
+    const [limit, setLimit] = useState(3);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -106,19 +106,18 @@ export default function PengaduanTable() {
         statusParam = selectedStatus,
         pageParam = page,
         limitParam = limit,
-        searchParam = search // <- search ini dari useState
+        searchParam = search
     ) => {
         try {
-            const res = await axios.get(
-                `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`,
-                {
-                    params: {
-                        page: pageParam,
-                        limit: limitParam,
-                        status: statusParam !== "Semua" ? statusParam : undefined,
-                        search: searchParam?.trim() || undefined
-                    }
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
+                params: {
+                    page: pageParam,
+                    limit: limitParam,
+                    status: statusParam !== "Semua" ? statusParam : undefined,
+                    search: searchParam?.trim() || undefined,
+                    sorts: JSON.stringify(sorts) // Kirim array [{ key: "prioritas", order: "asc" }]
                 }
+            }
             );
 
             const responseData = Array.isArray(res.data?.data)
@@ -295,6 +294,12 @@ export default function PengaduanTable() {
     useEffect(() => {
         getReports(selectedStatus, page, limit, search);
     }, [page, limit]);
+
+    useEffect(() => {
+        setPage(1); // reset ke halaman 1 saat sort berubah
+        getReports(selectedStatus, 1, limit, search);
+    }, [sorts]);
+
 
     useEffect(() => {
         const handleResize = () => {
