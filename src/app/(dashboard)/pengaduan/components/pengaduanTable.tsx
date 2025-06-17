@@ -55,29 +55,29 @@ const statusOrder = [
 /* ======================================================== */
 
 export default function PengaduanTable() {
-  /* -------------------- State -------------------- */
-  const [data, setData] = useState<Chat[]>([]);
-  const [search, setSearch] = useState('');
-  const [sorts, setSorts] = useState<{ key: SortKey; order: 'asc' | 'desc' }[]>(
-    [
-      { key: 'prioritas', order: 'desc' },
-      { key: 'date', order: 'desc' },
-    ]
-  );
-  const [selectedLoc, setSelectedLoc] = useState<{
-    lat: number;
-    lon: number;
-    desa: string;
-  } | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedStatus, setSelectedStatus] = useState<string>('Semua');
-  const [limit, setLimit] = useState(100);
-  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-  const [photoModal, setPhotoModal] = useState<string[] | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [role, setRole] = useState<string | null>(null);
+    /* -------------------- State -------------------- */
+    const [data, setData] = useState<Chat[]>([]);
+    const [search, setSearch] = useState("");
+    const [sorts, setSorts] = useState<
+        { key: SortKey; order: "asc" | "desc" }[]
+    >([
+        { key: "prioritas", order: "desc" },
+        { key: "date", order: "desc" }
+    ]);
+    const [selectedLoc, setSelectedLoc] = useState<{
+        lat: number;
+        lon: number;
+        desa: string;
+    } | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
+    const [limit, setLimit] = useState(100);
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+    const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [role, setRole] = useState<string | null>(null);
 
   const statusColors: Record<string, string> = {
     'Perlu Verifikasi': '#FF3131',
@@ -583,35 +583,42 @@ export default function PengaduanTable() {
                     ? 'bg-yellow-100'
                     : '';
 
-                  return (
-                    <tr
-                      key={chat.sessionId}
-                      className={`border-b border-gray-300 ${rowClass}`}
-                    >
-                      {/* Prioritas switch / label */}
-                      {role === 'Bupati' ? (
-                        <td className="px-4 py-2">
-                          <Switch
-                            checked={isPrioritas}
-                            onChange={(e) =>
-                              toggleMode(chat.tindakan?.report!, e)
-                            }
-                            className={`${
-                              isPrioritas ? 'bg-green-500' : 'bg-gray-300'
-                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                                isPrioritas ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                            />
-                          </Switch>
-                        </td>
-                      ) : (
-                        <td className="px-4 py-2">
-                          {chat.tindakan?.prioritas || '-'}
-                        </td>
-                      )}
+                                    return (
+                                        <tr
+                                            key={chat.sessionId}
+                                            className={`border-b border-gray-300 ${rowClass}`}
+                                        >
+                                            {/* Prioritas switch / label */}
+                                            {(role === "Bupati" || role === "SuperAdmin") ? (
+                                                <td className="px-4 py-2">
+                                                    <Switch
+                                                        checked={isPrioritas}
+                                                        onChange={e =>
+                                                            toggleMode(
+                                                                chat.tindakan
+                                                                    ?.report!,
+                                                                e
+                                                            )
+                                                        }
+                                                        className={`${isPrioritas
+                                                            ? "bg-green-500"
+                                                            : "bg-gray-300"
+                                                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                    >
+                                                        <span
+                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas
+                                                                ? "translate-x-6"
+                                                                : "translate-x-1"
+                                                                }`}
+                                                        />
+                                                    </Switch>
+                                                </td>
+                                            ) : (
+                                                <td className="px-4 py-2">
+                                                    {chat.tindakan?.prioritas ||
+                                                        "-"}
+                                                </td>
+                                            )}
 
                       {/* No. Pengaduan + tooltip */}
                       <td className="px-4 py-2">

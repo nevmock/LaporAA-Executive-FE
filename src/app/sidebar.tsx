@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
             </div>
 
             {/* Logout */}
-            <div className="mb-6 px-3">
+            {/* <div className="mb-6 px-3">
                 <div
                     className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-800 transition"
                     onClick={handleLogout}
@@ -119,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                         </>
                     )}
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };
