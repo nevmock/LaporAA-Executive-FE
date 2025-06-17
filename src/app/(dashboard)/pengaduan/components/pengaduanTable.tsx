@@ -300,10 +300,10 @@ export default function PengaduanTable() {
         );
         if (!confirm) return;
 
-        try {
-            await axios.delete(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
-                data: { sessionIds: selectedIds }, // <- sesuai backend kamu
-            });
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
+        data: { sessionIds: selectedIds }, // <- sesuai backend kamu
+      });
 
             setSelectedIds([]); // Reset selection
             await getReports(); // Refresh data
@@ -314,7 +314,7 @@ export default function PengaduanTable() {
         }
     };
 
-    /* ---------------- Lifecycle --------------------- */
+  /* ---------------- Lifecycle --------------------- */
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -323,37 +323,37 @@ export default function PengaduanTable() {
         }
     }, []);
 
-    useEffect(() => {
-        getSummary();
-    }, []);
+  useEffect(() => {
+    getSummary();
+  }, []);
 
-    useEffect(() => {
-        setPage(1);
-        getReports(selectedStatus, 1, limit, search);
-    }, [selectedStatus]);
+  useEffect(() => {
+    setPage(1);
+    getReports(selectedStatus, 1, limit, search);
+  }, [selectedStatus]);
 
-    useEffect(() => {
-        const delayDebounce = setTimeout(() => {
-            setPage(1);
-            getReports(selectedStatus, 1, limit, search);
-        }, 400); // debounce 400ms
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setPage(1);
+      getReports(selectedStatus, 1, limit, search);
+    }, 400); // debounce 400ms
 
-        return () => clearTimeout(delayDebounce);
-    }, [search]);
+    return () => clearTimeout(delayDebounce);
+  }, [search]);
 
-    useEffect(() => {
-        getReports(selectedStatus, page, limit, search);
-    }, [page, limit]);
+  useEffect(() => {
+    getReports(selectedStatus, page, limit, search);
+  }, [page, limit]);
 
     useEffect(() => {
         setPage(1); // reset ke halaman 1 saat sort berubah
         getReports(selectedStatus, 1, limit, search);
     }, [sorts]);
 
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 1200);
-        };
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1200);
+    };
 
         handleResize(); // inisialisasi
         window.addEventListener('resize', handleResize);
@@ -845,28 +845,28 @@ export default function PengaduanTable() {
                 </div>
             </div>
 
-            {/* ------------- Pagination --------------- */}
-            <div className="sticky bottom-0 z-40 border-t border-gray-200 bg-white py-3 px-4">
-                <div className="flex items-center justify-center gap-2">
-                    <button
-                        disabled={page === 1}
-                        onClick={() => setPage(page - 1)}
-                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
-                    >
-                        ← Prev
-                    </button>
-                    <span className="text-xs text-gray-600">
-                        {page} dari {totalPages}
-                    </span>
-                    <button
-                        disabled={page === totalPages}
-                        onClick={() => setPage(page + 1)}
-                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
-                    >
-                        Next →
-                    </button>
-                </div>
-            </div>
+      {/* ------------- Pagination --------------- */}
+      <div className="sticky bottom-0 z-40 border-t border-gray-200 bg-white py-3 px-4">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
+          >
+            ← Prev
+          </button>
+          <span className="text-xs text-gray-600">
+            {page} dari {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
 
             {/* ------------- Map Modal --------------- */}
             {selectedLoc && (
