@@ -314,236 +314,223 @@ export default function PengaduanTable() {
     /* =================== RENDER ===================== */
     return (
         <div className="flex h-screen flex-col">
+
             {/* ------------ Header & Search ------------- */}
             <div className="z-[400] sticky top-0 z-50 m-3">
-                <h2 className="z-[400] mb-2 text-2xl font-bold text-gray-900">
-                    Daftar Pengaduan
-                </h2>
-                <div className="relative w-full z-[400]">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="w-4 h-4 text-gray-400" />
+                <h2 className="mb-2 text-2xl font-bold text-gray-900">Daftar Pengaduan</h2>
+
+                {/* === Desktop: Search + View === */}
+                <div className="mb-3 mt-5 hidden md:flex md:items-center md:justify-between gap-4">
+                    {/* Search */}
+                    <div className="flex-1 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari No. ID, Nama, OPD, atau Lokasi..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none hover:ring-2 hover:ring-blue-200"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Cari No. ID, Nama, OPD, atau Lokasi..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+
+                    {/* View label + dropdown */}
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">View</p>
+                        <Listbox value={limit} onChange={(val) => {
+                            setLimit(val);
+                            setPage(1);
+                        }}>
+                            <div className="relative w-[250px] z-[400]">
+                                <Listbox.Button className="w-full h-10 border rounded-md px-3 py-2 text-sm bg-white text-left shadow-md flex items-center justify-between text-gray-700 focus:outline-none hover:ring-2 hover:ring-blue-200">
+                                    <span>Tampilkan {limit}</span>
+                                </Listbox.Button>
+                                <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[999] max-h-60 overflow-auto">
+                                    {[100, 200, 300, 500].map((val) => (
+                                        <Listbox.Option key={val} value={val} as={Fragment}>
+                                            {({ active }) => (
+                                                <li className={`px-3 py-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""} text-gray-700`}>
+                                                    Tampilkan {val}
+                                                </li>
+                                            )}
+                                        </Listbox.Option>
+                                    ))}
+                                </Listbox.Options>
+                            </div>
+                        </Listbox>
+                    </div>
                 </div>
 
-                {/* ----------- Tabs & Controls ----------- */}
-                {/* ----------- Tabs & Controls ----------- */}
-                <div className="mb-3 mt-5 z-[400] grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
-                    {/* Kiri: Filter Status */}
-                    <div className="md:col-span-2 lg:col-span-3 flex flex-col space-y-2">
-                        <p className="text-sm font-semibold text-gray-700">Filter Status Laporan</p>
-                        {isMobile ? (
-                            <Listbox
-                                value={selectedStatus}
-                                onChange={(val) => {
-                                    setSelectedStatus(val);
-                                    setPage(1);
-                                }}
-                            >
-                                <div className="relative w-full max-w-xs">
-                                    <Listbox.Button className="w-full border rounded px-3 py-2 z-[400] text-xs bg-white text-left shadow-sm flex items-center gap-2">
-                                        {selectedStatus !== "Semua" && (
-                                            <span
-                                                className="w-2.5 h-2.5 rounded-full inline-block"
-                                                style={{ backgroundColor: statusColors[selectedStatus] }}
-                                            />
-                                        )}
-                                        <span className="truncate">
-                                            {selectedStatus} (
-                                            {selectedStatus === "Semua"
-                                                ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                                : statusCounts[selectedStatus] || 0}
-                                            )
-                                        </span>
-                                    </Listbox.Button>
-                                    <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[400] max-h-60 overflow-auto">
-                                        {statusTabs.map((status) => {
-                                            const labelCount =
-                                                status === "Semua"
-                                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                                    : statusCounts[status] || 0;
-                                            const color = statusColors[status];
-                                            return (
-                                                <Listbox.Option key={status} value={status} as={Fragment}>
-                                                    {({ active }) => (
-                                                        <li
-                                                            className={`px-3 py-2 flex items-center gap-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""
-                                                                }`}
-                                                        >
-                                                            {status !== "Semua" && (
-                                                                <span
-                                                                    className="w-2.5 h-2.5 rounded-full inline-block"
-                                                                    style={{ backgroundColor: color }}
-                                                                />
-                                                            )}
-                                                            <span>
-                                                                {status} ({labelCount})
-                                                            </span>
-                                                        </li>
-                                                    )}
-                                                </Listbox.Option>
-                                            );
-                                        })}
-                                    </Listbox.Options>
-                                </div>
-                            </Listbox>
-                        ) : (
-                            <div className="flex flex-wrap gap-2">
-                                {statusTabs.map((status) => {
-                                    const labelCount =
-                                        status === "Semua"
-                                            ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
-                                            : statusCounts[status] || 0;
-                                    const color = statusColors[status];
-
-                                    return (
-                                        <button
-                                            key={status}
-                                            onClick={() => {
-                                                setSelectedStatus(status);
-                                                setPage(1);
-                                            }}
-                                            className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border 
-                                ${selectedStatus === status
-                                                    ? "border-pink-600 bg-pink-600 text-white"
-                                                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                                }`}
-                                        >
-                                            {status !== "Semua" && (
-                                                <span
-                                                    className="w-3 h-3 rounded-full inline-block"
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                            )}
-                                            <span>
-                                                {status} ({labelCount})
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                {/* === Mobile: Search + Filter Status Dropdown + View === */}
+                <div className="md:hidden flex flex-col gap-3 z-[400] mb-4">
+                    {/* Search */}
+                    <div className="relative w-full">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari No. ID, Nama, OPD, atau Lokasi..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-10 pr-3 py-2 rounded-md border text-sm text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </div>
 
-                    {/* Kanan: Jumlah yang Ditampilkan */}
-                    <div className="md:col-span-1 lg:col-span-1 flex flex-col space-y-2 w-full max-w-xs md:w-full">
-                        <p className="text-sm font-semibold text-gray-700">Jumlah yang Ditampilkan</p>
-                        <select
-                            value={limit}
-                            onChange={(e) => {
-                                setLimit(Number(e.target.value));
-                                setPage(1);
-                            }}
-                            className="w-full border rounded px-3 py-2 text-xs bg-white text-gray-700 shadow-sm"
-                        >
-                            {[100, 200, 300, 500].map((l) => (
-                                <option key={l} value={l}>
-                                    Tampilkan {l}
-                                </option>
-                            ))}
-                        </select>
+                    {/* Filter Status (Dropdown) */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-1 ml-1">Filter Status Laporan</p>
+                        <Listbox value={selectedStatus} onChange={(val) => {
+                            setSelectedStatus(val);
+                            setPage(1);
+                        }}>
+                            <div className="relative w-full z-[400]">
+                                <Listbox.Button className="w-full border rounded px-3 py-2 text-xs bg-white text-left shadow-sm flex items-center gap-2 text-gray-700">
+                                    {selectedStatus !== 'Semua' && (
+                                        <span
+                                            className="w-2.5 h-2.5 rounded-full inline-block"
+                                            style={{ backgroundColor: statusColors[selectedStatus] }}
+                                        />
+                                    )}
+                                    <span className="truncate">
+                                        {selectedStatus} (
+                                        {selectedStatus === 'Semua'
+                                            ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                            : statusCounts[selectedStatus] || 0}
+                                        )
+                                    </span>
+                                </Listbox.Button>
+                                <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[999] max-h-60 overflow-auto">
+                                    {statusTabs.map((status) => {
+                                        const labelCount = status === 'Semua'
+                                            ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                            : statusCounts[status] || 0;
+                                        const color = statusColors[status];
+                                        return (
+                                            <Listbox.Option key={status} value={status} as={Fragment}>
+                                                {({ active }) => (
+                                                    <li className={`px-3 py-2 flex items-center gap-2 text-xs cursor-pointer ${active ? 'bg-gray-100' : ''} text-gray-700`}>
+                                                        {status !== 'Semua' && (
+                                                            <span
+                                                                className="w-2.5 h-2.5 rounded-full inline-block"
+                                                                style={{ backgroundColor: color }}
+                                                            />
+                                                        )}
+                                                        <span>
+                                                            {status} ({labelCount})
+                                                        </span>
+                                                    </li>
+                                                )}
+                                            </Listbox.Option>
+                                        );
+                                    })}
+                                </Listbox.Options>
+                            </div>
+                        </Listbox>
+                    </div>
+
+                    {/* View Dropdown */}
+                    <Listbox value={limit} onChange={(val) => {
+                        setLimit(val);
+                        setPage(1);
+                    }}>
+                        <div className="flex flex-col gap-1 w-full relative z-[400]">
+                            <p className="text-sm font-semibold text-gray-700">View</p>
+                            <Listbox.Button className="w-full border rounded px-3 py-2 text-xs bg-white text-left shadow-sm flex items-center justify-between text-gray-700">
+                                <span>Tampilkan {limit}</span>
+                                <span className="text-gray-500">▼</span>
+                            </Listbox.Button>
+                            <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[999] max-h-60 overflow-auto">
+                                {[100, 200, 300, 500].map((val) => (
+                                    <Listbox.Option key={val} value={val} as={Fragment}>
+                                        {({ active }) => (
+                                            <li className={`px-3 py-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""} text-gray-700`}>
+                                                Tampilkan {val}
+                                            </li>
+                                        )}
+                                    </Listbox.Option>
+                                ))}
+                            </Listbox.Options>
+                        </div>
+                    </Listbox>
+                </div>
+
+                {/* === Filter Button Group (Desktop only) === */}
+                <div className="z-[400] mb-4 hidden md:block">
+                    <p className="text-sm font-semibold text-gray-700 mb-2 ml-1">Filter Status Laporan</p>
+                    <div className="flex flex-wrap gap-2">
+                        {statusTabs.map((status) => {
+                            const labelCount =
+                                status === 'Semua'
+                                    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+                                    : statusCounts[status] || 0;
+                            const color = statusColors[status];
+
+                            return (
+                                <button
+                                    key={status}
+                                    onClick={() => {
+                                        setSelectedStatus(status);
+                                        setPage(1);
+                                    }}
+                                    className={`flex items-center gap-2 rounded-full px-4 py-1 text-[12px] font-semibold border 
+              ${selectedStatus === status
+                                            ? 'border-pink-600 bg-pink-600 text-white'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                    {status !== 'Semua' && (
+                                        <span
+                                            className="w-3 h-3 rounded-full inline-block"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    )}
+                                    <span>
+                                        {status} ({labelCount})
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
             {/* ----------------- TABLE ------------------ */}
-            <div className="ml-3 mr-3 flex-1 overflow-y-auto rounded-t-lg">
-                <div className="w-full h-screen box-border rounded-lg border border-gray-400">
-                    <table className="min-w-full table-fixed text-left text-sm">
+            <div className="mx-3 flex-1 overflow-hidden rounded-t-lg border border-gray-300">
+                <div className="w-full max-h-[calc(100vh-260px)] overflow-auto rounded-lg">
+                    <table className="min-w-full table-fixed text-left text-sm border-collapse">
                         <thead className="sticky top-0 z-[300] bg-gray-800 text-white">
                             <tr>
                                 {[
-                                    {
-                                        key: "prioritas",
-                                        icon: <FaStar />,
-                                        label: "Prioritas"
-                                    },
-                                    {
-                                        key: "sessionId",
-                                        icon: <FaIdCard />,
-                                        label: "No. Id"
-                                    },
-                                    {
-                                        key: "date",
-                                        icon: <FaClock />,
-                                        label: "Tgl. Laporan"
-                                    },
-                                    {
-                                        key: "user",
-                                        icon: <FaUser />,
-                                        label: "Nama"
-                                    },
-                                    {
-                                        key: "from",
-                                        icon: <FaPhone />,
-                                        label: "No. Kontak"
-                                    },
-                                    {
-                                        key: "lokasi_kejadian",
-                                        icon: <FaMap />,
-                                        label: "Lokasi Kejadian"
-                                    },
-                                    {
-                                        key: "situasi",
-                                        icon: <FaExclamationCircle />,
-                                        label: "Situasi"
-                                    },
-                                    {
-                                        key: "status",
-                                        icon: <FaCheckCircle />,
-                                        label: "Status"
-                                    },
-                                    {
-                                        key: "opd",
-                                        icon: <FaBuilding />,
-                                        label: "OPD Terkait"
-                                    },
-                                    {
-                                        key: "timer",
-                                        icon: <FaClock />,
-                                        label: "Waktu Berjalan"
-                                    },
-                                    { key: "photo", icon: null, label: "Foto" } // 🔧 kolom foto
+                                    { key: 'prioritas', icon: <FaStar />, label: 'Prioritas' },
+                                    { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
+                                    { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
+                                    { key: 'user', icon: <FaUser />, label: 'Nama' },
+                                    { key: 'from', icon: <FaPhone />, label: 'No. Kontak' },
+                                    { key: 'lokasi_kejadian', icon: <FaMap />, label: 'Lokasi Kejadian' },
+                                    { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
+                                    { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
+                                    { key: 'opd', icon: <FaBuilding />, label: 'OPD Terkait' },
+                                    { key: 'timer', icon: <FaClock />, label: 'Waktu Berjalan' },
+                                    { key: 'photo', icon: null, label: 'Foto' },
                                 ].map(({ key, icon, label }) => (
                                     <th
                                         key={key}
                                         className="sticky top-0 z-[300] px-4 py-2 select-none bg-gray-800 text-white hover:bg-white/20 transition cursor-pointer"
                                         onClick={() => toggleSort(key as SortKey)}
                                     >
-                                        <div
-                                            className="flex items-center justify-between gap-2"
-
-                                        >
-                                            {/* Kiri: ICON */}
+                                        <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center justify-center w-6">{icon}</div>
-
-                                            {/* Tengah: LABEL */}
                                             <div className="flex flex-col items-center text-[12px] leading-tight text-center">
-                                                {label.split(" ").length === 1 ? (
-                                                    <span>{label}</span>
-                                                ) : (
-                                                    label.split(" ").map((word, i) => <span key={i}>{word}</span>)
-                                                )}
+                                                {label.split(' ').map((word, i) => <span key={i}>{word}</span>)}
                                             </div>
-
-                                            {/* Kanan: SORT TOGGLE */}
-                                            <button
-                                                // onClick={() => toggleSort(key as SortKey)}
-                                                className="text-sm rounded px-1 py-[2px]"
-                                            >
-                                                {renderSortArrow(key as SortKey) || ""}
+                                            <button className="text-sm rounded px-1 py-[2px]">
+                                                {renderSortArrow(key as SortKey) || ''}
                                             </button>
                                         </div>
                                     </th>
                                 ))}
-                                {/* Kolom checkbox (paling kanan) */}
-                                {role === "SuperAdmin" && (
+                                {role === 'SuperAdmin' && (
                                     <th className="sticky top-0 z-[300] px-4 py-2 bg-gray-800 text-white text-center">
                                         {selectedIds.length > 0 ? (
                                             <button
@@ -551,159 +538,91 @@ export default function PengaduanTable() {
                                                 onClick={handleDeleteSelected}
                                                 title="Hapus Terpilih"
                                             >
-                                                <IoTrashBin className="w-4 h-4" />
-                                                ({selectedIds.length})
+                                                <IoTrashBin className="w-4 h-4" />({selectedIds.length})
                                             </button>
                                         ) : (
-                                            <span>Hapus</span> // fallback teks jika tidak ada yang dipilih
+                                            <span>Hapus</span>
                                         )}
                                     </th>
                                 )}
                             </tr>
-
                         </thead>
 
-                        {/* Body */}
-                        <tbody className="bg-gray-100 text-center text-gray-900">
+                        <tbody className="bg-white text-center text-gray-900">
                             {filteredData.length > 0 ? (
-                                filteredData.map(chat => {
-                                    const isPrioritas =
-                                        chat.tindakan?.prioritas === "Ya";
+                                filteredData.map((chat) => {
+                                    const isPrioritas = chat.tindakan?.prioritas === 'Ya';
                                     const rowClass = isPrioritas
-                                        ? "bg-red-100"
-                                        : chat.tindakan?.status ===
-                                            "Perlu Verifikasi"
-                                            ? "bg-yellow-100"
-                                            : "";
+                                        ? 'bg-red-100'
+                                        : chat.tindakan?.status === 'Perlu Verifikasi'
+                                            ? 'bg-yellow-100'
+                                            : '';
 
                                     return (
-                                        <tr
-                                            key={chat.sessionId}
-                                            className={`border-b border-gray-300 ${rowClass}`}
-                                        >
-                                            {/* Prioritas switch / label */}
-                                            {(role === "Bupati" || role === "SuperAdmin") ? (
-                                                <td className="px-4 py-2">
+                                        <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
+                                            <td className="px-4 py-2">
+                                                {(role === "Bupati" || role === "SuperAdmin") ? (
                                                     <Switch
                                                         checked={isPrioritas}
-                                                        onChange={e =>
-                                                            toggleMode(
-                                                                chat.tindakan
-                                                                    ?.report!,
-                                                                e
-                                                            )
-                                                        }
-                                                        className={`${isPrioritas
-                                                            ? "bg-green-500"
-                                                            : "bg-gray-300"
-                                                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                        onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                        className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
                                                     >
-                                                        <span
-                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas
-                                                                ? "translate-x-6"
-                                                                : "translate-x-1"
-                                                                }`}
-                                                        />
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
                                                     </Switch>
-                                                </td>
-                                            ) : (
-                                                <td className="px-4 py-2">
-                                                    {chat.tindakan?.prioritas ||
-                                                        "-"}
-                                                </td>
-                                            )}
-
-                                            {/* No. Pengaduan + tooltip */}
+                                                ) : (
+                                                    chat.tindakan?.prioritas || '-'
+                                                )}
+                                            </td>
                                             <td className="px-4 py-2">
                                                 <Tooltip text="Klik di sini untuk melihat detail laporan">
-                                                    <Link
-                                                        href={`/pengaduan/${chat.sessionId}`}
-                                                        className="text-blue-600 hover:underline"
-                                                    >
+                                                    <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
                                                         {chat.sessionId}
                                                     </Link>
                                                 </Tooltip>
                                             </td>
-
-                                            {/* Tanggal */}
                                             <td className="px-4 py-2">
                                                 {chat.createdAt
-                                                    ? new Date(chat.createdAt).toLocaleString("id-ID", {
-                                                        day: "2-digit",
-                                                        month: "long",
-                                                        year: "numeric",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                        timeZone: "Asia/Jakarta",
-                                                        hour12: false
+                                                    ? new Date(chat.createdAt).toLocaleString('id-ID', {
+                                                        day: '2-digit',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        timeZone: 'Asia/Jakarta',
+                                                        hour12: false,
                                                     })
-                                                    : "-"}
+                                                    : '-'}
                                             </td>
-
-                                            {/* Nama */}
-                                            <td className="px-4 py-2">
-                                                {chat.user || "-"}
-                                            </td>
-
-                                            {/* No. kontak */}
-                                            <td className="px-4 py-2">
-                                                {chat.from || "-"}
-                                            </td>
-
-                                            {/* Lokasi kejadian + tooltip */}
+                                            <td className="px-4 py-2">{chat.user || '-'}</td>
+                                            <td className="px-4 py-2">{chat.from || '-'}</td>
                                             <td className="px-4 py-2">
                                                 {chat.location?.desa ? (
-                                                    <Tooltip text="Klik di sini untuk melihat detail lokasi">
+                                                    <Tooltip text="Klik untuk lihat detail lokasi">
                                                         <button
                                                             onClick={() =>
                                                                 setSelectedLoc({
-                                                                    lat: chat
-                                                                        .location
-                                                                        .latitude,
-                                                                    lon: chat
-                                                                        .location
-                                                                        .longitude,
-                                                                    desa: chat
-                                                                        .location
-                                                                        .desa
+                                                                    lat: chat.location.latitude,
+                                                                    lon: chat.location.longitude,
+                                                                    desa: chat.location.desa,
                                                                 })
                                                             }
                                                             className="text-blue-600 hover:underline"
                                                         >
-                                                            {
-                                                                chat.location
-                                                                    .desa
-                                                            }
-                                                            ,{" "}
-                                                            {
-                                                                chat.location
-                                                                    .kecamatan
-                                                            }
+                                                            {chat.location.desa}, {chat.location.kecamatan}
                                                         </button>
                                                     </Tooltip>
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                ) : '-'}
                                             </td>
-
-                                            {/* Situasi */}
+                                            <td className="px-4 py-2">{chat.tindakan?.situasi || '-'}</td>
                                             <td className="px-4 py-2">
-                                                {chat.tindakan?.situasi || "-"}
-                                            </td>
-
-                                            {/* Status */}
-                                            <td className="px-4 py-2 align-middle">
                                                 {chat.tindakan?.status ? (
                                                     <div className="flex items-center">
-                                                        {/* Kontainer lingkaran warna (fixed width) */}
                                                         <div className="w-6 flex justify-center">
                                                             <span
                                                                 className="w-2.5 h-2.5 rounded-full inline-block"
-                                                                style={{ backgroundColor: statusColors[chat.tindakan.status] || "gray" }}
+                                                                style={{ backgroundColor: statusColors[chat.tindakan.status] || 'gray' }}
                                                             />
                                                         </div>
-
-                                                        {/* Kontainer teks status */}
                                                         <div className="flex-1 text-sm text-gray-800 font-medium">
                                                             {chat.tindakan.status}
                                                         </div>
@@ -712,18 +631,8 @@ export default function PengaduanTable() {
                                                     <span className="text-sm text-gray-500">-</span>
                                                 )}
                                             </td>
-
-                                            {/* OPD */}
-                                            <td className="px-4 py-2">
-                                                {chat.tindakan?.opd || "-"}
-                                            </td>
-
-                                            {/* Timer */}
-                                            <td className="px-4 py-2">
-                                                {getElapsedTime(chat.createdAt)}
-                                            </td>
-
-                                            {/* Foto thumbnail */}
+                                            <td className="px-4 py-2">{chat.tindakan?.opd || '-'}</td>
+                                            <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
                                             <td className="px-2 py-2">
                                                 {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
                                                     <img
@@ -731,23 +640,14 @@ export default function PengaduanTable() {
                                                         alt="Foto pengaduan"
                                                         className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
                                                         onClick={() => {
-                                                            if (chat.photos.length > 1) {
-                                                                setPhotoModal(chat.photos);
-                                                            } else {
-                                                                window.open(
-                                                                    `${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`,
-                                                                    "_blank"
-                                                                );
-                                                            }
+                                                            chat.photos.length > 1
+                                                                ? setPhotoModal(chat.photos)
+                                                                : window.open(`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`, '_blank');
                                                         }}
                                                     />
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                ) : '-'}
                                             </td>
-
-                                            {/* Checkbox untuk SuperAdmin */}
-                                            {role === "SuperAdmin" && (
+                                            {role === 'SuperAdmin' && (
                                                 <td className="px-4 py-2">
                                                     <input
                                                         type="checkbox"
@@ -756,16 +656,12 @@ export default function PengaduanTable() {
                                                     />
                                                 </td>
                                             )}
-
                                         </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
-                                    <td
-                                        colSpan={12}
-                                        className="py-4 text-center text-gray-500"
-                                    >
+                                    <td colSpan={12} className="py-4 text-center text-gray-500">
                                         Tidak ada data ditemukan.
                                     </td>
                                 </tr>
@@ -781,7 +677,7 @@ export default function PengaduanTable() {
                     <button
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
-                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
+                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400 hover:bg-[#1d4fbb]"
                     >
                         ← Prev
                     </button>
@@ -791,7 +687,7 @@ export default function PengaduanTable() {
                     <button
                         disabled={page === totalPages}
                         onClick={() => setPage(page + 1)}
-                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
+                        className="rounded bg-[#2463eb] px-3 py-1 text-gray-200 text-xs disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400 hover:bg-[#1d4fbb]"
                     >
                         Next →
                     </button>
