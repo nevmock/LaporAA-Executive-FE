@@ -48,7 +48,7 @@ export default function Home() {
     </div>
 
       <div className="w-full min-h-screen overflow-y-auto bg-white p-6 space-y-6">
-        
+
         {/* Summary Table */}
         <div className="w-full">
           <SummaryTable statusCounts={statusCounts} />
