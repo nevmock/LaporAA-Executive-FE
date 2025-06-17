@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* Section + Section Header */}
+      {/* Section Header */}
     <div className="bg-white px-6 py-4 shadow">
       <h2 className="text-2xl font-bold text-gray-900">Dashboard Lapor AA</h2>
     </div>
