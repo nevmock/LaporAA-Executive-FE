@@ -140,23 +140,24 @@ export default function HorizontalBarWilayahChart() {
     const chartSeries = [{ name: 'Total Laporan', data: totals }];
 
     return (
-        <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-2">
+        <div className="w-full h-full flex flex-col">
+            {/* Header */}
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-800">Lokasi Kejadian Berdasakan Kecamatan</h4>
-                <div className="flex flex-wrap gap-2 items-center justify-end">
-                    <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
+                    <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
                         {FILTERS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
-                    <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                    <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                     {(filter === "monthly" || filter === "weekly") && (
-                        <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                        <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                         </select>
                     )}
                     {filter === "weekly" && (
-                        <select value={week} onChange={e => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                        <select value={week} onChange={e => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
                                 <option key={w} value={w}>Minggu ke-{w}</option>
                             ))}
@@ -165,7 +166,7 @@ export default function HorizontalBarWilayahChart() {
                     <select
                     value={selectedKecamatan}
                     onChange={e => setSelectedKecamatan(e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border rounded px-2 py-1 text-sm text-black"
                 >
                     <option value="">Semua Kecamatan</option>
                     {allKecamatan.map(kec => (

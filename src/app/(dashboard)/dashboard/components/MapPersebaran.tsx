@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import axios from "../../../../utils/axiosInstance";
+import { X, Maximize2 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -89,6 +90,7 @@ const iconByStatus: Record<string, L.Icon> = {
 
 export default function MapPersebaran() {
   const [reports, setReports] = useState<Report[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     axios
@@ -108,25 +110,30 @@ export default function MapPersebaran() {
   }, [reports]);
 
   return (
-    <div className="bg-white shadow-md rounded-xl p-6 w-full h-full">
+    <div className={isFullscreen ? "fixed inset-0 bg-white z-[9999] p-4" : "bg-white rounded-xl shadow-md p-6"}>
+      {/* Header */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-2">
         <h4 className="text-lg font-semibold text-gray-800">Peta Persebaran</h4>
-        <div className="flex flex-wrap gap-2 items-center justify-end"></div>
+        <button
+          onClick={() => setIsFullscreen(prev => !prev)}
+          className="text-gray-500 hover:text-gray-800 transition"
+        >
+          {isFullscreen ? <X size={22} /> : <Maximize2 size={18} />}
+        </button>
       </div>
 
-      <div className="flex flex-wrap items-center mb-4 justify-end"></div>
-
-      <div className="flex items-center justify-center h-[500px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
+      {/* Map Area */}
+      <div className={isFullscreen ? "h-[calc(100%-60px)]" : "h-[400px]"}>
         {reports.length > 0 ? (
           <MapContainer
+            key={isFullscreen ? "fullscreen" : "normal"} // 🔁 Trigger re-mount
             center={mapCenter}
             zoom={12}
             scrollWheelZoom={false}
-            style={{ height: '100%', width: '100%' }}
-            className="h-[400px]"
+            style={{ height: "100%", width: "100%" }}
           >
             {/* Legend */}
-            <div className="absolute bottom-2 text-gray-800 right-2 bg-white bg-opacity-50 rounded shadow p-3 text-[8px] z-[1000]">
+            <div className="absolute bottom-2 right-2 bg-white bg-opacity-50 rounded shadow p-3 text-[8px] z-[1000] text-gray-800">
               <ul className="space-y-1">
                 <li className="flex items-center gap-2">
                   <span className="w-3 h-3 inline-block rounded-full bg-[#FF3131]" /> Perlu Verifikasi
@@ -178,7 +185,9 @@ export default function MapPersebaran() {
             })}
           </MapContainer>
         ) : (
-          <span>Data laporan belum tersedia.</span>
+          <div className="flex justify-center items-center h-full text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
+            Data laporan belum tersedia.
+          </div>
         )}
       </div>
     </div>

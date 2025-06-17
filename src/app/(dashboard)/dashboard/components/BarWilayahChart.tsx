@@ -206,7 +206,7 @@ export default function HorizontalBarWilayahChart() {
                     <select
                         value={filter}
                         onChange={e => setFilter(e.target.value)}
-                        className="border rounded px-2 py-1 text-sm"
+                        className="border rounded px-2 py-1 text-sm text-black"
                     >
                         {FILTERS.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -215,7 +215,7 @@ export default function HorizontalBarWilayahChart() {
                     <select
                         value={year}
                         onChange={e => setYear(Number(e.target.value))}
-                        className="border rounded px-2 py-1 text-sm"
+                        className="border rounded px-2 py-1 text-sm text-black"
                     >
                         {years.map(y => (
                             <option key={y} value={y}>{y}</option>
@@ -225,7 +225,7 @@ export default function HorizontalBarWilayahChart() {
                         <select
                             value={month}
                             onChange={e => setMonth(Number(e.target.value))}
-                            className="border rounded px-2 py-1 text-sm"
+                            className="border rounded px-2 py-1 text-sm text-black"
                         >
                             {months.map((m, i) => (
                                 <option key={i + 1} value={i + 1}>{m}</option>
@@ -236,7 +236,7 @@ export default function HorizontalBarWilayahChart() {
                         <select
                             value={week}
                             onChange={e => setWeek(Number(e.target.value))}
-                            className="border rounded px-2 py-1 text-sm"
+                            className="border rounded px-2 py-1 text-sm text-black"
                         >
                             {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
                                 <option key={w} value={w}>Minggu ke-{w}</option>
