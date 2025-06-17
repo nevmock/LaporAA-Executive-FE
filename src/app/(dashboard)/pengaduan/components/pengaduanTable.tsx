@@ -72,7 +72,7 @@ export default function PengaduanTable() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
-    const [limit, setLimit] = useState(3);
+    const [limit, setLimit] = useState(100);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const [photoModal, setPhotoModal] = useState<string[] | null>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -582,7 +582,7 @@ export default function PengaduanTable() {
                                             className={`border-b border-gray-300 ${rowClass}`}
                                         >
                                             {/* Prioritas switch / label */}
-                                            {role === "Bupati" ? (
+                                            {(role === "Bupati" || role === "SuperAdmin") ? (
                                                 <td className="px-4 py-2">
                                                     <Switch
                                                         checked={isPrioritas}

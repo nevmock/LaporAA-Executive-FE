@@ -30,10 +30,10 @@ export default function SidebarHorizontal({ countPending, onLogout }: Props) {
                         </span>
                     )}
                 </Link>
-                <button onClick={onLogout} className="flex items-center gap-1">
+                {/* <button onClick={onLogout} className="flex items-center gap-1">
                     <FiLogOut />
                     
-                </button>
+                </button> */}
             </div>
         </div>
     );
