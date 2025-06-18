@@ -108,7 +108,20 @@ export default function HorizontalBarWilayahChart() {
     const isAllZero = totals.length === 0 || totals.every((v) => v === 0);
 
     const chartOptions = {
-        chart: { type: 'bar' as const, height: 400, toolbar: { show: false } },
+        chart: {
+            type: 'bar' as const,
+            height: 400,
+            toolbar: { show: false },
+            events: {
+                dataPointSelection: (event: any, chartContext: any, config: any) => {
+                    const clickedKecamatan = categories[config.dataPointIndex];
+                    if (clickedKecamatan) {
+                        sessionStorage.setItem('searchKecamatan', clickedKecamatan);
+                        window.location.href = '/pengaduan';
+                    }
+                }
+            }
+        },
         plotOptions: {
             bar: {
                 horizontal: true,
@@ -164,15 +177,15 @@ export default function HorizontalBarWilayahChart() {
                         </select>
                     )}
                     <select
-                    value={selectedKecamatan}
-                    onChange={e => setSelectedKecamatan(e.target.value)}
-                    className="border rounded px-2 py-1 text-sm text-black"
-                >
-                    <option value="">Semua Kecamatan</option>
-                    {allKecamatan.map(kec => (
-                        <option key={kec} value={kec}>{kec}</option>
-                    ))}
-                </select>
+                        value={selectedKecamatan}
+                        onChange={e => setSelectedKecamatan(e.target.value)}
+                        className="border rounded px-2 py-1 text-sm text-black"
+                    >
+                        <option value="">Semua Kecamatan</option>
+                        {allKecamatan.map(kec => (
+                            <option key={kec} value={kec}>{kec}</option>
+                        ))}
+                    </select>
                     <button
                         onClick={handleDownloadCSV}
                         className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600"

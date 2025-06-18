@@ -97,6 +97,15 @@ export default function HorizontalBarPerangkatDaerahChart() {
             type: 'bar' as const,
             height: 400,
             toolbar: { show: false },
+            events: {
+                dataPointSelection: (event: any, chartContext: any, config: any) => {
+                    const clickedOPD = categories[config.dataPointIndex];
+                    if (clickedOPD) {
+                        sessionStorage.setItem('searchOPD', clickedOPD);
+                        window.location.href = '/pengaduan';
+                    }
+                }
+            }
         },
         plotOptions: {
             bar: {

@@ -88,4 +88,26 @@ export interface Chat {
     rating?: number;
 }
 
+export interface Report {
+    _id: string;
+    sessionId: string;
+    message: string;
+    location: {
+        latitude: number;
+        longitude: number;
+        description: string;
+        desa?: string;
+        kecamatan?: string;
+        kabupaten?: string;
+    };
+    user?: {
+        name: string;
+    };
+    photos?: string[];
+    tindakan?: {
+        situasi?: string;
+        status?: string;
+    };
+}
+
 export type SortKey = "sessionId" | "user" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
