@@ -1,166 +1,165 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import axios from "../../../../utils/axiosInstance";
-import { X, Maximize2 } from "lucide-react";
+import axios from '../../../../utils/axiosInstance';
+import Legend from './legend';
+import iconByStatus from './icons';
+import { Report } from '../../../../lib/types';
+import dayjs from 'dayjs';
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-interface Report {
-  _id: string;
-  sessionId: string;
-  message: string;
-  location: {
-    latitude: number;
-    longitude: number;
-    description: string;
-    desa?: string;
-    kecamatan?: string;
-    kabupaten?: string;
-  };
-  user?: {
-    name: string;
-  };
-  photos?: string[];
-  tindakan?: {
-    situasi?: string;
-    status?: string;
-  };
-}
+const FILTERS = [
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Yearly', value: 'yearly' },
+];
 
-const iconByStatus: Record<string, L.Icon> = {
-  'Perlu Verifikasi': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Verifikasi Situasi': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Verifikasi Kelengkapan Berkas': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Proses OPD Terkait': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Selesai Penanganan': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Selesai Pengaduan': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-  'Ditolak': L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-  }),
-};
+const STATUS_OPTIONS = [
+  'Semua',
+  'Perlu Verifikasi',
+  'Verifikasi Situasi',
+  'Verifikasi Kelengkapan Berkas',
+  'Proses OPD Terkait',
+  'Selesai Penanganan',
+  'Selesai Pengaduan',
+  'Ditolak',
+];
 
-export default function MapPersebaran() {
+const months = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+const now = dayjs();
+
+export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?: boolean }) {
   const [reports, setReports] = useState<Report[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [filter, setFilter] = useState('monthly');
+  const [year, setYear] = useState(now.year());
+  const [month, setMonth] = useState(now.month() + 1);
+  const [week, setWeek] = useState(1);
+  const [selectedStatus, setSelectedStatus] = useState('Semua');
+  const [mapReady, setMapReady] = useState(false);
+
+  const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
+
+  const getWeeksInMonth = (year: number, month: number) => {
+    const firstDay = dayjs(`${year}-${month}-01`);
+    const lastDay = firstDay.endOf('month');
+    let week = 1;
+    let current = firstDay.startOf('week').add(1, 'day');
+    while (current.isBefore(lastDay)) {
+      week++;
+      current = current.add(1, 'week');
+    }
+    return week;
+  };
 
   useEffect(() => {
+    setMapReady(false);
+    let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
+    if (filter === 'monthly' || filter === 'weekly') url += `&month=${month}`;
+    if (filter === 'weekly') url += `&week=${week}`;
+    if (selectedStatus !== 'Semua') url += `&status=${encodeURIComponent(selectedStatus)}`;
+
     axios
-      .get(`${API_URL}/reports/map`)
-      .then((res) => setReports(res.data.data || []))
+      .get(url)
+      .then((res) => {
+        setReports(res.data.data || []);
+        setMapReady(true);
+      })
       .catch((err) => {
         console.error('❌ Gagal ambil data laporan:', err);
+        setMapReady(true);
       });
-  }, []);
+  }, [filter, year, month, week, selectedStatus]);
 
-  const mapCenter = useMemo<[number, number]>(() => {
-    const filtered = reports.filter((r) => r?.location?.latitude && r?.location?.longitude);
-    if (filtered.length === 0) return [0, 0];
-    const avgLat = filtered.reduce((sum, r) => sum + r.location.latitude, 0) / filtered.length;
-    const avgLon = filtered.reduce((sum, r) => sum + r.location.longitude, 0) / filtered.length;
-    return [avgLat, avgLon];
-  }, [reports]);
+  useEffect(() => {
+    setWeek(1);
+  }, [month, year, filter]);
+
+  const handleDownloadCSV = () => {
+    const summaryMap: Record<string, { total: number; status: string }> = {};
+
+    for (const r of reports) {
+      const status = r.tindakan?.status || 'Perlu Verifikasi';
+      const kel = r.location.desa || '-';
+      const kec = r.location.kecamatan || '-';
+      const kab = r.location.kabupaten || '-';
+      const key = `${kel},${kec},${kab},${status}`;
+
+      if (!summaryMap[key]) summaryMap[key] = { total: 0, status };
+      summaryMap[key].total++;
+    }
+
+    let csv = 'Kelurahan/Desa,Kecamatan,Kabupaten/Kota,Status,Total\n';
+    Object.entries(summaryMap).forEach(([key, { total, status }]) => {
+      const [kel, kec, kab] = key.split(',');
+      csv += `"${kel}","${kec}","${kab}","${status}",${total}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `persebaran-${filter}-${year}${filter !== 'yearly' ? `-${month}` : ''}${filter === 'weekly' ? `-minggu${week}` : ''}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const firstMarker = reports.find(r => typeof r?.location?.latitude === 'number' && typeof r?.location?.longitude === 'number');
+  const mapCenter: [number, number] = firstMarker
+    ? [firstMarker.location.latitude, firstMarker.location.longitude]
+    : [-2.5, 118];
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 bg-white z-[9999] p-4" : "bg-white rounded-xl shadow-md p-6"}>
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-2">
+    <div className="w-full h-full flex flex-col">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 md:flex-row md:items-center md:justify-between mb-4">
         <h4 className="text-lg font-semibold text-gray-800">Peta Persebaran</h4>
-        <button
-          onClick={() => setIsFullscreen(prev => !prev)}
-          className="text-gray-500 hover:text-gray-800 transition"
-        >
-          {isFullscreen ? <X size={22} /> : <Maximize2 size={18} />}
-        </button>
+        <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
+            {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+          </select>
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          {(filter === 'monthly' || filter === 'weekly') && (
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
+              {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+            </select>
+          )}
+          {filter === 'weekly' && (
+            <select value={week} onChange={(e) => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
+              {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
+                <option key={w} value={w}>Minggu ke-{w}</option>
+              ))}
+            </select>
+          )}
+          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
+            Download CSV
+          </button>
+        </div>
       </div>
 
-      {/* Map Area */}
-      <div className={isFullscreen ? "h-[calc(100%-60px)]" : "h-[400px]"}>
-        {reports.length > 0 ? (
+      {/* Map */}
+      <div className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}>
+        {mapReady ? (
           <MapContainer
-            key={isFullscreen ? "fullscreen" : "normal"} // 🔁 Trigger re-mount
+            key={isFullscreen ? 'fullscreen' : 'normal'}
             center={mapCenter}
-            zoom={12}
+            zoom={isFullscreen ? 11 : 10}
             scrollWheelZoom={false}
-            style={{ height: "100%", width: "100%" }}
+            style={{ height: '100%', width: '100%' }}
           >
-            {/* Legend */}
-            <div className="absolute bottom-2 right-2 bg-white bg-opacity-50 rounded shadow p-3 text-[8px] z-[1000] text-gray-800">
-              <ul className="space-y-1">
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-[#FF3131]" /> Perlu Verifikasi
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-[#5E17EB]" /> Verifikasi Situasi
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-[#FF9F12]" /> Verifikasi Kelengkapan Berkas
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-yellow-400" /> Proses OPD Terkait
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-blue-400" /> Selesai Penanganan
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-green-400" /> Selesai Pengaduan
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 inline-block rounded-full bg-black" /> Ditolak
-                </li>
-              </ul>
-            </div>
-
+            <Legend />
             <TileLayer
-              attribution='&copy; <a href="https://osm.org">OpenStreetMap</a> contributors'
+              attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
@@ -178,15 +177,36 @@ export default function MapPersebaran() {
                       <p><strong>Lokasi:</strong> {report.location.description}</p>
                       {report.user?.name && <p><strong>Pelapor:</strong> {report.user.name}</p>}
                       <p><strong>Status:</strong> {status}</p>
+                      <p>
+                        <a
+                          href={`/pengaduan/${report.sessionId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          Klik untuk melihat laporan
+                        </a>
+                      </p>
                     </div>
                   </Popup>
                 </Marker>
               );
             })}
+
+            {reports.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[999]">
+                <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
+                  Tidak ada laporan ditemukan untuk filter ini.
+                </div>
+              </div>
+            )}
           </MapContainer>
         ) : (
-          <div className="flex justify-center items-center h-full text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
-            Data laporan belum tersedia.
+          <div className="flex items-center justify-center h-full text-gray-600">
+            <div className="flex flex-col items-center gap-2 animate-pulse">
+              <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+              <span className="text-sm">Memuat peta...</span>
+            </div>
           </div>
         )}
       </div>
