@@ -1,15 +1,14 @@
-name: Build and Deploy
-
 on:
   push:
     branches:
       - 'main'
   pull_request:
     branches: 
-      - 'main'  # Trigger on all branches
+      - 'main'
 
 jobs:
   build:
+    if: github.repository == 'nevmock/LaporAA-Executive-FE'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -26,7 +25,7 @@ jobs:
       run: npm run build
 
   deploy:
-    if: github.ref == 'refs/heads/main'  # Only run on main
+    if: github.repository == 'nevmock/LaporAA-Executive-FE' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
