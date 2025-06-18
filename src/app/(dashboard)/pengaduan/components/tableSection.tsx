@@ -31,6 +31,7 @@ interface Props {
     toggleMode: (tindakanId: string, prioritas: boolean) => void;
     setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void;
     setPhotoModal: (photos: string[]) => void;
+    loading: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -70,6 +71,7 @@ const TableSection: React.FC<Props> = ({
     toggleMode,
     setSelectedLoc,
     setPhotoModal,
+    loading,
 }) => {
     const renderSortArrow = (key: SortKey) => {
         const found = sorts.find((s) => s.key === key);
@@ -82,7 +84,7 @@ const TableSection: React.FC<Props> = ({
     };
 
     return (
-        <div className="px-4 h-full flex flex-col overflow-hidden bg-white">
+        <div className="px-2 h-full flex flex-col overflow-hidden bg-white">
             {/* Scrollable div harus LANGSUNG membungkus table */}
             <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-300">
                 <table className="min-w-full table-fixed text-left text-sm border-collapse">
@@ -136,7 +138,16 @@ const TableSection: React.FC<Props> = ({
                     </thead>
 
                     <tbody className="bg-white text-center text-gray-900">
-                        {filteredData.length > 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={12} className="py-8 text-center">
+                                    <div className="flex justify-center items-center space-x-2">
+                                        <div className="w-5 h-5 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin" />
+                                        <span className="text-sm text-gray-600">Memuat data...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : filteredData.length > 0 ? (
                             filteredData.map((chat) => {
                                 const isPrioritas = chat.tindakan?.prioritas === 'Ya';
                                 const rowClass = isPrioritas

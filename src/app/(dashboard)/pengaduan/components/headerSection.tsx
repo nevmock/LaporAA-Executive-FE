@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 
@@ -13,6 +13,7 @@ interface Props {
     isMobile: boolean;
     limit: number;
     setLimit: (val: number) => void;
+    page: number;
     setPage: (val: number) => void;
 }
 
@@ -46,10 +47,62 @@ const HeaderSection: React.FC<Props> = ({
     isMobile,
     limit,
     setLimit,
+    page,
     setPage
 }) => {
+    // // Load dari localStorage saat mount
+    // useEffect(() => {
+    //     const username = localStorage.getItem("username");
+    //     if (!username) return;
+
+    //     const savedStatus = localStorage.getItem(`selectedStatus-${username}`);
+    //     if (savedStatus && statusTabs.includes(savedStatus)) {
+    //         setSelectedStatus(savedStatus);
+    //     }
+
+    //     const savedSearch = localStorage.getItem(`search-${username}`);
+    //     if (savedSearch) setSearch(savedSearch);
+
+    //     const savedLimit = localStorage.getItem(`limit-${username}`);
+    //     if (savedLimit && !isNaN(Number(savedLimit))) {
+    //         setLimit(Number(savedLimit));
+    //     }
+
+    //     const savedPage = localStorage.getItem(`page-${username}`);
+    //     if (savedPage && !isNaN(Number(savedPage))) {
+    //         setPage(Number(savedPage));
+    //     } else {
+    //         setPage(1); // default jika tidak ada
+    //     }
+    // }, []);
+
+    // // Simpan ke localStorage saat berubah
+    // useEffect(() => {
+    //     const username = localStorage.getItem("username");
+    //     if (!username) return;
+    //     localStorage.setItem(`selectedStatus-${username}`, selectedStatus);
+    // }, [selectedStatus]);
+
+    // useEffect(() => {
+    //     const username = localStorage.getItem("username");
+    //     if (!username) return;
+    //     localStorage.setItem(`search-${username}`, search);
+    // }, [search]);
+
+    // useEffect(() => {
+    //     const username = localStorage.getItem("username");
+    //     if (!username) return;
+    //     localStorage.setItem(`limit-${username}`, limit.toString());
+    // }, [limit]);
+
+    // useEffect(() => {
+    //     const username = localStorage.getItem("username");
+    //     if (!username) return;
+    //     localStorage.setItem(`page-${username}`, page.toString());
+    // }, [page]);
+
     return (
-        <div className="z-[400] bg-white pt-3">
+        <div className="z-[500] bg-white pt-3">
             <h2 className="mb-2 text-2xl font-bold text-gray-900 px-3">Daftar Pengaduan</h2>
 
             {/* Desktop Controls */}
@@ -69,19 +122,19 @@ const HeaderSection: React.FC<Props> = ({
                             />
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">View</p>
+                        <div className="flex items-center z-[500] gap-2">
+                            <p className="text-sm font-semibold z-[500] text-gray-700 whitespace-nowrap">View</p>
                             <Listbox value={limit} onChange={(val) => { setLimit(val); setPage(1); }}>
-                                <div className="relative w-[200px] z-[400]">
-                                    <Listbox.Button className="w-full h-10 border rounded-md px-3 py-2 text-sm bg-white text-left shadow-md flex items-center justify-between text-gray-700 focus:outline-none hover:ring-2 hover:ring-blue-200">
+                                <div className="relative w-[200px] z-[500]">
+                                    <Listbox.Button className="w-full h-10 border rounded-md px-3 py-2 z-[500] text-sm bg-white text-left shadow-md flex items-center justify-between text-gray-700 focus:outline-none hover:ring-2 hover:ring-blue-200">
                                         <span>Tampilkan {limit}</span>
                                         <span className="text-gray-500">▼</span>
                                     </Listbox.Button>
-                                    <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[999] max-h-60 overflow-auto">
+                                    <Listbox.Options className="absolute mt-1 w-full bg-white border rounded shadow-lg z-[500] max-h-60 overflow-auto">
                                         {[100, 200, 300, 500].map((val) => (
                                             <Listbox.Option key={val} value={val} as={Fragment}>
                                                 {({ active }) => (
-                                                    <li className={`px-3 py-2 text-xs cursor-pointer ${active ? "bg-gray-100" : ""} text-gray-700`}>
+                                                    <li className={`px-3 py-2 text-xs cursor-pointer z-[500] ${active ? "bg-gray-100" : ""} text-gray-700`}>
                                                         Tampilkan {val}
                                                     </li>
                                                 )}

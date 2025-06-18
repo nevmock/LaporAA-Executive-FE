@@ -11,7 +11,7 @@ interface Props {
 
 const Pagination: React.FC<Props> = ({ page, setPage, totalPages }) => {
     return (
-        <div className="z-40 bg-red-50">
+        <div className="z-40">
             <div className="flex items-center justify-center gap-2">
                 <button
                     disabled={page === 1}
