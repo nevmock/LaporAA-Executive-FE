@@ -1,0 +1,9 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 chore: update .env.example
+📅 2025-06-19_0244
+
+📂 Perubahan file:
+.env.example
+
+🚀 Siap di-push ke origin & backup
