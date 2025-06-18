@@ -1,0 +1,14 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 perbaikan_FE
+👤 optimus9021 <ismaianugrah@gmail.com>
+📅 Thu Jun 19 00:59:42 2025 +0700
+
+📂 Perubahan file:
+M	package.json
+M	src/app/(dashboard)/pengaduan/components/headerSection.tsx
+M	src/app/(dashboard)/pengaduan/components/laporan.tsx
+M	src/app/(dashboard)/pengaduan/components/pagination.tsx
+M	src/app/(dashboard)/pengaduan/components/tableSection.tsx
+
+🚀 Mendorong perubahan ke origin dan backup...
