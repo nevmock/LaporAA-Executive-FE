@@ -42,38 +42,42 @@ export default function Laporan() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const getReports = async (
-    statusParam = selectedStatus,
-    pageParam = page,
-    limitParam = limit,
-    searchParam = search
-  ) => {
-    try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
-        params: {
-          page: pageParam,
-          limit: limitParam,
-          status: statusParam !== "Semua" ? statusParam : undefined,
-          search: searchParam?.trim() || undefined,
-          sorts: JSON.stringify(sorts),
-        },
-      });
+  statusParam = selectedStatus,
+  pageParam = page,
+  limitParam = limit,
+  searchParam = search
+) => {
+  setLoading(true);
+  try {
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, {
+      params: {
+        page: pageParam,
+        limit: limitParam,
+        status: statusParam !== "Semua" ? statusParam : undefined,
+        search: searchParam?.trim() || undefined,
+        sorts: JSON.stringify(sorts),
+      },
+    });
 
-      const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
-      const processedData: Chat[] = responseData.map((item: any) => ({
-        ...item,
-        user: typeof item.user === "object" ? item.user.name : item.user,
-        address: typeof item.user === "object" ? item.user.address : item.address,
-      }));
+    const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
+    const processedData: Chat[] = responseData.map((item: any) => ({
+      ...item,
+      user: typeof item.user === "object" ? item.user.name : item.user,
+      address: typeof item.user === "object" ? item.user.address : item.address,
+    }));
 
-      setData(processedData);
-      setTotalPages(res.data.totalPages || 1);
-    } catch (err) {
-      console.error("❌ Fetch error:", err);
-      setData([]);
-    }
-  };
+    setData(processedData);
+    setTotalPages(res.data.totalPages || 1);
+  } catch (err) {
+    console.error("❌ Fetch error:", err);
+    setData([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getSummary = async () => {
     try {
@@ -232,10 +236,38 @@ export default function Laporan() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // // Load 'sorts' dari localStorage saat pertama mount
+  // useEffect(() => {
+  //   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
+  //   if (!username) return;
+
+  //   const savedSorts = localStorage.getItem(`sorts-${username}`);
+  //   if (savedSorts) {
+  //     try {
+  //       const parsed = JSON.parse(savedSorts);
+  //       const valid = Array.isArray(parsed) && parsed.every(
+  //         s => typeof s.key === "string" && (s.order === "asc" || s.order === "desc")
+  //       );
+  //       if (valid) {
+  //         setSorts(parsed);
+  //       }
+  //     } catch (e) {
+  //       console.error("❌ Gagal parse sorts dari localStorage:", e);
+  //     }
+  //   }
+  // }, []);
+
+  // // Simpan 'sorts' ke localStorage setiap kali berubah
+  // useEffect(() => {
+  //   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
+  //   if (!username) return;
+  //   localStorage.setItem(`sorts-${username}`, JSON.stringify(sorts));
+  // }, [sorts]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-[300] bg-white">
+      <div className="sticky top-0 z-[500] bg-white">
         <HeaderSection
           search={search}
           setSearch={setSearch}
@@ -245,6 +277,7 @@ export default function Laporan() {
           isMobile={isMobile}
           limit={limit}
           setLimit={setLimit}
+          page={page}
           setPage={setPage}
         />
       </div>
@@ -266,6 +299,7 @@ export default function Laporan() {
               toggleMode={toggleMode}
               setSelectedLoc={setSelectedLoc}
               setPhotoModal={setPhotoModal}
+              loading={loading}
             />
           </div>
           {/* Sticky Pagination inside scroll area */}
