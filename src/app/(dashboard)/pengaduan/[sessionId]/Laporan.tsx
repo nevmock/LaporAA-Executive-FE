@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
@@ -102,62 +103,62 @@ export default function ChatPage() {
 
   return (
     <div className="w-full h-screen flex bg-white">
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center px-6 py-4 border-b bg-gray-100 justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push("/pengaduan")}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-            </button>
-            <div>
-              <p className="font-semibold text-gray-800">{data?.user?.name}</p>
-              <p className="text-sm text-gray-500">+{data?.from}</p>
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center px-6 py-4 border-b bg-gray-100 justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push("/pengaduan")}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <div>
+                <p className="font-semibold text-gray-800">{data?.user?.name}</p>
+                <p className="text-sm text-gray-500">+{data?.from}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex border-b px-6 bg-white">
-          {["tindakan", "pesan"].map((tab) => (
-            <button
-              key={tab}
-              className={`py-2 px-4 font-medium flex items-center gap-2 transition
+          {/* Tabs */}
+          <div className="flex border-b px-6 bg-white">
+            {["tindakan", "pesan"].map((tab) => (
+              <button
+                key={tab}
+                className={`py-2 px-4 font-medium flex items-center gap-2 transition
         ${activeTab === tab
-                  ? tab === "pesan"
-                    ? "border-b-2 border-green-600 text-green-600 bg-green-50"
-                    : "border-b-2 border-gray-800 text-gray-800 bg-gray-100"
-                  : tab === "pesan"
-                    ? "text-green-600 bg-green-100 hover:bg-green-50"
-                    : "text-gray-500 bg-gray-50 hover:bg-gray-100"}
+                    ? tab === "pesan"
+                      ? "border-b-2 border-green-600 text-green-600 bg-green-50"
+                      : "border-b-2 border-gray-800 text-gray-800 bg-gray-100"
+                    : tab === "pesan"
+                      ? "text-green-600 bg-green-100 hover:bg-green-50"
+                      : "text-gray-500 bg-gray-50 hover:bg-gray-100"}
       `}
-              onClick={() => setActiveTab(tab as "pesan" | "tindakan")}
-            >
-              {tab === "pesan" && <FaWhatsapp className="text-lg" />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
+                onClick={() => setActiveTab(tab as "pesan" | "tindakan")}
+              >
+                {tab === "pesan" && <FaWhatsapp className="text-lg" />}
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          {activeTab === "pesan" ? (
-            modeReady ? (
-              <Message from={data?.from || ""} />
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === "pesan" ? (
+              modeReady ? (
+                <Message from={data?.from || ""} />
+              ) : (
+                <div className="p-6 text-center text-gray-500 text-sm">
+                  Menyiapkan mode manual...
+                </div>
+              )
             ) : (
-              <div className="p-6 text-center text-gray-500 text-sm">
-                Menyiapkan mode manual...
-              </div>
-            )
-          ) : (
-            <Tindakan tindakan={data?.tindakan || null} sessionId={sessionId} />
-          )}
+              <Tindakan tindakan={data?.tindakan || null} sessionId={sessionId} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
   );
 }

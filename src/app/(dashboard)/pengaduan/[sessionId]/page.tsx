@@ -1,12 +1,16 @@
-import type { Metadata } from 'next';
+// Hapus semuanya, cukup:
+import { Metadata } from 'next/dist/lib/metadata/types/metadata-interface';
 import Laporan from './Laporan';
 
-export async function generateMetadata({ params }: { params: { sessionId: string } }): Promise<Metadata> {
-    try {
-        const sessionId = params.sessionId;
-        const url = `${process.env.BASE_URL_SERVER}/user/public-reports/${sessionId}`;
-        const res = await fetch(url, { cache: 'no-store' });
+export async function generateMetadata(props: { params: { sessionId: string } }) {
+    const { params } = await Promise.resolve(props);
+    const sessionId = params.sessionId;
 
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/user/public-reports/${sessionId}`, {
+        cache: 'no-store',
+    });
+
+    try {
         if (!res.ok) throw new Error(`Status: ${res.status}`);
         const data = await res.json();
         const nama = data?.user?.name || 'Warga Kabupaten Bekasi';
