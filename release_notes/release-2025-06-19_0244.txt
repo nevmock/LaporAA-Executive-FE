@@ -6,4 +6,4 @@
 📂 Perubahan file:
 .env.example
 
-🚀 Siap di-push ke origin & backup
+🚀
