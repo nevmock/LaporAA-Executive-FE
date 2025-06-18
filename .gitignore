@@ -43,5 +43,5 @@ next-env.d.ts
 package-lock.json
 
 # custom script
-push_commit_release.sh
+push.sh
 node_modules
