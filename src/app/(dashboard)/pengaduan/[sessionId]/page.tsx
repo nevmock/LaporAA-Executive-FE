@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Laporan from './Laporan';
 
-export async function generateMetadata(
-    { params }: { params: { sessionId: string } }
-): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ sessionId: string }> }): Promise<Metadata> {
+    const params = await props.params;
     const sessionId = params.sessionId;
 
     try {
