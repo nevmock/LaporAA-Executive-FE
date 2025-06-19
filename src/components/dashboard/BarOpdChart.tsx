@@ -177,7 +177,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
     return (
         <div className="w-full h-full flex flex-col">
             {/* Header + Filter */}
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-800">
                     Penanganan Berdasarkan Perangkat Daerah
                 </h4>
@@ -208,7 +208,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
 
             {/* Chart atau Empty State */}
             {isAllZero ? (
-                <div className="flex items-center justify-center flex-1 h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
+                <div className="flex items-center justify-center h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
                     Tidak ada data
                 </div>
             ) : (

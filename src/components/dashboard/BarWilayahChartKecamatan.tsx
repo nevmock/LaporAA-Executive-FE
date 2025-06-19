@@ -272,7 +272,15 @@ export default function HorizontalBarWilayahChart() {
                     Tidak ada data
                 </div>
             ) : (
-                <Chart options={chartOptions} series={chartSeries} type="bar" width="100%" height={800} />
+                <div className="flex-1 w-full h-full">
+                    <Chart
+                        options={chartOptions}
+                        series={chartSeries}
+                        type="bar"
+                        width="100%"
+                        height={800}
+                    />
+                </div>
             )}
         </div>
     );
