@@ -25,6 +25,13 @@ const months = [
 
 const now = dayjs();
 
+<style jsx global>{`
+  .apexcharts-bar-series path, 
+  .apexcharts-bar-area {
+    cursor: pointer !important;
+  }
+`}</style>
+
 export default function HorizontalBarWilayahChart() {
     // State untuk filter dan waktu
     const [filter, setFilter] = useState('monthly');
@@ -192,6 +199,23 @@ export default function HorizontalBarWilayahChart() {
     const chartSeries = useMemo(() => [
         { name: 'Total Laporan', data: data.totals }
     ], [data]);
+
+    // Inject CSS secara dinamis jika ApexCharts sudah ada
+    useEffect(() => {
+        const style = document.createElement("style");
+        style.innerHTML = `
+      .apexcharts-bar-series .apexcharts-series path,
+      .apexcharts-bar-series .apexcharts-bar-area {
+        cursor: pointer !important;
+      }
+    `;
+        document.head.appendChild(style);
+
+        // Bersihkan style waktu unmount
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     return (
         <div className="w-full h-full flex flex-col">

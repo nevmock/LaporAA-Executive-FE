@@ -25,10 +25,11 @@ body {
 }
 
 .apexcharts-tooltip .apexcharts-tooltip-title {
-  color: #111 !important; /* warna teks bagian atas */
+  color: #111 !important;
+  /* warna teks bagian atas */
 }
 
 .apexcharts-tooltip-series-group .apexcharts-tooltip-text {
-  color: #0ea5e9 !important; /* warna tulisan 'Laporan Masuk' */
+  color: #0ea5e9 !important;
+  /* warna tulisan 'Laporan Masuk' */
 }
-

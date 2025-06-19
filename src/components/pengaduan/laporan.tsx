@@ -77,7 +77,6 @@ export default function Laporan() {
   const getSummary = async () => {
     try {
       const params: any = {};
-      if (selectedStatus && selectedStatus !== "Semua") params.status = selectedStatus;
       if (search && search.trim()) params.search = search.trim();
 
       const res = await axios.get(

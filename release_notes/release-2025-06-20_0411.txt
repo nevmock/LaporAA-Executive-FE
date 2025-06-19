@@ -1,0 +1,15 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/app/(dashboard)/dashboard/Home.tsx, src/app/globals.css, src/components/dashboard/BarOpdChart.tsx
+📅 2025-06-20_0411
+
+📂 Perubahan file:
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/globals.css
+src/components/dashboard/BarOpdChart.tsx
+src/components/dashboard/BarWilayahChartKecamatan.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/pengaduan/laporan.tsx
+
+🚀 Meluncur
