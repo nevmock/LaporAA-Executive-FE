@@ -1,0 +1,10 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/dashboard/BarOpdChart.tsx, src/components/dashboard/BarWilayahChartKecamatan.tsx
+📅 2025-06-20_0432
+
+📂 Perubahan file:
+src/components/dashboard/BarOpdChart.tsx
+src/components/dashboard/BarWilayahChartKecamatan.tsx
+
+🚀 Meluncur
