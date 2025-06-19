@@ -1,0 +1,58 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update next.config.ts, package.json, src/api/dailyRanking.json
+📅 2025-06-19_1941
+
+📂 Perubahan file:
+next.config.ts
+package.json
+src/api/dailyRanking.json
+src/api/dataPresentasiOpd.json
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/(dashboard)/dashboard/components/BarOpdChart.tsx
+src/app/(dashboard)/dashboard/components/BarWilayahChart.tsx
+src/app/(dashboard)/dashboard/components/BarWilayahChartKecamatan.tsx
+src/app/(dashboard)/dashboard/components/BarchartsOpd.tsx
+src/app/(dashboard)/dashboard/components/DistribusiCard.tsx
+src/app/(dashboard)/dashboard/components/EffectivenessCard.tsx
+src/app/(dashboard)/dashboard/components/EfisiensiCard.tsx
+src/app/(dashboard)/dashboard/components/FullScreen.tsx
+src/app/(dashboard)/dashboard/components/KepuasanCard.tsx
+src/app/(dashboard)/dashboard/components/LeaderBoardCard.tsx
+src/app/(dashboard)/dashboard/components/LineChart.tsx
+src/app/(dashboard)/dashboard/components/MapPersebaran.tsx
+src/app/(dashboard)/dashboard/components/SpedoChart.tsx
+src/app/(dashboard)/dashboard/components/SummaryPieChart.tsx
+src/app/(dashboard)/dashboard/components/SummaryTable.tsx
+src/app/(dashboard)/dashboard/components/icons.ts
+src/app/(dashboard)/dashboard/components/legend.tsx
+src/app/(dashboard)/pengaduan/Pengaduan.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/MapViews.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/ditolak.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/opdSelect.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/proses.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/selesai.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/selesai2.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/verifikasi.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/verifikasi1.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/componentsTindakan/verifikasi2.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/keluhan.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/message.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/profile.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/components/tindakan.tsx
+src/app/(dashboard)/pengaduan/components/MapModal.tsx
+src/app/(dashboard)/pengaduan/components/PhotoModal.tsx
+src/app/(dashboard)/pengaduan/components/Tooltip.tsx
+src/app/(dashboard)/pengaduan/components/headerSection.tsx
+src/app/(dashboard)/pengaduan/components/laporan.backup.tsx
+src/app/(dashboard)/pengaduan/components/laporan.tsx
+src/app/(dashboard)/pengaduan/components/mapPopup.tsx
+src/app/(dashboard)/pengaduan/components/pagination.tsx
+src/app/(dashboard)/pengaduan/components/tableSection.tsx
+src/app/AppShell.tsx
+src/app/sidebar.tsx
+src/app/sidebarHorizontal.tsx
+src/components/LoadingSpinner.tsx
+
+🚀 Meluncur

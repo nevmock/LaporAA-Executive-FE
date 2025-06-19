@@ -4,18 +4,15 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
 import axios from "../../../utils/axiosInstance";
 
-import SummaryTable from './components/SummaryTable';
-import SummaryPieChart from './components/SummaryPieChart';
-import LineChart from './components/LineChart';
-import BarWilayahChartKecamatan from './components/BarWilayahChartKecamatan';
-import BarOpdChart from './components/BarOpdChart';
-import FullScreen from "./components/FullScreen";
+const BarOpdChart = dynamic(() => import('../../../components/dashboard/BarOpdChart'), { ssr: false });
+const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/BarWilayahChartKecamatan'), { ssr: false });
+const FullScreen = dynamic(() => import('../../../components/dashboard/FullScreen'), { ssr: false });
+const LineChart = dynamic(() => import('../../../components/dashboard/LineChart'), { ssr: false });
+const MapPersebaran = dynamic(() => import('../../../components/dashboard/MapPersebaran'), { ssr: false });
+const SummaryPieChart = dynamic(() => import('../../../components/dashboard/SummaryPieChart'), { ssr: false });
+const SummaryTable = dynamic(() => import('../../../components/dashboard/SummaryTable'), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-
-const MapPersebaran = dynamic(() => import('./components/MapPersebaran'), {
-  ssr: false,
-});
 
 export default function Home() {
   const router = useRouter();

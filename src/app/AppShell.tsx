@@ -1,7 +1,7 @@
 "use client";
 
-import Sidebar from "./sidebar";
-import SidebarHorizontal from "./sidebarHorizontal";
+import Sidebar from "../components/sidebar";
+import SidebarHorizontal from "../components/sidebarHorizontal";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
@@ -14,19 +14,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [isMobile, setIsMobile] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
     const router = useRouter();
-
-    const getRoleDisplay = (role: string | null) => {
-        switch (role) {
-            case "SuperAdmin":
-                return { color: "bg-red-500", label: "SuperAdmin" };
-            case "Bupati":
-                return { color: "bg-blue-500", label: "Bupati" };
-            case "Admin":
-                return { color: "bg-green-500", label: "Admin" };
-            default:
-                return { color: "bg-gray-400", label: "Guest" };
-        }
-    };
 
     const [role, setRole] = useState<string | null>(null);
 
@@ -98,7 +85,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* CONTENT */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto bg-white">
                     {children}
                 </div>
             </main>
