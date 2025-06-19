@@ -8,14 +8,17 @@ import iconByStatus from './icons';
 import { Report } from '../../lib/types';
 import dayjs from 'dayjs';
 
+// Base URL dari API backend
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+// Opsi filter berdasarkan waktu
 const FILTERS = [
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
   { label: 'Yearly', value: 'yearly' },
 ];
 
+// Opsi status laporan yang bisa difilter
 const STATUS_OPTIONS = [
   'Semua',
   'Perlu Verifikasi',
@@ -27,6 +30,7 @@ const STATUS_OPTIONS = [
   'Ditutup',
 ];
 
+// Label nama bulan
 const months = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
@@ -34,6 +38,7 @@ const months = [
 
 const now = dayjs();
 
+// Komponen utama Peta Persebaran Laporan
 export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?: boolean }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [filter, setFilter] = useState('monthly');
@@ -43,8 +48,10 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [mapReady, setMapReady] = useState(false);
 
+  // Daftar 5 tahun terakhir
   const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
 
+  // Hitung jumlah minggu dalam satu bulan tertentu
   const getWeeksInMonth = (y: number, m: number) => {
     const first = dayjs(`${y}-${m}-01`);
     const end = first.endOf('month');
@@ -57,6 +64,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     return weekCount;
   };
 
+  // Ambil data laporan dari backend berdasarkan filter
   const fetchData = async () => {
     setMapReady(false);
     let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
@@ -73,14 +81,17 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     }
   };
 
+  // Trigger fetch data setiap kali filter berubah
   useEffect(() => {
     fetchData();
   }, [filter, year, month, week, selectedStatus]);
 
+  // Reset minggu ke-1 saat bulan/tahun/filter berubah
   useEffect(() => {
     setWeek(1);
   }, [month, year, filter]);
 
+  // Export data CSV agregat lokasi dan status
   const handleDownloadCSV = () => {
     const summary: Record<string, { total: number; status: string }> = {};
 
@@ -108,17 +119,19 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     URL.revokeObjectURL(url);
   };
 
+  // Tentukan pusat peta dari laporan pertama yang valid (berkoordinat)
   const firstValid = reports.find(r => r.location?.latitude && r.location?.longitude);
   const mapCenter: [number, number] = firstValid
     ? [firstValid.location.latitude, firstValid.location.longitude]
-    : [-2.5, 118];
+    : [-2.5, 118]; // Default: tengah Indonesia
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Filters */}
+      {/* Filter dan kontrol */}
       <div className="flex flex-wrap gap-2 md:flex-row md:items-center md:justify-between mb-4">
         <h4 className="text-lg font-semibold text-gray-800">Peta Persebaran</h4>
         <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
+          {/* Dropdown filter */}
           <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
             {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
           </select>
@@ -140,13 +153,14 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
           <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          {/* Tombol download CSV */}
           <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
             Download CSV
           </button>
         </div>
       </div>
 
-      {/* Map View */}
+      {/* Peta */}
       <div className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}>
         {mapReady ? (
           <MapContainer
@@ -161,6 +175,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {/* Marker per laporan */}
             {reports.map(r => {
               const lat = r.location.latitude;
               const lon = r.location.longitude;
@@ -188,6 +203,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
                 </Marker>
               );
             })}
+            {/* Tidak ada data */}
             {reports.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[999]">
                 <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
@@ -197,6 +213,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
             )}
           </MapContainer>
         ) : (
+          // Loading state
           <div className="flex items-center justify-center h-full text-gray-600">
             <div className="flex flex-col items-center gap-2 animate-pulse">
               <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />

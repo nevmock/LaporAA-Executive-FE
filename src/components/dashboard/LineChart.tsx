@@ -6,16 +6,20 @@ import { ApexOptions } from 'apexcharts';
 import axios from '../../utils/axiosInstance';
 import dayjs from 'dayjs';
 
+// Dynamic import untuk komponen Chart dari ApexCharts (agar tidak dirender di server)
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
+// Base URL dari backend
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+// Pilihan filter waktu
 const FILTERS = [
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
     { label: 'Yearly', value: 'yearly' },
 ];
 
+// Label bulan untuk ditampilkan di UI dan CSV
 const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -24,15 +28,20 @@ const months = [
 const now = dayjs();
 
 export default function LineChart() {
+    // State filter waktu
     const [filter, setFilter] = useState('monthly');
     const [year, setYear] = useState(now.year());
     const [month, setMonth] = useState(now.month() + 1);
     const [week, setWeek] = useState(1);
+
+    // Data chart
     const [categories, setCategories] = useState<string[]>([]);
     const [totals, setTotals] = useState<number[]>([]);
 
+    // Tahun berjalan + 4 tahun sebelumnya
     const years = useMemo(() => Array.from({ length: 5 }, (_, i) => now.year() - i), []);
 
+    // Menghitung jumlah minggu dalam bulan tertentu
     const getWeeksInMonth = (y: number, m: number) => {
         const start = dayjs(`${y}-${m}-01`);
         const end = start.endOf('month');
@@ -45,6 +54,7 @@ export default function LineChart() {
         return count;
     };
 
+    // Mapping data API ke kategori & total berdasarkan mode (weekly, monthly, yearly)
     const getChartDataByMode = (data: any[]) => {
         if (filter === 'weekly') {
             const first = dayjs(`${year}-${month}-01`);
@@ -67,10 +77,12 @@ export default function LineChart() {
         }
     };
 
+    // Reset minggu ke-1 setiap kali filter berubah
     useEffect(() => {
         setWeek(1);
     }, [filter, month, year]);
 
+    // Ambil data dari API berdasarkan filter waktu
     useEffect(() => {
         let url = `${API_URL}/dashboard/harian?mode=${filter}&year=${year}`;
         if (filter !== 'yearly') url += `&month=${month}`;
@@ -84,6 +96,7 @@ export default function LineChart() {
             });
     }, [filter, year, month, week]);
 
+    // Fungsi export data ke format CSV
     const handleDownloadCSV = () => {
         let csv = '';
         if (filter === 'weekly') {
@@ -113,8 +126,10 @@ export default function LineChart() {
         URL.revokeObjectURL(url);
     };
 
+    // Cek jika semua data bernilai nol
     const isAllZero = totals.length === 0 || totals.every(v => v === 0);
 
+    // Opsi konfigurasi chart Apex
     const chartOptions: ApexOptions = useMemo(() => ({
         chart: {
             type: 'line',
@@ -134,24 +149,30 @@ export default function LineChart() {
         legend: { show: false },
     }), [categories, filter]);
 
+    // Data series yang dikirim ke chart
     const chartSeries = useMemo(() => [{ name: 'Laporan Masuk', data: totals }], [totals]);
 
     return (
         <div className="w-full h-full flex flex-col">
+            {/* Header dan kontrol filter */}
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-800">Grafik Laporan Masuk</h4>
                 <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
+                    {/* Filter waktu */}
                     <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
                         {FILTERS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
+                    {/* Pilih tahun */}
                     <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
+                    {/* Pilih bulan */}
                     {(filter === 'monthly' || filter === 'weekly') && (
                         <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                         </select>
                     )}
+                    {/* Pilih minggu */}
                     {filter === 'weekly' && (
                         <select value={week} onChange={e => setWeek(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
                             {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
@@ -159,12 +180,14 @@ export default function LineChart() {
                             ))}
                         </select>
                     )}
+                    {/* Tombol download CSV */}
                     <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600" type="button">
                         Download CSV
                     </button>
                 </div>
             </div>
 
+            {/* Tampilan chart */}
             <div className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]">
                 {isAllZero ? (
                     <div className="flex items-center justify-center h-full text-gray-400 text-lg font-semibold border border-dashed rounded-xl">

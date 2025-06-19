@@ -4,6 +4,7 @@ import React, { Fragment } from "react";
 import { Search } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 
+// Props interface untuk mendefinisikan properti yang dibutuhkan komponen
 interface Props {
     search: string;
     setSearch: (val: string) => void;
@@ -17,6 +18,7 @@ interface Props {
     setPage: (val: number) => void;
 }
 
+// Warna untuk setiap status laporan
 const statusColors: Record<string, string> = {
     "Perlu Verifikasi": "#FF3131",
     "Verifikasi Situasi": "#5E17EB",
@@ -27,6 +29,7 @@ const statusColors: Record<string, string> = {
     "Ditutup": "black",
 };
 
+// Daftar tab status yang ditampilkan sebagai filter
 const statusTabs = [
     "Semua",
     "Perlu Verifikasi",
@@ -38,6 +41,7 @@ const statusTabs = [
     "Ditutup",
 ];
 
+// Komponen utama HeaderSection
 const HeaderSection: React.FC<Props> = ({
     search,
     setSearch,
@@ -54,11 +58,11 @@ const HeaderSection: React.FC<Props> = ({
         <div className="z-[500] bg-white pt-3">
             <h2 className="mb-2 text-2xl font-bold text-gray-900 px-3">Daftar Pengaduan</h2>
 
-            {/* Desktop Controls */}
+            {/* Kontrol untuk tampilan Desktop */}
             {!isMobile && (
                 <>
                     <div className="flex items-end justify-between gap-4 px-3 mb-4">
-                        {/* Search */}
+                        {/* Input pencarian */}
                         <div className="flex-1 relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Search className="w-4 h-4 text-gray-400" />
@@ -72,9 +76,9 @@ const HeaderSection: React.FC<Props> = ({
                             />
                         </div>
 
-                        {/* Limit View */}
+                        {/* Pilihan jumlah data per halaman */}
                         <div className="flex items-center z-[500] gap-2">
-                            <p className="text-sm font-semibold z-[500] text-gray-700 whitespace-nowrap">View</p>
+                            <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">View</p>
                             <Listbox value={limit} onChange={(val) => { setLimit(val); setPage(1); }}>
                                 <div className="relative w-[200px] z-[500]">
                                     <Listbox.Button className="w-full h-10 border rounded-md px-3 py-2 text-sm bg-white text-left shadow-md flex items-center justify-between text-gray-700 focus:outline-none hover:ring-2 hover:ring-blue-200">
@@ -97,7 +101,7 @@ const HeaderSection: React.FC<Props> = ({
                         </div>
                     </div>
 
-                    {/* Status Filter */}
+                    {/* Filter status laporan (desktop) */}
                     <div className="px-3 mb-4">
                         <p className="text-sm font-semibold text-gray-700 mb-2">Filter Status Laporan</p>
                         <div className="flex flex-wrap gap-2">
@@ -131,10 +135,10 @@ const HeaderSection: React.FC<Props> = ({
                 </>
             )}
 
-            {/* Mobile Controls */}
+            {/* Kontrol untuk tampilan Mobile */}
             {isMobile && (
                 <div className="flex flex-col gap-3 px-3 mb-4 z-[400]">
-                    {/* Search */}
+                    {/* Input pencarian */}
                     <div className="relative w-full">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="w-4 h-4 text-gray-400" />
@@ -148,7 +152,7 @@ const HeaderSection: React.FC<Props> = ({
                         />
                     </div>
 
-                    {/* Filter Status */}
+                    {/* Filter status laporan (mobile) */}
                     <div>
                         <p className="text-sm font-semibold text-gray-700 mb-1 ml-1">Filter Status Laporan</p>
                         <Listbox value={selectedStatus} onChange={(val) => { setSelectedStatus(val); setPage(1); }}>
@@ -191,7 +195,7 @@ const HeaderSection: React.FC<Props> = ({
                         </Listbox>
                     </div>
 
-                    {/* Limit View */}
+                    {/* Pilihan jumlah data per halaman */}
                     <div>
                         <p className="text-sm font-semibold text-gray-700 mb-1 ml-1">View</p>
                         <Listbox value={limit} onChange={(val) => { setLimit(val); setPage(1); }}>

@@ -11,23 +11,25 @@ import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
 import { Chat, SortKey } from "../../lib/types";
 
+// Props interface untuk komponen TableSection
 interface Props {
-    filteredData: Chat[];
-    sorts: { key: SortKey; order: "asc" | "desc" }[];
-    toggleSort: (key: SortKey) => void;
-    role: string | null;
-    selectedIds: string[];
-    toggleSingleSelect: (id: string) => void;
-    toggleSelectAll: () => void;
-    allSelected: boolean;
-    handleDeleteSelected: () => void;
-    toggleMode: (tindakanId: string, prioritas: boolean) => void;
-    setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void;
-    setPhotoModal: (photos: string[]) => void;
-    loading: boolean;
-    setSorts: (sorts: { key: SortKey; order: "asc" | "desc" }[]) => void;
+    filteredData: Chat[]; // Data yang sudah difilter dan siap ditampilkan
+    sorts: { key: SortKey; order: "asc" | "desc" }[]; // Sorting aktif
+    toggleSort: (key: SortKey) => void; // Fungsi untuk mengubah sorting
+    role: string | null; // Role user (misalnya 'SuperAdmin', 'Bupati')
+    selectedIds: string[]; // ID yang terpilih (untuk hapus batch)
+    toggleSingleSelect: (id: string) => void; // Toggle satu checkbox
+    toggleSelectAll: () => void; // Toggle semua checkbox
+    allSelected: boolean; // Status semua terpilih
+    handleDeleteSelected: () => void; // Fungsi untuk hapus data terpilih
+    toggleMode: (tindakanId: string, prioritas: boolean) => void; // Ubah status prioritas
+    setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void; // Pilih lokasi di peta
+    setPhotoModal: (photos: string[]) => void; // Tampilkan modal galeri foto
+    loading: boolean; // Status loading
+    setSorts: (sorts: { key: SortKey; order: "asc" | "desc" }[]) => void; // Setter sorting (tidak dipakai langsung)
 }
 
+// Warna status untuk ikon status
 const statusColors: Record<string, string> = {
     "Perlu Verifikasi": "#FF3131",
     "Verifikasi Situasi": "#5E17EB",
@@ -38,6 +40,7 @@ const statusColors: Record<string, string> = {
     "Ditutup": "black",
 };
 
+// Fungsi untuk menghitung waktu berlalu sejak laporan dibuat
 function getElapsedTime(createdAt?: string): string {
     if (!createdAt) return "-";
     const now = new Date();
@@ -58,6 +61,7 @@ const TableSection: React.FC<Props> = ({
     handleDeleteSelected, toggleMode, setSelectedLoc, setPhotoModal,
     loading,
 }) => {
+    // Menampilkan panah naik/turun jika kolom sedang di-sort
     const renderSortArrow = (key: SortKey) => {
         const found = sorts.find((s) => s.key === key);
         if (!found) return null;
@@ -72,8 +76,10 @@ const TableSection: React.FC<Props> = ({
         <div className="px-2 h-full flex flex-col overflow-hidden bg-white">
             <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-300">
                 <table className="min-w-full table-fixed text-left text-sm border-collapse">
+                    {/* -------- Tabel Header -------- */}
                     <thead className="sticky top-0 z-[300] bg-gray-800 text-white">
                         <tr>
+                            {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: 'Prioritas' },
                                 { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
@@ -101,6 +107,7 @@ const TableSection: React.FC<Props> = ({
                                     </div>
                                 </th>
                             ))}
+                            {/* Kolom hapus jika SuperAdmin */}
                             {role === 'SuperAdmin' && (
                                 <th className="sticky top-0 z-[300] px-4 py-2 bg-gray-800 text-white text-center">
                                     {selectedIds.length > 0 ? (
@@ -117,8 +124,10 @@ const TableSection: React.FC<Props> = ({
                         </tr>
                     </thead>
 
+                    {/* -------- Tabel Body -------- */}
                     <tbody className="bg-white text-center text-gray-900">
                         {loading ? (
+                            // Loading spinner
                             <tr>
                                 <td colSpan={12} className="py-8 text-center">
                                     <div className="flex justify-center items-center space-x-2">
@@ -128,6 +137,7 @@ const TableSection: React.FC<Props> = ({
                                 </td>
                             </tr>
                         ) : filteredData.length > 0 ? (
+                            // Render baris data
                             filteredData.map((chat) => {
                                 const isPrioritas = chat.tindakan?.prioritas === 'Ya';
                                 const rowClass = isPrioritas
@@ -138,6 +148,7 @@ const TableSection: React.FC<Props> = ({
 
                                 return (
                                     <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
+                                        {/* Kolom prioritas toggle */}
                                         <td className="px-4 py-2">
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
                                                 <Switch
@@ -149,6 +160,8 @@ const TableSection: React.FC<Props> = ({
                                                 </Switch>
                                             ) : chat.tindakan?.prioritas || '-'}
                                         </td>
+
+                                        {/* Link ke halaman detail */}
                                         <td className="px-4 py-2">
                                             <Tooltip text="Klik di sini untuk melihat detail laporan">
                                                 <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
@@ -156,6 +169,8 @@ const TableSection: React.FC<Props> = ({
                                                 </Link>
                                             </Tooltip>
                                         </td>
+
+                                        {/* Tanggal laporan */}
                                         <td className="px-4 py-2">
                                             {chat.createdAt
                                                 ? new Date(chat.createdAt).toLocaleString('id-ID', {
@@ -169,8 +184,11 @@ const TableSection: React.FC<Props> = ({
                                                 })
                                                 : '-'}
                                         </td>
+
                                         <td className="px-4 py-2">{chat.user || '-'}</td>
                                         <td className="px-4 py-2">{chat.from || '-'}</td>
+
+                                        {/* Lokasi kejadian */}
                                         <td className="px-4 py-2">
                                             {chat.location?.desa ? (
                                                 <Tooltip text="Klik untuk lihat detail lokasi">
@@ -187,6 +205,8 @@ const TableSection: React.FC<Props> = ({
                                                 </Tooltip>
                                             ) : "-"}
                                         </td>
+
+                                        {/* Situasi, Status, OPD */}
                                         <td className="px-4 py-2">{chat.tindakan?.situasi || '-'}</td>
                                         <td className="px-4 py-2">
                                             {chat.tindakan?.status ? (
@@ -201,7 +221,11 @@ const TableSection: React.FC<Props> = ({
                                             ) : <span className="text-sm text-gray-500">-</span>}
                                         </td>
                                         <td className="px-4 py-2">{chat.tindakan?.opd || '-'}</td>
+
+                                        {/* Timer */}
                                         <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
+
+                                        {/* Foto */}
                                         <td className="px-2 py-2">
                                             {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
                                                 <img
@@ -216,6 +240,8 @@ const TableSection: React.FC<Props> = ({
                                                 />
                                             ) : '-'}
                                         </td>
+
+                                        {/* Checkbox SuperAdmin */}
                                         {role === 'SuperAdmin' && (
                                             <td className="px-4 py-2">
                                                 <input
@@ -229,6 +255,7 @@ const TableSection: React.FC<Props> = ({
                                 );
                             })
                         ) : (
+                            // Data kosong
                             <tr>
                                 <td colSpan={12} className="py-4 text-center text-gray-500">
                                     Tidak ada data ditemukan.

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -8,14 +8,17 @@ import 'dayjs/locale/id';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
+// Base URL dari environment variable
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+// Opsi filter waktu
 const FILTERS = [
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
     { label: 'Yearly', value: 'yearly' },
 ];
 
+// Nama-nama bulan untuk dropdown
 const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -24,18 +27,29 @@ const months = [
 const now = dayjs();
 
 export default function HorizontalBarPerangkatDaerahChart() {
+    // State filter dan data chart
     const [filter, setFilter] = useState('monthly');
     const [year, setYear] = useState(now.year());
     const [month, setMonth] = useState(now.month() + 1);
     const [week, setWeek] = useState(1);
-    const [data, setData] = useState<{ categories: string[], totals: number[], fullLabels: string[] }>({
+
+    const [data, setData] = useState<{
+        categories: string[];
+        totals: number[];
+        fullLabels: string[];
+    }>({
         categories: [],
         totals: [],
         fullLabels: [],
     });
 
-    const years = useMemo(() => Array.from({ length: 5 }, (_, i) => now.year() - i), []);
+    // Tahun 5 terakhir untuk dropdown
+    const years = useMemo(() =>
+        Array.from({ length: 5 }, (_, i) => now.year() - i),
+        []
+    );
 
+    // Hitung jumlah minggu dalam bulan tertentu
     const getWeeksInMonth = (year: number, month: number) => {
         const first = dayjs(`${year}-${month}-01`);
         const end = first.endOf('month');
@@ -48,6 +62,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
         return count;
     };
 
+    // Fetch data dari API saat filter berubah
     useEffect(() => {
         let url = `${API_URL}/dashboard/perangkat-daerah-summary?mode=${filter}&year=${year}`;
         if (filter === 'monthly' || filter === 'weekly') url += `&month=${month}`;
@@ -71,10 +86,12 @@ export default function HorizontalBarPerangkatDaerahChart() {
             });
     }, [filter, year, month, week]);
 
+    // Reset week ke 1 saat filter bulan/tahun berubah
     useEffect(() => {
         setWeek(1);
     }, [month, year, filter]);
 
+    // Fungsi export ke CSV
     const handleDownloadCSV = () => {
         let csv = 'Perangkat Daerah,Total\n';
         data.categories.forEach((cat, i) => {
@@ -89,18 +106,22 @@ export default function HorizontalBarPerangkatDaerahChart() {
         URL.revokeObjectURL(url);
     };
 
+    // Cek jika semua data nol
     const isAllZero = data.totals.length === 0 || data.totals.every(v => v === 0);
 
+    // Konfigurasi chart Apex
     const chartOptions = useMemo(() => ({
         chart: {
             type: 'bar' as const,
             height: 400,
             toolbar: { show: false },
             events: {
+                // Saat OPD di-klik, redirect ke halaman pengaduan dan simpan ke sessionStorage
                 dataPointSelection: (_e: any, _ctx: any, config: any) => {
                     const clickedOPD = data.categories[config.dataPointIndex];
                     if (clickedOPD) {
-                        sessionStorage.setItem('searchOPD', clickedOPD);
+                        // Gunakan key unik untuk dashboard agar tidak konflik dengan halaman pengaduan
+                        sessionStorage.setItem('searchClicked', clickedOPD);
                         window.location.href = '/pengaduan';
                     }
                 }
@@ -131,13 +152,14 @@ export default function HorizontalBarPerangkatDaerahChart() {
         responsive: [{ breakpoint: 480, options: { chart: { height: "100%" } } }],
     }), [data]);
 
+    // Data series untuk chart
     const chartSeries = useMemo(() => [
         { name: 'Total Laporan', data: data.totals }
     ], [data]);
 
     return (
         <div className="w-full h-full flex flex-col">
-            {/* Header */}
+            {/* Header + Filter */}
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <h4 className="text-lg font-semibold text-gray-800">
                     Penanganan Berdasarkan Perangkat Daerah
@@ -167,6 +189,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
                 </div>
             </div>
 
+            {/* Chart atau Empty State */}
             {isAllZero ? (
                 <div className="flex items-center justify-center flex-1 h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
                     Tidak ada data

@@ -4,15 +4,17 @@ import React from "react";
 import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
 
 interface Props {
-    page: number;
-    setPage: (val: number) => void;
-    totalPages: number;
+    page: number;                      // Halaman saat ini
+    setPage: (val: number) => void;   // Setter untuk mengganti halaman
+    totalPages: number;               // Total jumlah halaman
 }
 
+// Komponen Pagination sederhana dengan tombol Prev/Next
 const Pagination: React.FC<Props> = ({ page, setPage, totalPages }) => {
     return (
         <div className="z-40">
             <div className="flex items-center justify-center gap-2">
+                {/* Tombol Previous */}
                 <button
                     disabled={page === 1}
                     onClick={() => setPage(page - 1)}
@@ -21,10 +23,12 @@ const Pagination: React.FC<Props> = ({ page, setPage, totalPages }) => {
                     <GrLinkPrevious size={12} /> Prev
                 </button>
 
+                {/* Indikator halaman */}
                 <span className="text-xs text-gray-600">
                     {page} dari {totalPages}
                 </span>
 
+                {/* Tombol Next */}
                 <button
                     disabled={page === totalPages}
                     onClick={() => setPage(page + 1)}

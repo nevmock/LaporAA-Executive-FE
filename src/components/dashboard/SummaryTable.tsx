@@ -3,9 +3,10 @@
 import React from "react";
 
 interface SummaryTableProps {
-    statusCounts: Record<string, number>;
+    statusCounts: Record<string, number>; // Jumlah laporan per status
 }
 
+// Urutan status yang digunakan untuk tampilan dan perhitungan
 const STATUS_ORDER = [
     "Perlu Verifikasi",
     "Verifikasi Situasi",
@@ -16,6 +17,7 @@ const STATUS_ORDER = [
     "Ditutup",
 ];
 
+// Warna bulatan indikator per status (digunakan di tabel dan mobile list)
 const STATUS_COLORS: Record<string, string> = {
     "Perlu Verifikasi": "#FF3131",
     "Verifikasi Situasi": "#5E17EB",
@@ -26,9 +28,12 @@ const STATUS_COLORS: Record<string, string> = {
     "Ditutup": "black",
 };
 
+// Komponen ringkasan statistik status laporan
 const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
+    // Hitung total laporan
     const totalAll = STATUS_ORDER.reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
 
+    // Hitung total laporan yang dianggap sudah ditindaklanjuti
     const totalFollowUp =
         (statusCounts["Verifikasi Situasi"] || 0) +
         (statusCounts["Verifikasi Kelengkapan Berkas"] || 0) +
@@ -36,6 +41,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         (statusCounts["Selesai Penanganan"] || 0) +
         (statusCounts["Selesai Pengaduan"] || 0);
 
+    // Hitung persentase (dibulatkan 1 angka desimal)
     const percentFollowUp = totalAll > 0 ? ((totalFollowUp / totalAll) * 100).toFixed(1) : "0";
     const percentSelesai = totalAll > 0 ? ((statusCounts["Selesai Pengaduan"] || 0) / totalAll * 100).toFixed(1) : "0";
     const percentDitutup = totalAll > 0 ? ((statusCounts["Ditutup"] || 0) / totalAll * 100).toFixed(1) : "0";
@@ -44,7 +50,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
         <div className="bg-white shadow-md text-gray-800 rounded-lg p-4 overflow-y-auto max-h-[500px]">
             <h3 className="text-lg font-bold mb-4">Ringkasan Status Pengaduan</h3>
 
-            {/* Desktop Table */}
+            {/* Tabel desktop (tampil di md dan atas) */}
             <div className="hidden md:block overflow-auto">
                 <table className="w-full text-xs text-center whitespace-nowrap border border-gray-300">
                     <thead>
@@ -52,6 +58,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                             {STATUS_ORDER.map((status) => (
                                 <th key={status} className="border px-3 py-2 max-w-[160px] whitespace-normal">
                                     <div className="flex items-center gap-2">
+                                        {/* Indikator warna */}
                                         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[status] }} />
                                         <div className="break-words leading-tight">{status}</div>
                                     </div>
@@ -89,7 +96,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                 </table>
             </div>
 
-            {/* Mobile Layout */}
+            {/* Tampilan mobile (hanya muncul di layar kecil) */}
             <div className="md:hidden flex flex-col gap-3">
                 {STATUS_ORDER.map((status, i) => {
                     const count = statusCounts[status] || 0;
@@ -103,6 +110,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ statusCounts }) => {
                     return (
                         <div key={i} className="flex justify-between items-center text-sm border-b py-2">
                             <div className="flex items-center gap-2">
+                                {/* Indikator warna */}
                                 <span
                                     className="w-3 h-3 rounded-full inline-block"
                                     style={{ backgroundColor: STATUS_COLORS[status] }}
