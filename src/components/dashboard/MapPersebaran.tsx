@@ -186,17 +186,27 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
                 <Marker key={r._id} position={[lat, lon]} icon={icon}>
                   <Popup>
                     <div>
-                      <p><strong>Pesan:</strong> {r.message}</p>
+                      <p>
+                        <strong>Pesan:</strong>{" "}
+                        {r.message && r.message.length > 100
+                          ? (
+                            <>
+                              {r.message.slice(0, 100) + " ...."}
+                            </>
+                          )
+                          : r.message
+                        }
+                      </p>
                       <p><strong>Lokasi:</strong> {r.location.description}</p>
                       {r.user?.name && <p><strong>Pelapor:</strong> {r.user.name}</p>}
                       <p><strong>Status:</strong> {status}</p>
                       <a
                         href={`/pengaduan/${r.sessionId}`}
-                        target="_blank"
+                        // target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                       >
-                        Klik untuk melihat laporan
+                        Klik untuk melihat detail laporan
                       </a>
                     </div>
                   </Popup>
