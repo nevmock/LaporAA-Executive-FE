@@ -2,12 +2,17 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import LoadingPage from "../../../components/LoadingPage";
 
-import Laporan from "./components/laporan";
+const Laporan = dynamic(() => import("../../../components/pengaduan/laporan"), {
+  ssr: false,
+  loading: () => <LoadingPage />,
+});
 
 export default function PengaduanPage() {
   const router = useRouter();
-  
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -17,7 +22,7 @@ export default function PengaduanPage() {
 
   return (
     <div className="w-full h-full">
-        <Laporan />
+      <Laporan />
     </div>
   );
 }
