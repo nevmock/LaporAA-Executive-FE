@@ -1,0 +1,20 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update package.json, src/app/(auth)/login/page.tsx, src/components/dashboard/BarOpdChart.tsx
+📅 2025-06-20_1715
+
+📂 Perubahan file:
+package.json
+src/app/(auth)/login/page.tsx
+src/components/dashboard/BarOpdChart.tsx
+src/components/dashboard/BarWilayahChartKecamatan.tsx
+src/components/dashboard/LineChart.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/SummaryPieChart.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/tableSection.tsx
+src/components/sidebar.tsx
+src/lib/types.ts
+
+🚀 Meluncur

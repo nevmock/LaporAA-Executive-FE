@@ -25,12 +25,12 @@ const months = [
 
 const now = dayjs();
 
-<style jsx global>{`
-  .apexcharts-bar-series path, 
-  .apexcharts-bar-area {
-    cursor: pointer !important;
-  }
-`}</style>
+function getChartHeight(barCount: number) {
+    const barHeight = 50; // px per bar (ubah sesuai kebutuhan)
+    const minHeight = 300;
+    const maxHeight = 1200;
+    return Math.max(minHeight, Math.min(barCount * barHeight, maxHeight));
+}
 
 export default function HorizontalBarWilayahChart() {
     // State untuk filter dan waktu
@@ -54,6 +54,8 @@ export default function HorizontalBarWilayahChart() {
         totals: [],
     });
 
+    const chartHeight = useMemo(() => getChartHeight(data.categories.length), [data.categories.length]);
+
     // Hitung jumlah minggu dalam 1 bulan
     const getWeeksInMonth = (year: number, month: number) => {
         const first = dayjs(`${year}-${month}-01`);
@@ -68,7 +70,7 @@ export default function HorizontalBarWilayahChart() {
     };
 
     // Ambil data dari API saat filter berubah
-    useEffect(() => {
+    const fetchData = React.useCallback(() => {
         let url = `${API_URL}/dashboard/wilayah-summary?mode=${filter}&year=${year}`;
         if (filter !== 'yearly') url += `&month=${month}`;
         if (filter === 'weekly') url += `&week=${week}`;
@@ -153,7 +155,7 @@ export default function HorizontalBarWilayahChart() {
     const chartOptions = useMemo(() => ({
         chart: {
             type: 'bar' as const,
-            height: 400,
+            height: chartHeight,
             toolbar: { show: false },
             events: {
                 // Saat klik bar, simpan ke sessionStorage dan redirect ke halaman pengaduan
@@ -192,8 +194,8 @@ export default function HorizontalBarWilayahChart() {
                 formatter: (val: number, opts: any) => `${data.categories[opts.dataPointIndex]}: ${val}`
             }
         },
-        responsive: [{ breakpoint: 480, options: { chart: { height: "100%" } } }],
-    }), [data, selectedKecamatan]);
+        responsive: [{ breakpoint: 480, options: { chart: { height: chartHeight } } }],
+    }), [data, selectedKecamatan, chartHeight]);
 
     // Data series chart
     const chartSeries = useMemo(() => [
@@ -216,6 +218,18 @@ export default function HorizontalBarWilayahChart() {
             document.head.removeChild(style);
         };
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchData();
+        }, 5 * 60 * 1000); // 5 menit
+        console.info("✅ Memperbarui data");
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
     return (
         <div className="w-full h-full flex flex-col">
@@ -278,7 +292,7 @@ export default function HorizontalBarWilayahChart() {
                         series={chartSeries}
                         type="bar"
                         width="100%"
-                        height={800}
+                        height={chartHeight}
                     />
                 </div>
             )}

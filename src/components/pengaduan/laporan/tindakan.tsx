@@ -51,9 +51,11 @@ const STEP_COMPONENTS = [Verifikasi, Verifikasi1, Verifikasi2, Proses, Selesai, 
 export default function Tindakan({
     tindakan,
     sessionId,
+    processed_by,
 }: {
     tindakan: TindakanClientState | null;
     sessionId: string;
+    processed_by?: string;
 }) {
     const [formData, setFormData] = useState<Partial<TindakanClientState>>({});
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -113,15 +115,22 @@ export default function Tindakan({
 
     const saveData = async (nextStatus?: string) => {
         try {
-            if (!formData.report) {
-                // setNotif("❌ Data laporan tidak valid.");
+            if (!formData.report) return;
+
+            // Ambil data user login
+            const userId = localStorage.getItem('nama_admin');
+            if (!userId) {
+                setNotif("❌ User belum login.");
                 return;
             }
+
             const updatedData = {
                 ...formData,
                 updatedAt: new Date().toISOString(),
-                status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : nextStatus || formData.status
+                status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : nextStatus || formData.status,
+                processed_by: userId
             };
+
             await axios.put(
                 `${API_URL}/tindakan/${formData.report}`,
                 updatedData
@@ -130,11 +139,39 @@ export default function Tindakan({
             setSaveSuccessModalVisible(true);
         } catch (err: any) {
             console.error("❌ Gagal menyimpan:", err);
-            // setNotif("❌ Gagal menyimpan data.");
         } finally {
             setTimeout(() => setNotif(null), 3000);
         }
     };
+
+    const processedBy = async () => {
+    try {
+        if (!formData.report) return;
+
+        // Ambil ID user login (pastikan key-nya benar, misal 'user_id' atau 'userLoginId')
+        const userLoginId = localStorage.getItem('user_id');
+        if (!userLoginId) {
+            setNotif("❌ User belum login.");
+            return;
+        }
+
+        // PATCH hanya kirim userLoginId saja
+        await axios.patch(
+            `${API_URL}/tindakan/${formData.report}/processed-by`,
+            { userLoginId }
+        );
+
+        // Optional: update state lokal kalau mau
+        setFormData({
+            ...formData,
+            processed_by: userLoginId,
+        });
+    } catch (err) {
+        console.error("❌ Gagal menyimpan:", err);
+    } finally {
+        setTimeout(() => setNotif(null), 3000);
+    }
+};
 
     const handleNextStep = async () => {
         if (!validateCurrentStep()) {
@@ -146,14 +183,13 @@ export default function Tindakan({
         const nextIndex = currentStepIndex + 1;
         const nextStatus = STATUS_LIST[nextIndex];
 
-        // Konfirmasi khusus untuk step 'Proses OPD Terkait'
+        // Step khusus, misal 'Proses OPD Terkait'
         if (statusNow === "Proses OPD Terkait") {
             setShowConfirmModal(true);
             setPendingNextStatus(nextStatus);
             return;
         }
 
-        // Modal khusus saat pindah ke 'Verifikasi Kelengkapan Berkas'
         if (statusNow === "Verifikasi Situasi" && nextStatus === "Verifikasi Kelengkapan Berkas") {
             setShowLaporModal(true);
             setPendingNextStatus(nextStatus);
@@ -161,11 +197,19 @@ export default function Tindakan({
         }
 
         setIsLoading(true);
-        await saveData(nextStatus);
+
+        // === UPDATE processed_by HANYA DI STEP 1 ===
+        if (currentStepIndex === 0) {
+            // Step pertama, update processed_by
+            await processedBy();
+            await saveData(nextStatus);
+        } else {
+            // Step selain pertama, cukup update data saja
+            await saveData(nextStatus);
+        }
+
         setIsLoading(false);
         setCurrentStepIndex(nextIndex);
-
-        // Refresh the page after loading finishes
         router.refresh();
     };
 
@@ -493,8 +537,8 @@ export default function Tindakan({
                                     onClick={() => handleNextStep()}
                                     disabled={isButtonDisabled}
                                     className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 ${isButtonDisabled
-                                            ? "bg-gray-300 cursor-not-allowed"
-                                            : "bg-indigo-500 hover:bg-indigo-600"
+                                        ? "bg-gray-300 cursor-not-allowed"
+                                        : "bg-indigo-500 hover:bg-indigo-600"
                                         }`}
                                 >
                                     {isLoading ? (
@@ -513,7 +557,6 @@ export default function Tindakan({
                                     </div>
                                 )}
                             </div>
-
                         )}
 
                         {/* Tombol Selesai (hanya di step pertama) */}

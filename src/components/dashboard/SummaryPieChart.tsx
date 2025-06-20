@@ -106,6 +106,15 @@ export default function SummaryPieChart() {
         fetchStatusSummary();
     }, [filter, year, month, week]);
 
+    // ===== AUTO REFRESH: Fetch data baru tiap 1 menit =====
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchStatusSummary();
+        }, 5 * 60 * 1000); // 1 menit (ganti ke n * 60 * 1000 untuk n menit)
+        return () => clearInterval(interval);
+    }, [filter, year, month, week]);
+    // ======================================================
+
     // Render pie chart ECharts
     useEffect(() => {
         if (!chartRef.current) return;
@@ -176,7 +185,7 @@ export default function SummaryPieChart() {
             chart.dispose();
             window.removeEventListener('resize', handleResize);
         };
-    }, [JSON.stringify(statusCounts)]); // Trigger re-render chart saat data berubah
+    }, [JSON.stringify(statusCounts)]); // Bisa diganti [statusCounts] saja
 
     return (
         <div className="w-full h-full flex flex-col">
