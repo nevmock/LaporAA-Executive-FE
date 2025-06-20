@@ -85,10 +85,10 @@ const TableSection: React.FC<Props> = ({
                             {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
-                                { key: 'bot_switch', icon: <ImSwitch />, label: '' },
-                                { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
+                                // { key: 'bot_switch', icon: <ImSwitch />, label: '' },
+                                // { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
                                 { key: 'admin', icon: <BsPersonFillCheck />, label: '' },
-                                { key: 'tag', icon: <FaHashtag  />, label: 'Tag' },
+                                // { key: 'tag', icon: <FaHashtag  />, label: 'Tag' },
                                 { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
                                 { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
@@ -169,7 +169,7 @@ const TableSection: React.FC<Props> = ({
                                         </td>
 
                                         {/* Bot Switch */}
-                                        <td className="px-4 py-2">
+                                        {/* <td className="px-4 py-2">
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
                                                 <Switch
                                                     checked={isPrioritas}
@@ -179,10 +179,10 @@ const TableSection: React.FC<Props> = ({
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
                                                 </Switch>
                                             ) : chat.tindakan?.prioritas || '-'}
-                                        </td>
+                                        </td> */}
                                         
                                         {/* Pinned */}
-                                        <td className="px-4 py-2">
+                                        {/* <td className="px-4 py-2">
                                             {(role === "Admin" || role === "SuperAdmin") ? (
                                                 <Switch
                                                     checked={isPrioritas}
@@ -192,13 +192,13 @@ const TableSection: React.FC<Props> = ({
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
                                                 </Switch>
                                             ) : chat.tindakan?.prioritas || '-'}
-                                        </td>
+                                        </td> */}
 
                                         {/* Admin */}
                                         <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
 
-                                        {/* Admin */}
-                                        <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
+                                        {/* Tag */}
+                                        {/* <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td> */}
 
                                         {/* Link ke halaman detail */}
                                         <td className="px-4 py-2">
