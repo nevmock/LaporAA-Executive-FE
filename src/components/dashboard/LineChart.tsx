@@ -83,7 +83,7 @@ export default function LineChart() {
     }, [filter, month, year]);
 
     // Ambil data dari API berdasarkan filter waktu
-    useEffect(() => {
+    const fetchData = React.useCallback(() => {
         let url = `${API_URL}/dashboard/harian?mode=${filter}&year=${year}`;
         if (filter !== 'yearly') url += `&month=${month}`;
         if (filter === 'weekly') url += `&week=${week}`;
@@ -151,6 +151,18 @@ export default function LineChart() {
 
     // Data series yang dikirim ke chart
     const chartSeries = useMemo(() => [{ name: 'Laporan Masuk', data: totals }], [totals]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchData();
+        }, 5 * 60 * 1000); // 5 menit
+        console.info("✅ Memperbarui data");
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
     return (
         <div className="w-full h-full flex flex-col">

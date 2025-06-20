@@ -61,7 +61,7 @@ export default function SummaryTable() {
     }, [filter, month, year]);
 
     // Fetch data dari API (axiosInstance)
-    useEffect(() => {
+    const fetchData = React.useCallback(() => {
         setLoading(true);
         let url = `${API_URL}/dashboard/summary-dashboard`;
         // Query param pakai object (lebih aman & readable)
@@ -133,6 +133,18 @@ export default function SummaryTable() {
         a.click();
         URL.revokeObjectURL(url);
     };
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchData();
+        }, 5 * 60 * 1000); // 5 menit
+        console.info("✅ Memperbarui data");
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
     return (
         <div className="w-full h-full flex flex-col">

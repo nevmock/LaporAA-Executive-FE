@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import axios from '../../utils/axiosInstance';
 import Legend from './legend';
 import iconByStatus from './icons';
 import { Report } from '../../lib/types';
 import dayjs from 'dayjs';
+import html2canvas from 'html2canvas';
+import { MdOutlineScreenshotMonitor } from "react-icons/md";
 
 // Base URL dari API backend
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -20,7 +22,7 @@ const FILTERS = [
 
 // Opsi status laporan yang bisa difilter
 const STATUS_OPTIONS = [
-  'Semua',
+  'Semua Status',
   'Perlu Verifikasi',
   'Verifikasi Situasi',
   'Verifikasi Kelengkapan Berkas',
@@ -47,6 +49,8 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const [week, setWeek] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [mapReady, setMapReady] = useState(false);
+  const mapParentRef = useRef<HTMLDivElement>(null);
+  const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
 
   // Daftar 5 tahun terakhir
   const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
@@ -65,7 +69,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   };
 
   // Ambil data laporan dari backend berdasarkan filter
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setMapReady(false);
     let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
     if (filter !== 'yearly') url += `&month=${month}`;
@@ -76,20 +80,30 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
       setReports(res.data.data || []);
     } catch (err) {
       console.error('❌ Gagal ambil data:', err);
+      setReports([]); // Kosongkan data biar ga freeze
     } finally {
       setMapReady(true);
     }
-  };
+  }, [filter, year, month, week, selectedStatus]);
 
   // Trigger fetch data setiap kali filter berubah
   useEffect(() => {
     fetchData();
-  }, [filter, year, month, week, selectedStatus]);
+  }, [fetchData]);
 
   // Reset minggu ke-1 saat bulan/tahun/filter berubah
   useEffect(() => {
     setWeek(1);
   }, [month, year, filter]);
+
+  // Auto-refresh data setiap 5 menit (ganti ke 1 menit buat development/test)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5 * 60 * 1000); // 5 menit
+    // console.info("✅ Memperbarui data peta");
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   // Export data CSV agregat lokasi dan status
   const handleDownloadCSV = () => {
@@ -119,11 +133,34 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     URL.revokeObjectURL(url);
   };
 
-  // Tentukan pusat peta dari laporan pertama yang valid (berkoordinat)
-  const firstValid = reports.find(r => r.location?.latitude && r.location?.longitude);
+  // Cari pusat peta dari laporan pertama yang valid (berkoordinat)
+  const validReports = reports.filter(r => r.location?.latitude && r.location?.longitude);
+  const firstValid = validReports[0];
   const mapCenter: [number, number] = firstValid
     ? [firstValid.location.latitude, firstValid.location.longitude]
     : [-2.5, 118]; // Default: tengah Indonesia
+
+  // Screenshot handler
+  const handleScreenshot = async () => {
+    if (!mapParentRef.current) return;
+    try {
+      setIsScreenshotLoading(true); // <-- set loading
+      mapParentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const canvas = await html2canvas(mapParentRef.current, {
+        useCORS: true,
+        backgroundColor: "#fff",
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      link.href = imgData;
+      link.download = `screenshot-peta-${filter}-${year}${filter !== 'yearly' ? `-${month}` : ''}${filter === 'weekly' ? `-minggu${week}` : ''}.jpg`;
+      link.click();
+    } catch (err) {
+      alert('Gagal mengambil screenshot. Silakan coba lagi!');
+    } finally {
+      setIsScreenshotLoading(false); // <-- reset loading
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -157,12 +194,44 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
           <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
             Download CSV
           </button>
+          {/* Tombol Screenshot Map */}
+          <button
+            onClick={handleScreenshot}
+            className={`border rounded px-2 py-1 text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+            disabled={!mapReady || isScreenshotLoading}
+            title={mapReady ? 'Screenshot peta' : 'Tunggu sampai peta siap'}
+          >
+            {isScreenshotLoading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-blue-200 rounded-full animate-spin"></span>
+                Memproses...
+              </>
+            ) : (
+              <><MdOutlineScreenshotMonitor /> Screenshot</>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Peta */}
-      <div className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}>
-        {mapReady ? (
+      {/* Loading */}
+      {!mapReady ? (
+        <div className="flex items-center justify-center h-full text-gray-600">
+          <div className="flex flex-col items-center gap-2 animate-pulse">
+            <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            <span className="text-sm">Memuat peta...</span>
+          </div>
+        </div>
+      ) : validReports.length === 0 ? (
+        <div className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
+            Tidak ada laporan ditemukan untuk filter ini.
+          </div>
+        </div>
+      ) : (
+        <div
+          ref={mapParentRef}
+          className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}
+        >
           <MapContainer
             key={isFullscreen ? 'fullscreen' : 'normal'}
             center={mapCenter}
@@ -175,13 +244,12 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {/* Marker per laporan */}
-            {reports.map(r => {
+            {/* Marker per laporan valid */}
+            {validReports.map(r => {
               const lat = r.location.latitude;
               const lon = r.location.longitude;
               const status = r.tindakan?.status || 'Perlu Verifikasi';
               const icon = iconByStatus[status] || iconByStatus['Perlu Verifikasi'];
-
               return (
                 <Marker key={r._id} position={[lat, lon]} icon={icon}>
                   <Popup>
@@ -213,25 +281,9 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
                 </Marker>
               );
             })}
-            {/* Tidak ada data */}
-            {reports.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[999]">
-                <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
-                  Tidak ada laporan ditemukan untuk filter ini.
-                </div>
-              </div>
-            )}
           </MapContainer>
-        ) : (
-          // Loading state
-          <div className="flex items-center justify-center h-full text-gray-600">
-            <div className="flex flex-col items-center gap-2 animate-pulse">
-              <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-              <span className="text-sm">Memuat peta...</span>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

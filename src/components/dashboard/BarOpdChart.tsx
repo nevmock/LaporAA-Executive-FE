@@ -26,12 +26,25 @@ const months = [
 
 const now = dayjs();
 
+function getChartHeight(barCount: number) {
+    const barHeight = 50; // px per bar (ubah sesuai kebutuhan)
+    const minHeight = 300;
+    const maxHeight = 1200;
+    return Math.max(minHeight, Math.min(barCount * barHeight, maxHeight));
+}
+
 export default function HorizontalBarPerangkatDaerahChart() {
     // State filter dan data chart
     const [filter, setFilter] = useState('monthly');
     const [year, setYear] = useState(now.year());
     const [month, setMonth] = useState(now.month() + 1);
     const [week, setWeek] = useState(1);
+
+    // Tahun 5 terakhir untuk dropdown
+    const years = useMemo(() =>
+        Array.from({ length: 5 }, (_, i) => now.year() - i),
+        []
+    );
 
     const [data, setData] = useState<{
         categories: string[];
@@ -43,11 +56,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
         fullLabels: [],
     });
 
-    // Tahun 5 terakhir untuk dropdown
-    const years = useMemo(() =>
-        Array.from({ length: 5 }, (_, i) => now.year() - i),
-        []
-    );
+    const chartHeight = useMemo(() => getChartHeight(data.categories.length), [data.categories.length]);
 
     // Hitung jumlah minggu dalam bulan tertentu
     const getWeeksInMonth = (year: number, month: number) => {
@@ -63,13 +72,14 @@ export default function HorizontalBarPerangkatDaerahChart() {
     };
 
     // Fetch data dari API saat filter berubah
-    useEffect(() => {
+    const fetchData = React.useCallback(() => {
         let url = `${API_URL}/dashboard/perangkat-daerah-summary?mode=${filter}&year=${year}`;
         if (filter === 'monthly' || filter === 'weekly') url += `&month=${month}`;
         if (filter === 'weekly') url += `&week=${week}`;
 
         axios.get(url)
             .then(res => {
+                console.info("🔥 Data fetched:", res.data);
                 const resData = res.data || {};
                 const formatted = Object.entries(resData)
                     .map(([opd, val]) => ({ opd, value: Number(val) }))
@@ -113,7 +123,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
     const chartOptions = useMemo(() => ({
         chart: {
             type: 'bar' as const,
-            height: 400,
+            height: chartHeight,
             toolbar: { show: false },
             events: {
                 // Saat OPD di-klik, redirect ke halaman pengaduan dan simpan ke sessionStorage
@@ -149,8 +159,8 @@ export default function HorizontalBarPerangkatDaerahChart() {
                     `${data.fullLabels[opts.dataPointIndex] || ''}: ${val}`
             }
         },
-        responsive: [{ breakpoint: 480, options: { chart: { height: "100%" } } }],
-    }), [data]);
+        responsive: [{ breakpoint: 480, options: { chart: { height: chartHeight } } }],
+    }), [data, chartHeight]);
 
     // Data series untuk chart
     const chartSeries = useMemo(() => [
@@ -173,6 +183,18 @@ export default function HorizontalBarPerangkatDaerahChart() {
             document.head.removeChild(style);
         };
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchData();
+        }, 5 * 60 * 1000); // 5 menit
+        console.info("✅ Memperbarui data");
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
     return (
         <div className="w-full h-full flex flex-col">
@@ -218,7 +240,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
                         series={chartSeries}
                         type="bar"
                         width="100%"
-                        height={800}
+                        height={chartHeight}
                     />
                 </div>
             )}

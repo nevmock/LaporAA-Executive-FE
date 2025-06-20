@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                 </div>
 
                 {/* MENU */}
-                <nav className="flex flex-col gap-4 mt-4 px-3">
+                <nav className="flex flex-col gap-5 mt-4 px-3">
                     {/* Dashboard */}
                     <Link href="/dashboard" passHref>
                         <div className={navItemClass(isActive("/dashboard"))}>
@@ -86,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                             )}
                             {countPending > 0 && (
                                 <div
-                                    className={`absolute -top-2 left-7 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
+                                    className={`absolute -top-3 left-6 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
                                 >
                                     {countPending}
                                 </div>

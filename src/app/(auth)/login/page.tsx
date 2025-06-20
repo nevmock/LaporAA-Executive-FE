@@ -20,10 +20,12 @@ export default function LoginPage() {
                 username,
                 password,
             });
-
+            
+            localStorage.setItem('user_id', res.data._id);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('role', res.data.role);
             localStorage.setItem('username', res.data.username);
+            localStorage.setItem('nama_admin', res.data.nama_admin);
 
             router.push('/dashboard');
         } catch (err: any) {

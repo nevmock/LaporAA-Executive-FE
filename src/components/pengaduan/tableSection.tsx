@@ -3,9 +3,12 @@
 import React from "react";
 import {
     FaStar, FaIdCard, FaUser, FaPhone, FaMap,
-    FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock,
+    FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
+    FaHashtag 
 } from "react-icons/fa";
+import { ImSwitch } from "react-icons/im";
 import { IoTrashBin } from "react-icons/io5";
+import { BsPinAngleFill, BsPersonFillCheck } from "react-icons/bs";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
@@ -57,7 +60,7 @@ function getElapsedTime(createdAt?: string): string {
 
 const TableSection: React.FC<Props> = ({
     filteredData, sorts, toggleSort, role,
-    selectedIds, toggleSingleSelect, toggleSelectAll, allSelected,
+    selectedIds, toggleSingleSelect,
     handleDeleteSelected, toggleMode, setSelectedLoc, setPhotoModal,
     loading,
 }) => {
@@ -73,7 +76,7 @@ const TableSection: React.FC<Props> = ({
     };
 
     return (
-        <div className="px-2 h-full flex flex-col overflow-hidden bg-white">
+        <div className="px-2 pb-2 h-full flex flex-col overflow-hidden bg-white">
             <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-300">
                 <table className="min-w-full table-fixed text-left text-sm border-collapse">
                     {/* -------- Tabel Header -------- */}
@@ -81,7 +84,11 @@ const TableSection: React.FC<Props> = ({
                         <tr>
                             {/* Loop untuk membuat header dari kolom */}
                             {[
-                                { key: 'prioritas', icon: <FaStar />, label: 'Prioritas' },
+                                { key: 'prioritas', icon: <FaStar />, label: '' },
+                                // { key: 'bot_switch', icon: <ImSwitch />, label: '' },
+                                // { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
+                                { key: 'admin', icon: <BsPersonFillCheck />, label: '' },
+                                // { key: 'tag', icon: <FaHashtag  />, label: 'Tag' },
                                 { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
                                 { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
@@ -91,7 +98,7 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD Terkait' },
                                 { key: 'timer', icon: <FaClock />, label: 'Waktu Berjalan' },
-                                { key: 'photo', icon: null, label: 'Foto' },
+                                { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
                             ].map(({ key, icon, label }) => (
                                 <th
                                     key={key}
@@ -161,6 +168,38 @@ const TableSection: React.FC<Props> = ({
                                             ) : chat.tindakan?.prioritas || '-'}
                                         </td>
 
+                                        {/* Bot Switch */}
+                                        {/* <td className="px-4 py-2">
+                                            {(role === "Bupati" || role === "SuperAdmin") ? (
+                                                <Switch
+                                                    checked={isPrioritas}
+                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                    className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                </Switch>
+                                            ) : chat.tindakan?.prioritas || '-'}
+                                        </td> */}
+                                        
+                                        {/* Pinned */}
+                                        {/* <td className="px-4 py-2">
+                                            {(role === "Admin" || role === "SuperAdmin") ? (
+                                                <Switch
+                                                    checked={isPrioritas}
+                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                    className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                </Switch>
+                                            ) : chat.tindakan?.prioritas || '-'}
+                                        </td> */}
+
+                                        {/* Admin */}
+                                        <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
+
+                                        {/* Tag */}
+                                        {/* <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td> */}
+
                                         {/* Link ke halaman detail */}
                                         <td className="px-4 py-2">
                                             <Tooltip text="Klik di sini untuk melihat detail laporan">
@@ -185,7 +224,10 @@ const TableSection: React.FC<Props> = ({
                                                 : '-'}
                                         </td>
 
+                                        {/* Nama Pelapor */}
                                         <td className="px-4 py-2">{chat.user || '-'}</td>
+
+                                        {/* Nomor Telepon */}
                                         <td className="px-4 py-2">{chat.from || '-'}</td>
 
                                         {/* Lokasi kejadian */}
@@ -227,18 +269,20 @@ const TableSection: React.FC<Props> = ({
 
                                         {/* Foto */}
                                         <td className="px-2 py-2">
-                                            {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
-                                                <img
-                                                    src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`}
-                                                    alt="Foto pengaduan"
-                                                    className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
-                                                    onClick={() =>
-                                                        chat.photos.length > 1
-                                                            ? setPhotoModal(chat.photos)
-                                                            : window.open(`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`, '_blank')
-                                                    }
-                                                />
-                                            ) : '-'}
+                                            <div className="flex justify-center items-center">
+                                                {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
+                                                    <img
+                                                        src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`}
+                                                        alt="Foto pengaduan"
+                                                        className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
+                                                        onClick={() =>
+                                                            chat.photos.length > 1
+                                                                ? setPhotoModal(chat.photos)
+                                                                : window.open(`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`, '_blank')
+                                                        }
+                                                    />
+                                                ) : '-'}
+                                            </div>
                                         </td>
 
                                         {/* Checkbox SuperAdmin */}

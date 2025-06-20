@@ -1,0 +1,11 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/dashboard/MapPersebaran.tsx, src/components/pengaduan/tableSection.tsx, src/lib/types.ts
+📅 2025-06-20_2115
+
+📂 Perubahan file:
+src/components/dashboard/MapPersebaran.tsx
+src/components/pengaduan/tableSection.tsx
+src/lib/types.ts
+
+🚀 Meluncur

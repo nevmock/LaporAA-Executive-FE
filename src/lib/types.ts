@@ -18,6 +18,7 @@ export interface Data {
     message: string;
     photos: string[];
     tindakan?: TindakanData;
+    processed_by?: string;
 }
 
 export interface TindakanData {
@@ -42,6 +43,7 @@ export interface TindakanData {
 
 export interface TindakanClientState extends TindakanData {
     tempPhotos?: File[];
+    processed_by?: string;
 }
 
 export interface Location {
@@ -86,6 +88,12 @@ export interface Chat {
     updatedAt?: string;
     tindakan?: Tindakan;
     rating?: number;
+    processed_by: ProcessedBy;
+}
+
+export interface ProcessedBy {
+    _id: string;
+    nama_admin: string;
 }
 
 export interface Report {
@@ -108,6 +116,7 @@ export interface Report {
         situasi?: string;
         status?: string;
     };
+    processed_by?: string;
 }
 
-export type SortKey = "sessionId" | "user" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
+export type SortKey = "sessionId" | "user" | "pinned" | "admin" | "bot_switch" | "tag" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
