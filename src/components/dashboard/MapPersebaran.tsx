@@ -22,7 +22,7 @@ const FILTERS = [
 
 // Opsi status laporan yang bisa difilter
 const STATUS_OPTIONS = [
-  'Semua',
+  'Semua Status',
   'Perlu Verifikasi',
   'Verifikasi Situasi',
   'Verifikasi Kelengkapan Berkas',

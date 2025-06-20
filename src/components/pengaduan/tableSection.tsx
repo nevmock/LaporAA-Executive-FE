@@ -3,7 +3,8 @@
 import React from "react";
 import {
     FaStar, FaIdCard, FaUser, FaPhone, FaMap,
-    FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo
+    FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
+    FaHashtag 
 } from "react-icons/fa";
 import { ImSwitch } from "react-icons/im";
 import { IoTrashBin } from "react-icons/io5";
@@ -83,10 +84,11 @@ const TableSection: React.FC<Props> = ({
                         <tr>
                             {/* Loop untuk membuat header dari kolom */}
                             {[
-                                { key: 'prioritas', icon: <FaStar />, label: 'Prioritas' },
-                                { key: 'bot_switch', icon: <ImSwitch />, label: 'Bot Switch' },
-                                { key: 'pinned', icon: <BsPinAngleFill />, label: 'Pinned' },
-                                { key: 'admin', icon: <BsPersonFillCheck />, label: 'Admin' },
+                                { key: 'prioritas', icon: <FaStar />, label: '' },
+                                { key: 'bot_switch', icon: <ImSwitch />, label: '' },
+                                { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
+                                { key: 'admin', icon: <BsPersonFillCheck />, label: '' },
+                                { key: 'tag', icon: <FaHashtag  />, label: 'Tag' },
                                 { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
                                 { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
@@ -181,7 +183,7 @@ const TableSection: React.FC<Props> = ({
                                         
                                         {/* Pinned */}
                                         <td className="px-4 py-2">
-                                            {(role === "Bupati" || role === "SuperAdmin") ? (
+                                            {(role === "Admin" || role === "SuperAdmin") ? (
                                                 <Switch
                                                     checked={isPrioritas}
                                                     onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
@@ -191,6 +193,9 @@ const TableSection: React.FC<Props> = ({
                                                 </Switch>
                                             ) : chat.tindakan?.prioritas || '-'}
                                         </td>
+
+                                        {/* Admin */}
+                                        <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
 
                                         {/* Admin */}
                                         <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
