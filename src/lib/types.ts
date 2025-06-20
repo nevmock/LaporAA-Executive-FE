@@ -117,6 +117,7 @@ export interface Report {
         status?: string;
     };
     processed_by?: string;
+    createdAt?: string;
 }
 
 export type SortKey = "sessionId" | "user" | "pinned" | "admin" | "bot_switch" | "tag" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";

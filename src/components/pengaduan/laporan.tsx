@@ -40,7 +40,8 @@ export default function Laporan() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [hydrated, setHydrated] = useState(false); // <--- PAKAI useState
+  const [hydrated, setHydrated] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
 
   // Helpers
   const username = typeof window !== "undefined" ? localStorage.getItem("username") || "guest" : "guest";
@@ -119,6 +120,7 @@ export default function Laporan() {
     const savedLimit = localStorage.getItem(LS_KEY("limit"));
     const savedSorts = localStorage.getItem(LS_KEY("sorts"));
     const savedSearch = localStorage.getItem(LS_KEY("search"));
+    const savedShowHeader = localStorage.getItem(LS_KEY("showHeader"));
 
     setSelectedStatus(savedStatus || "Semua");
     setPage(Number(savedPage) || 1);
@@ -128,6 +130,7 @@ export default function Laporan() {
       { key: "date", order: "desc" },
     ]);
     setSearch(savedSearch || "");
+    setShowHeader(savedShowHeader === null ? true : savedShowHeader === "true");
 
     sessionStorage.clear();
     setHydrated(true);
@@ -141,6 +144,11 @@ export default function Laporan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, selectedStatus, search, page, limit, sorts]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, showHeader]);
+
   // ----------------------- EFFECTS: SYNC STORAGE (AFTER HYDRATED) -----------------------
   useEffect(() => {
     if (!hydrated) return;
@@ -151,6 +159,12 @@ export default function Laporan() {
     localStorage.setItem(LS_KEY("search"), search);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, selectedStatus, search, page, limit, sorts]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(LS_KEY("showHeader"), showHeader.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, showHeader]);
 
   // Responsive
   useEffect(() => {
@@ -247,7 +261,7 @@ export default function Laporan() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-[500] bg-white">
+      {/* <div className="sticky top-0 z-[500] bg-white">
         <HeaderSection
           search={search}
           setSearch={setSearch}
@@ -260,10 +274,55 @@ export default function Laporan() {
           page={page}
           setPage={setPage}
         />
+      </div> */}
+      <div className="sticky top-0 z-[800] bg-white">
+        <div className="relative">
+          {/* Wrapper HeaderSection + Transition */}
+          <div
+            className={`transition-all duration-300 overflow-hidden z-[800] ${showHeader ? "max-h-[400px] z-[800] opacity-100" : "max-h-0 z-[800] opacity-0"
+              }`}
+          >
+            <HeaderSection
+              search={search}
+              setSearch={setSearch}
+              statusCounts={statusCounts}
+              selectedStatus={selectedStatus}
+              setSelectedStatus={setSelectedStatus}
+              isMobile={isMobile}
+              limit={limit}
+              setLimit={setLimit}
+              page={page}
+              setPage={setPage}
+            />
+          </div>
+
+          {/* Tombol Hide/Show di tengah bawah */}
+          <button
+            className="
+        absolute
+        left-1/2
+        -translate-x-1/2
+        top-0
+        z-10
+        bg-gray-100 hover:bg-gray-200
+        w-[180px] h-[20px]
+        rounded-b-full px-4 py-1 shadow border
+        transition-all flex justify-center items-center text-xs text-black
+      "
+            onClick={() => setShowHeader((prev) => !prev)}
+          >
+            <span>{showHeader ? "Sembunyikan Filter" : "Tampilkan Filter"}</span>
+            <svg
+              className={`w-4 h-4 ml-1 transition-transform duration-200 ${showHeader ? "-rotate-180" : "rotate-0"}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 mt-6 overflow-hidden">
         <div className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto">
             <TableSection
