@@ -261,21 +261,10 @@ export default function Laporan() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      {/* <div className="sticky top-0 z-[500] bg-white">
-        <HeaderSection
-          search={search}
-          setSearch={setSearch}
-          statusCounts={statusCounts}
-          selectedStatus={selectedStatus}
-          setSelectedStatus={setSelectedStatus}
-          isMobile={isMobile}
-          limit={limit}
-          setLimit={setLimit}
-          page={page}
-          setPage={setPage}
-        />
-      </div> */}
       <div className="sticky top-0 z-[800] bg-white">
+        {/* The above code is a JSX snippet written in TypeScript for a React component. It includes a
+        div element with a className of "relative" and contains another div element that toggles its
+        visibility and height based on the value of the "showHeader" state variable. */}
         <div className="relative">
           {/* Wrapper HeaderSection + Transition */}
           <div
