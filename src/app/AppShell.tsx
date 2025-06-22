@@ -57,38 +57,68 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden flex-col sm:flex-row">
+        <div className="flex h-screen w-screen flex-col sm:flex-row">
             {isMobile ? (
-                <SidebarHorizontal countPending={countPending} onLogout={handleLogout} />
-            ) : (
-                <Sidebar countPending={countPending} />
-            )}
+                <>
+                    <SidebarHorizontal countPending={countPending} onLogout={handleLogout} />
+                    <div className="flex flex-col h-[calc(100vh-48px)] overflow-auto">
+                        <main className="flex-1 bg-gray-900 text-white flex flex-col">
+                            {/* TOP NAVBAR */}
+                            <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center sticky top-0 z-[9000]">
+                                <div className="flex items-center gap-2">
+                                    {role && (
+                                        <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
+                                    )}
+                                    <span>
+                                        User : {userName || "Pengguna"}
+                                    </span>
+                                </div>
 
-            <main className="flex-1 overflow-y-auto bg-gray-900 text-white flex flex-col">
-                {/* TOP NAVBAR */}
-                <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {role && (
-                            <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
-                        )}
-                        <span>
-                            User : {userName || "Pengguna"}
-                        </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
+                                >
+                                    Logout <FiLogOut size={12} />
+                                </button>
+                            </div>
+
+                            {/* CONTENT */}
+                            <div className="flex-1 bg-white">
+                                {children}
+                            </div>
+                        </main>
                     </div>
+                </>
+            ) : (
+                <>
+                    <Sidebar countPending={countPending} />
+                    <main className="flex-1 bg-gray-900 text-white flex flex-col overflow-hidden">
+                        {/* TOP NAVBAR */}
+                        <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center sticky top-0 z-10">
+                            <div className="flex items-center gap-2">
+                                {role && (
+                                    <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
+                                )}
+                                <span>
+                                    User : {userName || "Pengguna"}
+                                </span>
+                            </div>
 
-                    <button
-                        onClick={handleLogout}
-                        className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
-                    >
-                        Logout <FiLogOut size={12} />
-                    </button>
-                </div>
+                            <button
+                                onClick={handleLogout}
+                                className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
+                            >
+                                Logout <FiLogOut size={12} />
+                            </button>
+                        </div>
 
-                {/* CONTENT */}
-                <div className="flex-1 overflow-y-auto bg-white">
-                    {children}
-                </div>
-            </main>
+                        {/* CONTENT */}
+                        <div className="flex-1 overflow-auto bg-white">
+                            {children}
+                        </div>
+                    </main>
+                </>
+            )}
         </div>
     );
 }

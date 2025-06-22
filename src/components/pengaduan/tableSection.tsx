@@ -1,14 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
     FaStar, FaIdCard, FaUser, FaPhone, FaMap,
     FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
-    FaHashtag 
+    FaHashtag
 } from "react-icons/fa";
 import { ImSwitch } from "react-icons/im";
 import { IoTrashBin } from "react-icons/io5";
 import { BsPinAngleFill, BsPersonFillCheck } from "react-icons/bs";
+import { RiPushpin2Fill, RiPushpin2Line } from "react-icons/ri";
+import axios from "../../utils/axiosInstance";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
@@ -64,6 +66,75 @@ const TableSection: React.FC<Props> = ({
     handleDeleteSelected, toggleMode, setSelectedLoc, setPhotoModal,
     loading,
 }) => {
+    // State untuk modal OPD
+    const [opdModalVisible, setOpdModalVisible] = React.useState(false);
+    const [selectedOpds, setSelectedOpds] = React.useState<string[]>([]);
+    const [modalTitle, setModalTitle] = React.useState("");
+    const [pinnedReports, setPinnedReports] = React.useState<Record<string, boolean>>({});
+    const [loadingPin, setLoadingPin] = React.useState<Record<string, boolean>>({});
+
+    // Fungsi untuk toggle pin/unpin laporan
+    const togglePin = async (sessionId: string) => {
+        if (loadingPin[sessionId]) return; // Hindari multiple call
+
+        try {
+            setLoadingPin(prev => ({ ...prev, [sessionId]: true }));
+            const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+
+            const response = await axios.put(`${API_URL}/reports/session/${sessionId}/toggle-pin`);
+            const result = response.data;
+            console.log('Pin toggled:', result);
+
+            // Update state dengan status pin terbaru
+            setPinnedReports(prev => ({
+                ...prev,
+                [sessionId]: result.report.is_pinned
+            }));
+
+            // Tambahkan pesan notifikasi sukses jika ingin
+            // alert(result.message);
+        } catch (error) {
+            console.error('Error toggling pin status:', error);
+        } finally {
+            setLoadingPin(prev => ({ ...prev, [sessionId]: false }));
+        }
+    };
+
+    // Load initial pin status for all reports
+    useEffect(() => {
+        // Initialize pin status from data first
+        const initialPinnedState: Record<string, boolean> = {};
+
+        filteredData.forEach(chat => {
+            if (chat.is_pinned) {
+                initialPinnedState[chat.sessionId] = true;
+            }
+        });
+
+        setPinnedReports(initialPinnedState);
+
+        // Then check pin status from API for each report that's not pinned in the initial data
+        const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+
+        filteredData.forEach(async chat => {
+            if (!chat.is_pinned) {
+                try {
+                    const response = await axios.get(`${API_URL}/reports/pinned/${chat.sessionId}`);
+                    if (response && response.data && response.data.is_pinned) {
+                        setPinnedReports(prev => ({
+                            ...prev,
+                            [chat.sessionId]: true
+                        }));
+                    }
+                } catch (error) {
+                    // Jika laporan memang tidak di-pin, API akan memberikan status 404
+                    // Jadi tidak perlu menangani error dengan khusus
+                    console.log(`Report ${chat.sessionId} is not pinned`);
+                }
+            }
+        });
+    }, [filteredData]);
+
     // Menampilkan panah naik/turun jika kolom sedang di-sort
     const renderSortArrow = (key: SortKey) => {
         const found = sorts.find((s) => s.key === key);
@@ -76,7 +147,7 @@ const TableSection: React.FC<Props> = ({
     };
 
     return (
-        <div className="px-2 pb-2 h-full flex flex-col overflow-hidden bg-white">
+        <div className="px-2 py-2 h-full flex flex-col overflow-hidden bg-white">
             <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-300">
                 <table className="min-w-full table-fixed text-left text-sm border-collapse">
                     {/* -------- Tabel Header -------- */}
@@ -86,13 +157,13 @@ const TableSection: React.FC<Props> = ({
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
                                 // { key: 'bot_switch', icon: <ImSwitch />, label: '' },
-                                // { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
+                                { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
                                 { key: 'admin', icon: <BsPersonFillCheck />, label: '' },
-                                // { key: 'tag', icon: <FaHashtag  />, label: 'Tag' },
+                                { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
                                 { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
                                 { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
-                                { key: 'from', icon: <FaPhone />, label: 'No. Kontak' },
+                                // { key: 'from', icon: <FaPhone />, label: 'No. Kontak' },
                                 { key: 'lokasi_kejadian', icon: <FaMap />, label: 'Lokasi Kejadian' },
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
@@ -180,25 +251,85 @@ const TableSection: React.FC<Props> = ({
                                                 </Switch>
                                             ) : chat.tindakan?.prioritas || '-'}
                                         </td> */}
-                                        
+
                                         {/* Pinned */}
-                                        {/* <td className="px-4 py-2">
+                                        <td className="px-4 py-2">
                                             {(role === "Admin" || role === "SuperAdmin") ? (
-                                                <Switch
-                                                    checked={isPrioritas}
-                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
-                                                    className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                <button
+                                                    onClick={() => togglePin(chat.sessionId)}
+                                                    disabled={loadingPin[chat.sessionId]}
+                                                    className="p-1 rounded-full hover:bg-gray-100 transition-all focus:outline-none"
+                                                    title={pinnedReports[chat.sessionId] ? "Hapus pin laporan" : "Pin laporan"}
                                                 >
-                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                </Switch>
-                                            ) : chat.tindakan?.prioritas || '-'}
-                                        </td> */}
+                                                    {loadingPin[chat.sessionId] ? (
+                                                        <div className="w-5 h-5 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
+                                                    ) : pinnedReports[chat.sessionId] ? (
+                                                        <RiPushpin2Fill size={20} className="text-red-500" />
+                                                    ) : (
+                                                        <RiPushpin2Line size={20} className="text-gray-500" />
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                chat.is_pinned ? (
+                                                    <RiPushpin2Fill size={20} className="text-red-500 mx-auto" />
+                                                ) : '-'
+                                            )}
+                                        </td>
 
                                         {/* Admin */}
                                         <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
 
                                         {/* Tag */}
-                                        {/* <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td> */}
+                                        <td className="px-4 py-2">
+                                            {(
+                                                Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0
+                                                || Array.isArray(chat.tags) && chat.tags.length > 0
+                                            ) ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {/* Render tag dari tindakan.tag (bentuk baru) */}
+                                                    {Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0 &&
+                                                        chat.tindakan.tag.map((tagItem, index) => {
+                                                            // Jika object
+                                                            if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
+                                                                return (
+                                                                    <span
+                                                                        key={tagItem._id || `tag-obj-${index}`}
+                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                                    >
+                                                                        #{tagItem.hash_tag}
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            // Jika string (legacy)
+                                                            if (typeof tagItem === "string") {
+                                                                return (
+                                                                    <span
+                                                                        key={`tag-str-${index}`}
+                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                                    >
+                                                                        #{tagItem}
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })
+                                                    }
+                                                    {/* Render tags dari root (legacy, jika tindakan.tag kosong) */}
+                                                    {(!chat.tindakan?.tag || chat.tindakan.tag.length === 0) && Array.isArray(chat.tags) && chat.tags.length > 0 &&
+                                                        chat.tags.map((tag, idx) => (
+                                                            <span
+                                                                key={`legacy-root-tag-${idx}`}
+                                                                className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                            >
+                                                                #{tag}
+                                                            </span>
+                                                        ))
+                                                    }
+                                                </div>
+                                            ) : (
+                                                "-"
+                                            )}
+                                        </td>
 
                                         {/* Link ke halaman detail */}
                                         <td className="px-4 py-2">
@@ -228,7 +359,7 @@ const TableSection: React.FC<Props> = ({
                                         <td className="px-4 py-2">{chat.user || '-'}</td>
 
                                         {/* Nomor Telepon */}
-                                        <td className="px-4 py-2">{chat.from || '-'}</td>
+                                        {/* <td className="px-4 py-2">{chat.from || '-'}</td> */}
 
                                         {/* Lokasi kejadian */}
                                         <td className="px-4 py-2">
@@ -254,7 +385,14 @@ const TableSection: React.FC<Props> = ({
                                             {chat.tindakan?.status ? (
                                                 <div className="flex items-center">
                                                     <div className="w-6 flex justify-center">
-                                                        <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: statusColors[chat.tindakan.status] || 'gray' }} />
+                                                        <span
+                                                            className="w-2.5 h-2.5 rounded-full inline-block"
+                                                            style={{
+                                                                backgroundColor: chat.tindakan.status && statusColors[chat.tindakan.status]
+                                                                    ? statusColors[chat.tindakan.status]
+                                                                    : 'gray'
+                                                            }}
+                                                        />
                                                     </div>
                                                     <div className="flex-1 text-sm text-gray-800 font-medium">
                                                         {chat.tindakan.status}
@@ -262,7 +400,62 @@ const TableSection: React.FC<Props> = ({
                                                 </div>
                                             ) : <span className="text-sm text-gray-500">-</span>}
                                         </td>
-                                        <td className="px-4 py-2">{chat.tindakan?.opd || '-'}</td>
+                                        <td className="px-4 py-2">
+                                            {chat.tindakan?.opd ? (
+                                                // Handle string array (actual API response)
+                                                Array.isArray(chat.tindakan.opd) && chat.tindakan.opd.length > 0 ? (
+                                                    <Tooltip text="Klik untuk melihat semua OPD terkait">
+                                                        <button
+                                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                                            onClick={() => {
+                                                                try {
+                                                                    // Safely handle opd array with proper type checking
+                                                                    const opdList = Array.isArray(chat.tindakan?.opd)
+                                                                        ? chat.tindakan?.opd
+                                                                        : typeof chat.tindakan?.opd === 'string'
+                                                                            ? [chat.tindakan?.opd]
+                                                                            : [];
+
+                                                                    setSelectedOpds(opdList);
+                                                                    setModalTitle(`OPD Terkait - ${chat.sessionId}`);
+                                                                    setOpdModalVisible(true);
+                                                                } catch (error) {
+                                                                    console.error("Error showing OPD modal:", error);
+                                                                    alert("Terjadi kesalahan saat menampilkan data OPD");
+                                                                }
+                                                            }}
+                                                        >
+                                                            {Array.isArray(chat.tindakan.opd) && chat.tindakan.opd.length > 1
+                                                                ? `${chat.tindakan.opd[0]?.substring(0, 10) || ""}${(chat.tindakan.opd[0]?.length || 0) > 10 ? '...' : ''} +${chat.tindakan.opd.length - 1} lainnya`
+                                                                : Array.isArray(chat.tindakan.opd) && chat.tindakan.opd.length === 1
+                                                                    ? `${chat.tindakan.opd[0]?.substring(0, 15) || ""}${(chat.tindakan.opd[0]?.length || 0) > 15 ? '...' : ''}`
+                                                                    : '-'
+                                                            }
+                                                        </button>
+                                                    </Tooltip>
+                                                )
+                                                    // Handle legacy string value for backward compatibility
+                                                    : typeof chat.tindakan.opd === "string" ? (
+                                                        <Tooltip text="Klik untuk melihat detail OPD">
+                                                            <button
+                                                                className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                                                onClick={() => {
+                                                                    // Using non-null assertion since we've already checked above
+                                                                    setSelectedOpds([chat.tindakan?.opd as string]);
+                                                                    setModalTitle(`OPD Terkait - ${chat.sessionId}`);
+                                                                    setOpdModalVisible(true);
+                                                                }}
+                                                            >
+                                                                {(chat.tindakan.opd as string).length > 15
+                                                                    ? `${(chat.tindakan.opd as string).substring(0, 15)}...`
+                                                                    : chat.tindakan.opd}
+                                                            </button>
+                                                        </Tooltip>
+                                                    )
+                                                        // Empty or unexpected format
+                                                        : "-"
+                                            ) : "-"}
+                                        </td>
 
                                         {/* Timer */}
                                         <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
@@ -309,6 +502,55 @@ const TableSection: React.FC<Props> = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal untuk menampilkan daftar lengkap OPD */}
+            {opdModalVisible && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"
+                    onClick={() => setOpdModalVisible(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl w-full max-w-md"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center border-b px-6 py-4">
+                            <h3 className="font-semibold text-lg text-black">{modalTitle}</h3>
+                            <button
+                                onClick={() => setOpdModalVisible(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-6 max-h-96 overflow-auto text-black">
+                            {selectedOpds.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {selectedOpds.map((opd, idx) => (
+                                        <li key={idx} className="pb-2 border-b border-gray-100 last:border-0">
+                                            <div className="flex">
+                                                <div className="font-semibold mr-2 text-black">{idx + 1}.</div>
+                                                <div className="text-black">{opd}</div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-4 text-gray-600">
+                                    Tidak ada data OPD untuk ditampilkan
+                                </div>
+                            )}
+                        </div>
+                        <div className="border-t px-6 py-4 flex justify-end">
+                            <button
+                                onClick={() => setOpdModalVisible(false)}
+                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

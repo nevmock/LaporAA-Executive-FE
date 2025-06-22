@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
   experimental: {
     // appDir: true, // kalau kamu pakai App Router
   },
+  webpack: (config, { isServer }) => {
+    // Resolve paths with spaces correctly for Next.js build
+    config.watchOptions = {
+      ...config.watchOptions,
+      followSymlinks: false,
+    };
+    return config;
+  },
 };
 
 export default withAnalyzer(nextConfig);

@@ -43,9 +43,27 @@ export default function Laporan() {
   const [hydrated, setHydrated] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
 
+  const [selectedSituasi, setSelectedSituasi] = useState("Semua");
+
+  const [opdList, setOpdList] = useState<{ opd: string; count: number }[]>([]);
+  const [selectedOpd, setSelectedOpd] = useState("Semua");
+
+  const [isPinnedOnly, setIsPinnedOnly] = useState(false);
+
   // Helpers
   const username = typeof window !== "undefined" ? localStorage.getItem("username") || "guest" : "guest";
   const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
+
+  // ----------------------- API FUNCTIONS -----------------------
+  const getOpdList = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`);
+      setOpdList(res.data?.data || []);
+    } catch (err) {
+      console.error("❌ Failed to fetch OPD list:", err);
+      setOpdList([]);
+    }
+  };
 
   // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
@@ -57,6 +75,9 @@ export default function Laporan() {
         status: selectedStatus !== "Semua" ? selectedStatus : undefined,
         search: search?.trim() || undefined,
         sorts: JSON.stringify(sorts),
+        situasi: selectedSituasi !== "Semua" ? selectedSituasi : undefined,
+        opd: selectedOpd !== "Semua" ? selectedOpd : undefined,
+        is_pinned: isPinnedOnly || undefined,
       };
       const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { params });
       const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -121,6 +142,9 @@ export default function Laporan() {
     const savedSorts = localStorage.getItem(LS_KEY("sorts"));
     const savedSearch = localStorage.getItem(LS_KEY("search"));
     const savedShowHeader = localStorage.getItem(LS_KEY("showHeader"));
+    const savedSituasi = localStorage.getItem(LS_KEY("situasi"));
+    const savedOpd = localStorage.getItem(LS_KEY("opd"));
+    const savedPinned = localStorage.getItem(LS_KEY("pinned"));
 
     setSelectedStatus(savedStatus || "Semua");
     setPage(Number(savedPage) || 1);
@@ -131,6 +155,9 @@ export default function Laporan() {
     ]);
     setSearch(savedSearch || "");
     setShowHeader(savedShowHeader === null ? true : savedShowHeader === "true");
+    setSelectedSituasi(savedSituasi || "Semua");
+    setSelectedOpd(savedOpd || "Semua");
+    setIsPinnedOnly(savedPinned === "true");
 
     sessionStorage.clear();
     setHydrated(true);
@@ -141,8 +168,9 @@ export default function Laporan() {
     if (!hydrated) return;
     getSummary();
     getReports();
+    getOpdList(); // Fetch OPD list
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, selectedStatus, search, page, limit, sorts]);
+  }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -157,8 +185,11 @@ export default function Laporan() {
     localStorage.setItem(LS_KEY("limit"), limit.toString());
     localStorage.setItem(LS_KEY("sorts"), JSON.stringify(sorts));
     localStorage.setItem(LS_KEY("search"), search);
+    localStorage.setItem(LS_KEY("situasi"), selectedSituasi);
+    localStorage.setItem(LS_KEY("opd"), selectedOpd);
+    localStorage.setItem(LS_KEY("pinned"), isPinnedOnly.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, selectedStatus, search, page, limit, sorts]);
+  }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -202,8 +233,13 @@ export default function Laporan() {
           valA = a.location?.desa || "";
           valB = b.location?.desa || "";
         } else if (key === "opd") {
-          valA = a.tindakan?.opd || "";
-          valB = b.tindakan?.opd || "";
+          // Handle both array and string values for opd
+          const opdA = a.tindakan?.opd || "";
+          const opdB = b.tindakan?.opd || "";
+
+          // Convert to string for sorting
+          valA = Array.isArray(opdA) ? opdA.join(", ") : opdA;
+          valB = Array.isArray(opdB) ? opdB.join(", ") : opdB;
         } else if (key === "timer" || key === "date") {
           valA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           valB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -261,15 +297,10 @@ export default function Laporan() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-[800] bg-white">
-        {/* The above code is a JSX snippet written in TypeScript for a React component. It includes a
-        div element with a className of "relative" and contains another div element that toggles its
-        visibility and height based on the value of the "showHeader" state variable. */}
-        <div className="relative">
-          {/* Wrapper HeaderSection + Transition */}
+      <div className="sticky top-0 z-[5000] bg-white shadow-md overflow-visible">
+        <div className="relative z-[5000] overflow-visible">
           <div
-            className={`transition-all duration-300 overflow-hidden z-[800] ${showHeader ? "max-h-[400px] z-[800] opacity-100" : "max-h-0 z-[800] opacity-0"
-              }`}
+            className={`transition-all duration-300 ${showHeader ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"}`}
           >
             <HeaderSection
               search={search}
@@ -282,22 +313,18 @@ export default function Laporan() {
               setLimit={setLimit}
               page={page}
               setPage={setPage}
+              selectedSituasi={selectedSituasi}
+              setSelectedSituasi={setSelectedSituasi}
+              opdList={opdList}
+              selectedOpd={selectedOpd}
+              setSelectedOpd={setSelectedOpd}
+              isPinnedOnly={isPinnedOnly}
+              setIsPinnedOnly={setIsPinnedOnly}
             />
           </div>
-
           {/* Tombol Hide/Show di tengah bawah */}
           <button
-            className="
-        absolute
-        left-1/2
-        -translate-x-1/2
-        top-0
-        z-10
-        bg-gray-100 hover:bg-gray-200
-        w-[180px] h-[20px]
-        rounded-b-full px-4 py-1 shadow border
-        transition-all flex justify-center items-center text-xs text-black
-      "
+            className="absolute left-1/2 -translate-x-1/2 top-0 z-10 bg-gray-100 hover:bg-gray-200 w-[180px] h-[20px] rounded-b-full px-4 py-1 shadow border transition-all flex justify-center items-center text-xs text-black"
             onClick={() => setShowHeader((prev) => !prev)}
           >
             <span>{showHeader ? "Sembunyikan Filter" : "Tampilkan Filter"}</span>
@@ -311,7 +338,7 @@ export default function Laporan() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 mt-6 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto">
             <TableSection

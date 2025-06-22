@@ -28,7 +28,7 @@ export interface TindakanData {
     kesimpulan: Array<any>;
     situasi: string;
     status: string;
-    opd: string;
+    opd: string[] | string;
     disposisi: string;
     trackingId: string;
     photos: string[];
@@ -39,6 +39,9 @@ export interface TindakanData {
     keterangan: string;
     status_laporan: string;
     prioritas: string;
+    tags?: string[];
+    tindakanId?: string;
+    tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
 
 export interface TindakanClientState extends TindakanData {
@@ -62,7 +65,7 @@ export interface Tindakan {
     kesimpulan: Array<any>;
     situasi: string;
     status: string;
-    opd: string;
+    opd: string[] | string;
     disposisi: string;
     trackingId: string;
     photos: string[];
@@ -73,6 +76,8 @@ export interface Tindakan {
     keterangan: string;
     status_laporan: string;
     prioritas: string;
+    tags?: string[];
+    tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
 
 export interface Chat {
@@ -89,6 +94,9 @@ export interface Chat {
     tindakan?: Tindakan;
     rating?: number;
     processed_by: ProcessedBy;
+    is_pinned?: boolean;
+    tags?: string[];
+    tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
 
 export interface ProcessedBy {

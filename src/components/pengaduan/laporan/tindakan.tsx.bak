@@ -1,0 +1,983 @@
+"use client";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
+import Keluhan from "./keluhan";
+import { TindakanClientState } from "../../../lib/types";
+import Profile from "./profile"; // Added import for Profile component
+import { useTindakanState } from "./useTindakanState";
+import { STATUS_LIST } from "./useTindakanState";
+import Modal from "./Modal";
+import LoadingModal from "./LoadingModal";
+import SuccessModal from "./SuccessModal";
+import axios from "../../../utils/axiosInstance";
+
+// Icons
+import { FaEye, FaEyeSlash, FaSave, FaUserCog } from "react-icons/fa"; // Added icons for visibility toggle and admin
+
+// Step Components
+import Verifikasi from "./componentsTindakan/verifikasi";
+import Verifikasi1 from "./componentsTindakan/verifikasi1";
+import Verifikasi2 from "./componentsTindakan/verifikasi2";
+import Proses from "./componentsTindakan/proses";
+import Selesai from "./componentsTindakan/selesai";
+import Selesai2 from "./componentsTindakan/selesai2";
+import Ditutup from "./componentsTindakan/ditutup";
+
+// AdminSelector Component
+interface AdminUser {
+    _id: string;
+    username: string;
+    role: string;
+    nama_admin?: string;
+}
+
+const AdminSelector = ({ currentAdmin, onSave }: { 
+    currentAdmin: any;
+    onSave: (admin: AdminUser) => void;
+}) => {
+    const [admins, setAdmins] = useState<AdminUser[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
+    const [currentAdminDisplay, setCurrentAdminDisplay] = useState<string>('-');
+    const [responseAdmin, setResponseAdmin] = useState<any>(null);
+    const [error, setError] = useState<string>('');
+
+    // Debug the props passed to the component
+    useEffect(() => {
+        console.info('AdminSelector props:', {
+            currentAdmin,
+            currentAdminType: typeof currentAdmin,
+            isNull: currentAdmin === null,
+            isUndefined: currentAdmin === undefined
+        });
+    }, [currentAdmin]);
+    
+    // Function to get admin display string in a consistent way
+    const getAdminDisplayString = useCallback((admin: any): string => {
+        // Log admin object structure
+        console.info('Admin object structure in getAdminDisplayString:', {
+            type: typeof admin,
+            value: admin,
+            keys: admin && typeof admin === 'object' ? Object.keys(admin) : 'not an object',
+            hasNamaAdmin: admin && typeof admin === 'object' ? 'nama_admin' in admin : false,
+            hasUsername: admin && typeof admin === 'object' ? 'username' in admin : false,
+            hasId: admin && typeof admin === 'object' ? '_id' in admin : false
+        });
+        
+        if (!admin) return '-';
+        if (typeof admin === 'string') return admin;
+        if (typeof admin === 'object') {
+            return admin.nama_admin || 
+                  admin.username || 
+                  (admin._id ? `Admin (ID: ${typeof admin._id === 'string' ? admin._id.substring(0, 8) : 'unknown'}...)` : '-');
+        }
+        return '-';
+    }, []);
+    
+    // Initialize currentAdminDisplay based on currentAdmin or responseAdmin
+    useEffect(() => {
+        try {
+            // Use responseAdmin as the first choice if available (from API response)
+            const adminToDisplay = responseAdmin || currentAdmin;
+            setCurrentAdminDisplay(getAdminDisplayString(adminToDisplay));
+        } catch (err) {
+            console.error("Error setting current admin display:", err);
+            setCurrentAdminDisplay('-');
+        }
+    }, [currentAdmin, responseAdmin, getAdminDisplayString]);
+    
+    // Fetch admin list
+    useEffect(() => {
+        setLoading(true);
+        setError('');
+        
+        // Log the current admin props coming into the component
+        console.info('Current admin props when fetching admin list:', {
+            currentAdmin: currentAdmin,
+            type: typeof currentAdmin,
+            responseAdmin: responseAdmin,
+            responseAdminType: typeof responseAdmin
+        });
+        
+        axios.get(`${API_URL}/userLogin`)
+            .then(response => {
+                // Log the admin list response from API
+                console.info('Admin list API response:', {
+                    dataType: typeof response.data,
+                    isArray: Array.isArray(response.data),
+                    length: Array.isArray(response.data) ? response.data.length : 0,
+                    firstItem: Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : null,
+                    keys: Array.isArray(response.data) && response.data.length > 0 ? Object.keys(response.data[0]) : []
+                });
+                
+                if (Array.isArray(response.data)) {
+                    setAdmins(response.data);
+                    
+                    // Try to pre-select the current admin in the dropdown
+                    let adminToMatch = responseAdmin || currentAdmin;
+                    
+                    // Ensure we have a valid value to match against
+                    if (!adminToMatch || adminToMatch === '-') {
+                        console.info('No valid admin to match against, using first admin in list if available');
+                        // If no admin is specified, we could default to the first one in the list
+                        if (response.data.length > 0) {
+                            console.info('Setting first admin in list as default:', response.data[0]);
+                        }
+                        return;
+                    }
+                    
+                    console.info('Trying to match admin:', { 
+                        adminToMatch, 
+                        type: typeof adminToMatch,
+                        stringValue: String(adminToMatch)
+                    });
+                    
+                    let adminId: string | undefined;
+                    let adminName: string | undefined;
+                    
+                    if (typeof adminToMatch === 'object' && adminToMatch !== null) {
+                        adminId = adminToMatch._id;
+                        adminName = adminToMatch.nama_admin || adminToMatch.username;
+                        console.info('Matching by object properties:', { adminId, adminName, adminObject: adminToMatch });
+                    } else if (typeof adminToMatch === 'string') {
+                        // It could be an ID, username, or name
+                        adminName = adminToMatch;
+                        console.info('Matching by string value:', { adminName });
+                    }
+                    
+                    // Try to find a match by any available property
+                    if (adminId || adminName) {
+                        const matchedAdmin = response.data.find((a: AdminUser) => 
+                            (adminId && a._id === adminId) || 
+                            (adminName && (a.username === adminName || a.nama_admin === adminName))
+                        );
+                        
+                        console.info('Admin matching result:', {
+                            adminId,
+                            adminName,
+                            matchFound: !!matchedAdmin,
+                            matchedAdmin: matchedAdmin
+                        });
+                        
+                        if (matchedAdmin) {
+                            setSelectedAdmin(matchedAdmin);
+                            console.log("Found matching admin:", matchedAdmin.nama_admin || matchedAdmin.username);
+                        }
+                    }
+                } else {
+                    console.error("Expected array of admins but got:", typeof response.data);
+                    setError('Format data admin tidak valid');
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching admin list:", err);
+                setError('Gagal memuat daftar admin');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [API_URL, currentAdmin, responseAdmin]);
+    
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-4">
+                <div className="font-medium text-gray-700">Nama Admin Saat Ini</div>
+                <div className="text-gray-900 font-medium">{currentAdminDisplay}</div>
+            </div>
+            
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md text-sm">
+                    {error}
+                </div>
+            )}
+            
+            <div className="border-t pt-4">
+                <h3 className="text-md font-medium mb-2 flex items-center gap-2">
+                    <FaUserCog className="text-blue-600" />
+                    Ubah Admin Pengelola
+                </h3>
+                
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pilih Admin
+                        </label>
+                        {loading ? (
+                            <div className="bg-gray-100 p-2 rounded animate-pulse flex items-center justify-center">
+                                <span className="inline-block h-4 w-4 border-2 border-t-blue-600 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mr-2"></span>
+                                Memuat daftar admin...
+                            </div>
+                        ) : (
+                            <select 
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                value={selectedAdmin?._id || ""}
+                                onChange={(e) => {
+                                    const selected = admins.find(a => a._id === e.target.value);
+                                    setSelectedAdmin(selected || null);
+                                }}
+                            >
+                                <option value="">-- Pilih Admin --</option>
+                                {admins.map(admin => (
+                                    <option key={admin._id} value={admin._id}>
+                                        {admin.nama_admin || admin.username} ({admin.role})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                    
+                    <button
+                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-white ${
+                            loading || !selectedAdmin ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                        disabled={loading || !selectedAdmin}
+                        onClick={() => {
+                            if (selectedAdmin) {
+                                // Update the responseAdmin state after successful save
+                                onSave(selectedAdmin);
+                                // Set this admin as the responseAdmin to ensure UI is consistent
+                                setResponseAdmin(selectedAdmin);
+                            }
+                        }}
+                    >
+                        <FaSave />
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+
+const STEP_COMPONENTS = [Verifikasi, Verifikasi1, Verifikasi2, Proses, Selesai, Selesai2, Ditutup];
+
+export interface TindakanActionProps {
+    currentStepIndex: number;
+    NEXT_STEP_LABELS: string[];
+    isButtonDisabled: boolean;
+    tooltipMessage: string;
+    isLoading: boolean;
+    isSaving: boolean;
+    saveSuccessModalVisible: boolean;
+    showRejectModal: boolean;
+    showSelesaiModal: boolean;
+    rejectReason: string;
+    selesaiReason: string;
+    setShowRejectModal: (v: boolean) => void;
+    setShowSelesaiModal: (v: boolean) => void;
+    setRejectReason: (v: string) => void;
+    setSelesaiReason: (v: string) => void;
+    handlePreviousStep: () => void;
+    handleNextStep: () => void;
+    saveData: (nextStatus?: string) => Promise<any>; // Changed return type to Promise<any> to accommodate AxiosResponse
+    formData: any;
+    API_URL: string;
+    router: any;
+    setIsSaving: (v: boolean) => void;
+    confirmedVerifikasi2: boolean;
+    setSaveSuccessModalVisible: (v: boolean) => void;
+}
+
+const TindakanComponent = function Tindakan({
+    tindakan,
+    sessionId,
+    processed_by: rawProcessedBy,
+    actionProps,
+    reportData,
+}: {
+    tindakan: TindakanClientState | null;
+    sessionId: string;
+    processed_by?: any; // Changed to any to handle different types safely
+    actionProps?: (props: TindakanActionProps) => React.ReactNode;
+    reportData?: any;
+}) {
+    // Safely handle processed_by to ensure it's a string
+    const processed_by = (() => {
+        try {
+            if (typeof rawProcessedBy === 'string') {
+                return rawProcessedBy;
+            }
+            
+            if (rawProcessedBy && typeof rawProcessedBy === 'object') {
+                return rawProcessedBy.nama_admin || 
+                       rawProcessedBy.name || 
+                       (rawProcessedBy._id ? `Admin (${rawProcessedBy._id.toString().substring(0, 8)}...)` : '-');
+            }
+            
+            return '-';
+        } catch (e) {
+            console.error("Error processing admin name:", e);
+            return '-';
+        }
+    })();
+    // Gunakan custom hook untuk state dan handler utama
+    const state = useTindakanState(tindakan);
+    const {
+        formData, setFormData,
+        currentStepIndex, setCurrentStepIndex,
+        notif, setNotif,
+        saveSuccessModalVisible, setSaveSuccessModalVisible,
+        showModal, setShowModal,
+        activePhotoIndex, setActivePhotoIndex,
+        showConfirmModal, setShowConfirmModal,
+        showLaporModal, setShowLaporModal,
+        pendingNextStatus, setPendingNextStatus,
+        isLoading, setIsLoading,
+        isSaving, setIsSaving,
+        showRejectModal, setShowRejectModal,
+        showSelesaiModal, setShowSelesaiModal,
+        rejectReason, setRejectReason,
+        selesaiReason, setSelesaiReason,
+        confirmedVerifikasi2, setConfirmedVerifikasi2,
+        saveData, handleNextStep, handlePreviousStep,
+        validateCurrentStep,
+        router
+    } = state;
+
+    // State untuk show/hide section
+    const [showAdmin, setShowAdmin] = useState(false);
+    const [showProfileState, setShowProfileState] = useState(currentStepIndex === 0);
+    const [showKeluhanState, setShowKeluhanState] = useState(currentStepIndex === 0);
+    const [openedStep, setOpenedStep] = useState<number | null>(null);
+
+    // Debug formData to understand admin data issues
+    useEffect(() => {
+        console.info('TindakanComponent formData:', {
+            processed_by: formData.processed_by,
+            processed_by_type: typeof formData.processed_by,
+            processed_by_display: formData.processed_by_display,
+            keys: formData ? Object.keys(formData) : []
+        });
+    }, [formData]);
+
+    // isButtonDisabled
+    const isButtonDisabled =
+        isLoading ||
+        (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId) ||
+        (currentStepIndex === 3 && !formData.opd) ||
+        (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
+        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
+
+    // Tambahkan deklarasi NEXT_STEP_LABELS dan tooltipMessage di atas return utama
+    const NEXT_STEP_LABELS = [
+        "Lanjut Verifikasi",
+        "Konfirmasi Tindak Lanjut",
+        "Tindak Lanjut OPD Terkait",
+        "Selesai Penanganan",
+        "Selesai Pengaduan",
+        "Selesai",
+    ];
+
+    const tooltipMessage = isLoading
+        ? "Sedang memproses..."
+        : currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId
+            ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
+            : currentStepIndex === 3 && !formData.opd
+                ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
+                : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
+                    ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
+                    : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
+                        ? "Pastikan Status laporan SP4N Lapor sudah 'Selesai'"
+                        : "";
+
+    // Guard: only render if sessionId and (tindakan or reportData) exist
+    if (!sessionId || (!tindakan && !reportData)) {
+        return <div className="flex items-center justify-center h-full text-gray-500">Data tidak tersedia.</div>;
+    }
+
+    // Create a stable subset of formData that contains only what's needed by actionProps
+    const formDataForAction = useMemo(() => ({
+        opd: formData.opd,
+        trackingId: formData.trackingId,
+        status_laporan: formData.status_laporan,
+        report: formData.report,
+        situasi: formData.situasi,
+        // Add any other formData fields needed by ActionButtons component
+    }), [
+        formData.opd,
+        formData.trackingId,
+        formData.status_laporan,
+        formData.report,
+        formData.situasi,
+    ]);
+
+    // Use memoization to create stable props for actionProps with reduced dependency list
+    const actionPropsParams = useMemo(() => ({
+        currentStepIndex,
+        NEXT_STEP_LABELS,
+        isButtonDisabled,
+        tooltipMessage,
+        isLoading,
+        isSaving,
+        saveSuccessModalVisible,
+        showRejectModal,
+        showSelesaiModal,
+        rejectReason,
+        selesaiReason,
+        setShowRejectModal,
+        setShowSelesaiModal,
+        setRejectReason,
+        setSelesaiReason,
+        handlePreviousStep,
+        handleNextStep,
+        saveData,
+        formData: formDataForAction,
+        API_URL: API_URL || '',
+        router,
+        setIsSaving,
+        confirmedVerifikasi2,
+        setSaveSuccessModalVisible,
+    }), [
+        // Only include dependencies that should trigger re-rendering of action buttons
+        currentStepIndex,
+        isButtonDisabled,
+        isLoading,
+        isSaving,
+        saveSuccessModalVisible,
+        formDataForAction.status_laporan,
+        formDataForAction.opd,
+        formDataForAction.trackingId,
+        confirmedVerifikasi2
+        // Deliberately excluding other dependencies to prevent render loops
+    ]);
+
+    // Memoize reportData untuk referensi stabil - hanya pakai fields yang dibutuhkan
+    const memoizedReportData = useMemo(() => {
+        if (!reportData) return null;
+
+        // Return just the necessary fields to avoid deep comparisons on the entire reportData
+        return {
+            _id: reportData._id,
+            sessionId: reportData.sessionId,
+            message: reportData.message,
+            from: reportData.from,
+            user: reportData.user,
+            location: reportData.location,
+            photos: reportData.photos,
+            createdAt: reportData.createdAt
+        };
+    }, [
+        reportData?._id,
+        reportData?.sessionId,
+        reportData?.message,
+        reportData?.from,
+        reportData?.user?.name,
+        reportData?.location?.latitude,
+        reportData?.location?.longitude,
+        reportData?.photos?.length,
+        reportData?.createdAt
+    ]);
+
+    // Helper render section step
+    const renderStepSection = (idx: number, title: string, StepComponent: React.ComponentType<any>) => (
+        <div className="border-b pb-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-medium flex items-center gap-2">
+                    {title}
+                    <button
+                        onClick={() => setOpenedStep(openedStep === idx ? null : idx)}
+                        className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                    >
+                        {openedStep === idx ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                        {openedStep === idx ? 'Sembunyikan' : 'Lihat'}
+                    </button>
+                </h2>
+            </div>
+            {openedStep === idx && <StepComponent data={formData} onChange={setFormData} />}
+        </div>
+    );
+
+    // Don't need to use useEffect to call actionProps - we'll return it directly from the component
+    // This breaks the render loop while still making the action buttons available
+
+    // Call actionProps once when the component mounts or when critical dependencies change
+    useEffect(() => {
+        // Safety check for actionProps
+        if (typeof actionProps !== 'function') {
+            console.log("No actionProps function provided or not a function");
+            return;
+        }
+
+        try {
+            console.debug("Setting up actionProps effect with currentStepIndex:", currentStepIndex);
+
+            // Use a delay to allow rendering to complete before triggering prop callback
+            const timeoutId = setTimeout(() => {
+                try {
+                    console.debug("Calling actionProps with step:", actionPropsParams.currentStepIndex);
+                    const result = actionProps(actionPropsParams as TindakanActionProps);
+
+                    // Only log if debugging
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.debug("actionProps called successfully", {
+                            result,
+                            step: actionPropsParams.currentStepIndex,
+                            isLoading: actionPropsParams.isLoading,
+                            isSaving: actionPropsParams.isSaving
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error calling actionProps:", error);
+                    // Continue normal operation despite error - don't block UI
+                }
+            }, 200); // Increased delay to ensure stable render cycle
+
+            return () => {
+                clearTimeout(timeoutId);
+                console.debug("Cleaned up actionProps effect");
+            };
+        } catch (err) {
+            console.error("Critical error in actionProps useEffect:", err);
+            // Fall back gracefully without blocking the UI
+        }
+    }, [
+        actionProps,
+        // Only include critical dependencies in stable object form
+        currentStepIndex,
+        isButtonDisabled,
+        isLoading,
+        isSaving,
+        // Safely stringify important parts of actionPropsParams to create a stable dependency
+        JSON.stringify({
+            step: actionPropsParams?.currentStepIndex,
+            opd: actionPropsParams?.formData?.opd,
+            trackingId: actionPropsParams?.formData?.trackingId,
+            status: actionPropsParams?.formData?.status_laporan,
+        })
+    ]);
+
+    return (
+        <div className="flex flex-col h-full bg-gray-100 text-sm text-gray-800">
+            {/* Notif & Modal */}
+            {notif && (
+                <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded mb-4 shadow-sm">
+                    {notif}
+                </div>
+            )}
+            <SuccessModal open={saveSuccessModalVisible} onClose={() => setSaveSuccessModalVisible(false)} />
+            {/* KONTEN UTAMA (scrollable) */}
+            <div className="flex-1 overflow-y-auto px-0 md:px-0 pb-4 h-full">
+                <div className="space-y-4 mb-4">
+                    {/* Detail Admin */}
+                    <div className="border-b pb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-medium flex items-center gap-2">
+                                Detail Admin
+                                <button
+                                    onClick={() => setShowAdmin((prev) => !prev)}
+                                    className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                >
+                                    {showAdmin ? (
+                                        <>
+                                            <FaEyeSlash size={14} />
+                                            Sembunyikan
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaEye size={14} />
+                                            Lihat Detail
+                                        </>
+                                    )}
+                                </button>
+                            </h2>
+                        </div>
+                        {showAdmin && (
+                            <div className="bg-white rounded-md shadow p-4">
+                                {/* Log the admin data before rendering */}
+                                {(() => {
+                                    const adminValue = formData.processed_by_display || formData.processed_by || '-';
+                                    console.info('Actual admin value being passed to component:', {
+                                        value: adminValue,
+                                        type: typeof adminValue,
+                                        formDataKeys: Object.keys(formData)
+                                    });
+                                    return null;
+                                })()}
+                                
+                                <AdminSelector 
+                                    currentAdmin={formData.processed_by_display || formData.processed_by || '-'} 
+                                    onSave={(selectedAdmin) => {
+                                        if (selectedAdmin && formData.report) {
+                                            setIsSaving(true);
+                                            
+                                            // Log the data we're sending to the API 
+                                            console.info("Sending admin update request with data:", {
+                                                url: `${API_URL}/tindakan/${formData.report}/processed-by`,
+                                                reportId: formData.report,
+                                                selectedAdminId: selectedAdmin._id,
+                                                selectedAdmin
+                                            });
+                                            
+                                            // Call the update API with the selected admin
+                                            axios.patch(`${API_URL}/tindakan/${formData.report}/processed-by`, {
+                                                userLoginId: selectedAdmin._id
+                                            })
+                                            .then(response => {
+                                                // Detailed logging of the API response
+                                                console.info("Admin update API response:", {
+                                                    status: response.status,
+                                                    data: response.data,
+                                                    hasProcessedBy: 'processed_by' in response.data,
+                                                    processedByType: typeof response.data?.processed_by,
+                                                    processedByKeys: response.data?.processed_by && typeof response.data.processed_by === 'object' 
+                                                        ? Object.keys(response.data.processed_by) 
+                                                        : []
+                                                });
+                                                
+                                                // Extract processed_by from response safely
+                                                let processedBy;
+                                                let processedByDisplay;
+                                                
+                                                if (response.data?.processed_by) {
+                                                    processedBy = response.data.processed_by;
+                                                    
+                                                    // Format the display string based on what's returned
+                                                    if (typeof processedBy === 'object') {
+                                                        processedByDisplay = processedBy.nama_admin || 
+                                                                            processedBy.username || 
+                                                                            `Admin (${processedBy._id?.substring(0, 8)}...)`;
+                                                        
+                                                        console.info("Using object format for admin display", {
+                                                            processedBy,
+                                                            processedByDisplay
+                                                        });
+                                                    } else {
+                                                        processedByDisplay = String(processedBy);
+                                                        console.info("Using string format for admin display", {
+                                                            processedBy,
+                                                            processedByDisplay
+                                                        });
+                                                    }
+                                                } else {
+                                                    // Fallback to the selected admin if response doesn't include processed_by
+                                                    processedBy = selectedAdmin;
+                                                    processedByDisplay = selectedAdmin.nama_admin || 
+                                                                        selectedAdmin.username || 
+                                                                        `Admin (${selectedAdmin._id.substring(0, 8)}...)`;
+                                                    
+                                                    console.info("Using fallback admin display from selectedAdmin", {
+                                                        selectedAdmin,
+                                                        processedByDisplay
+                                                    });
+                                                }
+                                                
+                                                // Log the data we're about to save to formData
+                                                console.info("Admin data to be saved to formData:", {
+                                                    processedBy,
+                                                    processedByDisplay,
+                                                    processedByType: typeof processedBy,
+                                                    currentFormData: formData
+                                                });
+                                                
+                                                // Update formData with both the raw processed_by and a display string
+                                                const updatedFormData = {
+                                                    ...formData,
+                                                    processed_by: processedBy,
+                                                    processed_by_display: processedByDisplay
+                                                };
+                                                
+                                                setFormData(updatedFormData);
+                                                console.info("Updated formData after admin change:", updatedFormData);
+                                                
+                                                // Show success notification
+                                                setNotif("✅ Admin berhasil diperbarui");
+                                                
+                                                // Refresh router to ensure changes are reflected in the UI
+                                                router.refresh();
+                                            })
+                                            .catch(error => {
+                                                console.error("Error updating admin:", error);
+                                                setNotif("❌ Gagal memperbarui admin: " + 
+                                                    (error.response?.data?.message || error.message || "Unknown error"));
+                                            })
+                                            .finally(() => {
+                                                setIsSaving(false);
+                                            });
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {/* Detail Pelapor */}
+                    <div className="border-b pb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-medium flex items-center gap-2">
+                                Detail Pelapor
+                                <button
+                                    onClick={() => setShowProfileState((prev) => !prev)}
+                                    className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                >
+                                    {showProfileState ? (
+                                        <>
+                                            <FaEyeSlash size={14} />
+                                            Sembunyikan
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaEye size={14} />
+                                            Lihat Detail
+                                        </>
+                                    )}
+                                </button>
+                            </h2>
+                        </div>
+                        {showProfileState && (
+                            <Profile sessionId={sessionId} data={reportData} />
+                        )}
+                    </div>
+                    {/* Detail Keluhan */}
+                    <div className="border-b pb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-medium flex items-center gap-2">
+                                Detail Keluhan
+                                <button
+                                    onClick={() => setShowKeluhanState((prev) => !prev)}
+                                    className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                >
+                                    {showKeluhanState ? (
+                                        <>
+                                            <FaEyeSlash size={14} />
+                                            Sembunyikan
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaEye size={14} />
+                                            Lihat Detail
+                                        </>
+                                    )}
+                                </button>
+                            </h2>
+                        </div>
+                        {showKeluhanState && memoizedReportData && (
+                            <Keluhan
+                                key={`keluhan-${sessionId}`}
+                                sessionId={sessionId}
+                                data={memoizedReportData}
+                            />
+                        )}
+                    </div>
+                </div>
+                {/* Previous Steps (show with toggle) */}
+                {Array.from({ length: currentStepIndex }).map((_, idx) => (
+                    <div key={`prev-step-${idx}`} className="border-b pb-4 mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-medium flex items-center gap-2">
+                                {STATUS_LIST[idx]}
+                                <button
+                                    onClick={() => setOpenedStep(openedStep === idx ? null : idx)}
+                                    className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                >
+                                    {openedStep === idx ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                                    {openedStep === idx ? 'Sembunyikan' : 'Lihat'}
+                                </button>
+                            </h2>
+                        </div>
+                        {openedStep === idx && (() => {
+                            const StepComponent = STEP_COMPONENTS[idx];
+                            if (idx === 2) { // Verifikasi2
+                                return (
+                                    <Verifikasi2
+                                        data={formData}
+                                        onChange={setFormData}
+                                        onConfirmChange={val => setConfirmedVerifikasi2(val)}
+                                        saveData={saveData}
+                                    />
+                                );
+                            } else if (idx === 0) { // Verifikasi
+                                return <Verifikasi data={{ ...formData, sessionId }} onChange={setFormData} />;
+                            } else if (idx === 1) { // Verifikasi1
+                                return <Verifikasi1 data={{ ...formData }} onChange={setFormData} saveData={saveData} />;
+                            } else if (idx === 3) { // Proses
+                                return <Proses data={formData} onChange={setFormData} saveData={saveData} />;
+                            } else if (idx === 4) { // Selesai
+                                return <Selesai data={{ ...formData, sessionId }} reportData={reportData} saveData={saveData} />;
+                            } else if (idx === 5) { // Selesai2
+                                return <Selesai2 data={{ ...formData, sessionId }} reportData={reportData} saveData={saveData} />;
+                            } else if (idx === 6) { // Ditutup
+                                return <Ditutup data={{ ...formData, sessionId }} saveData={saveData} />;
+                            }
+                            return null;
+                        })()}
+                    </div>
+                ))}
+
+                {/* Current Active Step (always shown) */}
+                <div className="border-b pb-4 mb-4 bg-blue-50 p-4 rounded-md">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-blue-700">
+                            Tahap Aktif: {STATUS_LIST[currentStepIndex]}
+                        </h2>
+                    </div>
+
+                    {(() => {
+                        const status = STATUS_LIST[currentStepIndex];
+                        if (status === "Verifikasi Situasi") {
+                            return (
+                                <Verifikasi1 
+                                    data={{...formData}} 
+                                    onChange={setFormData} 
+                                    saveData={saveData}
+                                />
+                            );} 
+                        else if (status === "Verifikasi Kelengkapan Berkas") {
+                            return (
+                                <Verifikasi2
+                                    data={{...formData}}
+                                    onChange={setFormData}
+                                    onConfirmChange={val => setConfirmedVerifikasi2(val)}
+                                    saveData={saveData}
+                                />
+                            );
+                        } else if (status === "Proses OPD Terkait") {
+                            return (
+                                <Proses
+                                    data={{...formData}}
+                                    onChange={setFormData}
+                                    saveData={saveData}
+                                />
+                            );
+                        } else if (status === "Selesai Pengaduan") {
+                            return (
+                                <Selesai2
+                                    data={{ ...formData, sessionId }}
+                                    reportData={reportData}
+                                    saveData={saveData}
+                                />
+                            );
+                        } else if (status === "Selesai Penanganan") {
+                            return (
+                                <Selesai 
+                                    data={{ ...formData, sessionId }} 
+                                    reportData={reportData} 
+                                    saveData={saveData}
+                                />
+                            );
+                        } else if (status === "Ditutup") {
+                            return (
+                                <Ditutup 
+                                    data={{ ...formData, sessionId }} 
+                                    saveData={saveData}
+                                />
+                            );
+                        } else {
+                            const StepComponent = STEP_COMPONENTS[currentStepIndex];
+                            return (
+                                <StepComponent 
+                                    data={{ ...formData, sessionId }} 
+                                    onChange={setFormData} 
+                                    saveData={saveData}
+                                />
+                            );
+                        }
+                    })()}
+                </div>
+            </div>
+            {/* Modal Zoom Foto */}
+            <Modal open={showModal && !!formData.photos} onClose={() => setShowModal(false)} maxWidth="max-w-lg">
+                {formData.photos && formData.photos.length > 0 && (
+                    <div className="relative">
+                        <button onClick={() => setShowModal(false)} className="absolute top-2 right-3 text-gray-600 hover:text-black text-lg">✕</button>
+                        <div>
+                            <Zoom>
+                                <img
+                                    src={`${API_URL}${formData.photos[activePhotoIndex]}`}
+                                    className="w-full h-96 object-contain rounded-md cursor-zoom-in"
+                                    alt={`Foto ${activePhotoIndex + 1}`}
+                                />
+                            </Zoom>
+                        </div>
+                        <div className="flex justify-between mt-4 text-sm font-medium">
+                            <button onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : (formData.photos.length - 1))} className="text-blue-600 hover:underline">←</button>
+                            <span>Foto {activePhotoIndex + 1} dari {formData.photos.length}</span>
+                            <button onClick={() => setActivePhotoIndex((prev) => prev < (formData.photos.length - 1) ? prev + 1 : 0)} className="text-blue-600 hover:underline">→</button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+            <LoadingModal open={isSaving} />
+            {/* Modal Konfirmasi Proses OPD Terkait */}
+            <Modal open={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
+                <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Lanjutkan Proses</h3>
+                <p className="mb-2 text-sm text-gray-700">
+                    Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
+                </p>
+                <div className="flex justify-end gap-2 mt-4">
+                    <button
+                        onClick={() => setShowConfirmModal(false)}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={async () => {
+                            if (pendingNextStatus) {
+                                try {
+                                    setIsLoading(true);
+                                    await saveData(pendingNextStatus);
+                                    setCurrentStepIndex((prev: number) => prev + 1);
+                                    setPendingNextStatus(null);
+                                    setShowConfirmModal(false);
+                                    setSaveSuccessModalVisible(true);
+                                } catch (error: any) {
+                                    console.error("Error saving data:", error);
+                                    alert(`Gagal menyimpan data: ${error?.message || "Terjadi kesalahan"}`);
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            }
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
+                    >
+                        Lanjutkan
+                    </button>
+                </div>
+            </Modal>
+            {/* Modal Konfirmasi SP4N Lapor */}
+            <Modal open={showLaporModal} onClose={() => setShowLaporModal(false)}>
+                <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Tindak Lanjut</h3>
+                <p className="mb-2 text-sm text-gray-700">
+                    Yakin data sudah di croscheck{formData.situasi === 'Darurat' ? '' : `, lanjutkan ke SP4N Lapor`}?
+                </p>
+                <div className="flex justify-end gap-2 mt-4">
+                    <button
+                        onClick={() => setShowLaporModal(false)}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={async () => {
+                            if (pendingNextStatus) {
+                                try {
+                                    setIsSaving(true);
+                                    await saveData(pendingNextStatus);
+                                    setCurrentStepIndex((prev: number) => formData.situasi === 'Darurat' ? 5 : prev + 1);
+                                    setPendingNextStatus(null);
+                                    setShowLaporModal(false);
+                                    setSaveSuccessModalVisible(true);
+                                    if (currentStepIndex === 1 && formData.situasi !== 'Darurat') {
+                                        window.open("https://www.lapor.go.id/", "_blank", "noopener,noreferrer");
+                                    }
+                                } catch (error: any) {
+                                    console.error("Error saving data:", error);
+                                    alert(`Gagal menyimpan data: ${error?.message || "Terjadi kesalahan"}`);
+                                } finally {
+                                    setIsSaving(false);
+                                }
+                            }
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
+                    >
+                        Lanjutkan
+                    </button>
+                </div>
+            </Modal>
+        </div>
+    );
+}
+
+export default React.memo(TindakanComponent);

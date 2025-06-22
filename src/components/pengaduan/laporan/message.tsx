@@ -17,12 +17,13 @@ interface MessageItem {
     mediaUrl?: string;     // for image
 }
 
-export default function Message({ from }: { from: string }) {
+// Tambahkan mode ke props
+export default function Message({ from, mode }: { from: string, mode: "bot" | "manual" }) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
     const [isScrolledUp, setIsScrolledUp] = useState(false);
-    const [mode, setMode] = useState<"bot" | "manual">("bot");
+    // const [mode, setMode] = useState<"bot" | "manual">("bot"); // Hapus state mode lokal
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const limit = 20;
@@ -69,16 +70,7 @@ export default function Message({ from }: { from: string }) {
 
     useEffect(() => {
         if (!from) return;
-
-        axios.get(`${API_URL}/user/user-mode/${from}`)
-            .then(res => {
-                const mode = res.data?.mode || res.data?.session?.mode;
-                if (mode === "manual" || mode === "bot") setMode(mode);
-            })
-            .catch(err => console.error("Gagal fetch mode:", err));
-
         fetchMessages(true);
-        socket.connect();
 
         const handleNewMessage = (msg: MessageItem) => {
             if (msg.from !== from) return;
@@ -120,9 +112,15 @@ export default function Message({ from }: { from: string }) {
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
+        const nama_admin = localStorage.getItem("nama_admin") || "Admin";
+        const role = localStorage.getItem("role") || "Admin";
         axios.post(
             `${API_URL}/chat/send/${from}`,
-            { message: newMessage }
+            {
+                message: newMessage,
+                nama_admin,
+                role
+            }
         )
             .then(() => setNewMessage(""))
             .catch(err => console.error(err));

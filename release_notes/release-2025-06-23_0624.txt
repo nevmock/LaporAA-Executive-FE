@@ -1,0 +1,31 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update next.config.ts, src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx, src/app/AppShell.tsx
+📅 2025-06-23_0624
+
+📂 Perubahan file:
+next.config.ts
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/AppShell.tsx
+src/components/Tooltip.tsx
+src/components/dashboard/BarOpdChart.tsx
+src/components/pengaduan/headerSection.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/laporan/MapViews.tsx
+src/components/pengaduan/laporan/componentsTindakan/ditutup.tsx
+src/components/pengaduan/laporan/componentsTindakan/opdSelect.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/componentsTindakan/selesai.tsx
+src/components/pengaduan/laporan/componentsTindakan/selesai2.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi1.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi2.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/laporan/profile.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/tableSection.tsx
+src/lib/types.ts
+src/lib/utils.ts
+
+🚀 Meluncur
