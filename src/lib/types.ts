@@ -102,6 +102,7 @@ export interface Chat {
 export interface ProcessedBy {
     _id: string;
     nama_admin: string;
+    role: string;
 }
 
 export interface Report {

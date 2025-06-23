@@ -2,10 +2,10 @@
 
 import Sidebar from "../components/sidebar";
 import SidebarHorizontal from "../components/sidebarHorizontal";
-import { useRouter } from "next/navigation";
+import TopNavbar from "../components/TopNavbar";
+import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
-import { FiLogOut } from "react-icons/fi";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -14,8 +14,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [isMobile, setIsMobile] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
     const router = useRouter();
+    const pathname = usePathname();
 
     const [role, setRole] = useState<string | null>(null);
+
+    // Get page title based on pathname
+    const getPageTitle = () => {
+        if (pathname.includes('/dashboard')) {
+            return 'Dashboard';
+        } else if (pathname.includes('/pengaduan')) {
+            return 'Daftar Pengaduan';
+        }
+        return 'Laporan AA';
+    };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -60,33 +71,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen w-screen flex-col sm:flex-row">
             {isMobile ? (
                 <>
-                    <SidebarHorizontal countPending={countPending} onLogout={handleLogout} />
-                    <div className="flex flex-col h-[calc(100vh-48px)] overflow-auto">
-                        <main className="flex-1 bg-gray-900 text-white flex flex-col">
-                            {/* TOP NAVBAR */}
-                            <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center sticky top-0 z-[9000]">
-                                <div className="flex items-center gap-2">
-                                    {role && (
-                                        <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
-                                    )}
-                                    <span>
-                                        User : {userName || "Pengguna"}
-                                    </span>
-                                </div>
+                    <div className="flex flex-col h-screen overflow-hidden">
+                        {/* Combined TopNavbar with SidebarHorizontal for Mobile */}
+                        <TopNavbar 
+                            title={getPageTitle()}
+                            userName={userName || "Pengguna"}
+                            role={role}
+                            onLogout={handleLogout}
+                            isMobile={true}
+                            countPending={countPending}
+                        />
 
-                                <button
-                                    onClick={handleLogout}
-                                    className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
-                                >
-                                    Logout <FiLogOut size={12} />
-                                </button>
-                            </div>
-
-                            {/* CONTENT */}
-                            <div className="flex-1 bg-white">
-                                {children}
-                            </div>
-                        </main>
+                        {/* CONTENT */}
+                        <div className="flex-1 overflow-auto bg-white">
+                            {children}
+                        </div>
                     </div>
                 </>
             ) : (
@@ -94,23 +93,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <Sidebar countPending={countPending} />
                     <main className="flex-1 bg-gray-900 text-white flex flex-col overflow-hidden">
                         {/* TOP NAVBAR */}
-                        <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center sticky top-0 z-10">
-                            <div className="flex items-center gap-2">
-                                {role && (
-                                    <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
-                                )}
-                                <span>
-                                    User : {userName || "Pengguna"}
-                                </span>
-                            </div>
-
-                            <button
-                                onClick={handleLogout}
-                                className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
-                            >
-                                Logout <FiLogOut size={12} />
-                            </button>
-                        </div>
+                        <TopNavbar 
+                            title={getPageTitle()}
+                            userName={userName || "Pengguna"}
+                            role={role}
+                            onLogout={handleLogout}
+                            isMobile={false}
+                            countPending={countPending}
+                        />
 
                         {/* CONTENT */}
                         <div className="flex-1 overflow-auto bg-white">

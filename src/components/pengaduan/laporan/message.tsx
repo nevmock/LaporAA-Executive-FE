@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "../../../utils/axiosInstance";
 import { io } from "socket.io-client";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 const socket = io(`${API_URL}`, { autoConnect: false });
@@ -17,19 +17,52 @@ interface MessageItem {
     mediaUrl?: string;     // for image
 }
 
-// Tambahkan mode ke props
-export default function Message({ from, mode }: { from: string, mode: "bot" | "manual" }) {
+// Props interface untuk manual mode control
+interface MessageProps {
+    from: string;
+    mode: "bot" | "manual";
+    onModeChange?: (newMode: "bot" | "manual") => void;
+    forceMode?: boolean; // Receive force mode from parent
+}
+
+export default function Message({ from, mode, onModeChange, forceMode = false }: MessageProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
     const [isScrolledUp, setIsScrolledUp] = useState(false);
-    // const [mode, setMode] = useState<"bot" | "manual">("bot"); // Hapus state mode lokal
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [modeChanging, setModeChanging] = useState(false);
     const limit = 20;
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
+    // Manual mode toggle function
+    const toggleMode = async () => {
+        if (modeChanging || !onModeChange) return;
+        
+        setModeChanging(true);
+        try {
+            const newMode = mode === "bot" ? "manual" : "bot";
+            
+            if (newMode === "manual") {
+                // Set manual mode dengan timeout 30 menit
+                await axios.post(`${API_URL}/mode/manual/${from}`, { minutes: 30 });
+            } else {
+                // Set bot mode
+                await axios.put(`${API_URL}/mode/${from}`, { mode: "bot" });
+            }
+            
+            onModeChange(newMode);
+            console.log(`Mode manually changed to ${newMode} for ${from}`);
+        } catch (error) {
+            console.error("Failed to change mode:", error);
+            alert("Gagal mengubah mode. Silakan coba lagi.");
+        } finally {
+            setModeChanging(false);
+        }
+    };
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -163,11 +196,47 @@ export default function Message({ from, mode }: { from: string, mode: "bot" | "m
 
     return (
         <div className="flex flex-col h-full relative">
-            {/* Mode */}
-            <div className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-white shadow px-3 py-1 rounded-full border text-xs">
-                <span className="text-gray-700">Mode:</span>
-                <span className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`} />
-                <span className="text-gray-700">{mode === "manual" ? "Manual" : "Bot"}</span>
+            {/* Mode Control Header */}
+            <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${mode === 'manual' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm font-medium">
+                        Mode: {mode === 'manual' ? 'Manual' : 'Bot'}
+                        {forceMode && (
+                            <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                FORCE
+                            </span>
+                        )}
+                    </span>
+                </div>
+                <button
+                    onClick={toggleMode}
+                    disabled={modeChanging || Boolean(forceMode)}
+                    className={`flex items-center space-x-2 px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        forceMode 
+                            ? 'bg-red-100 text-red-700 cursor-not-allowed'
+                            : mode === 'manual' 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    } ${modeChanging ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={forceMode ? 'Cannot change mode when Force Mode is active' : ''}
+                >
+                    {modeChanging ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                        <>
+                            {mode === 'manual' ? <FaUser size={14} /> : <FaRobot size={14} />}
+                            <span>
+                                {forceMode 
+                                    ? 'Force Mode Active' 
+                                    : mode === 'manual' 
+                                        ? 'Switch to Bot' 
+                                        : 'Switch to Manual'
+                                }
+                            </span>
+                        </>
+                    )}
+                </button>
             </div>
 
             {/* Chat Area */}

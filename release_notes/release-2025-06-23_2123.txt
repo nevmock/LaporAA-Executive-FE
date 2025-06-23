@@ -1,0 +1,18 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update next.config.ts, package.json, src/app/(dashboard)/dashboard/Home.tsx
+📅 2025-06-23_2123
+
+📂 Perubahan file:
+next.config.ts
+package.json
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/AppShell.tsx
+src/components/pengaduan/headerSection.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/tableSection.tsx
+src/lib/types.ts
+
+🚀 Meluncur

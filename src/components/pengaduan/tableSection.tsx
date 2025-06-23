@@ -4,12 +4,11 @@ import React, { useEffect } from "react";
 import {
     FaStar, FaIdCard, FaUser, FaPhone, FaMap,
     FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
-    FaHashtag
+    FaHashtag, FaHeart, FaRegHeart, FaEye
 } from "react-icons/fa";
 import { ImSwitch } from "react-icons/im";
 import { IoTrashBin } from "react-icons/io5";
-import { BsPinAngleFill, BsPersonFillCheck } from "react-icons/bs";
-import { RiPushpin2Fill, RiPushpin2Line } from "react-icons/ri";
+import { BsPersonFillCheck } from "react-icons/bs";
 import axios from "../../utils/axiosInstance";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
@@ -28,10 +27,14 @@ interface Props {
     allSelected: boolean; // Status semua terpilih
     handleDeleteSelected: () => void; // Fungsi untuk hapus data terpilih
     toggleMode: (tindakanId: string, prioritas: boolean) => void; // Ubah status prioritas
+    toggleForceMode: (from: string, currentForceMode: boolean) => void; // Toggle force mode bot
+    forceModeStates: Record<string, boolean>; // Status force mode untuk setiap user
+    loadingForceMode: Record<string, boolean>; // Loading state untuk force mode
     setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void; // Pilih lokasi di peta
     setPhotoModal: (photos: string[]) => void; // Tampilkan modal galeri foto
     loading: boolean; // Status loading
     setSorts: (sorts: { key: SortKey; order: "asc" | "desc" }[]) => void; // Setter sorting (tidak dipakai langsung)
+    setSearch: (search: string) => void; // Fungsi untuk set search box
 }
 
 // Warna status untuk ikon status
@@ -63,8 +66,10 @@ function getElapsedTime(createdAt?: string): string {
 const TableSection: React.FC<Props> = ({
     filteredData, sorts, toggleSort, role,
     selectedIds, toggleSingleSelect,
-    handleDeleteSelected, toggleMode, setSelectedLoc, setPhotoModal,
+    handleDeleteSelected, toggleMode, toggleForceMode, forceModeStates, loadingForceMode,
+    setSelectedLoc, setPhotoModal,
     loading,
+    setSearch,
 }) => {
     // State untuk modal OPD
     const [opdModalVisible, setOpdModalVisible] = React.useState(false);
@@ -156,11 +161,11 @@ const TableSection: React.FC<Props> = ({
                             {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
-                                // { key: 'bot_switch', icon: <ImSwitch />, label: '' },
-                                { key: 'pinned', icon: <BsPinAngleFill />, label: '' },
-                                { key: 'admin', icon: <BsPersonFillCheck />, label: '' },
+                                { key: 'bot_switch', icon: <ImSwitch />, label: '' },
+                                { key: 'pinned', icon: <FaHeart />, label: '' },
+                                { key: 'admin', icon: <BsPersonFillCheck />, label: 'Admin' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
-                                { key: 'sessionId', icon: <FaIdCard />, label: 'No. Id' },
+                                { key: 'sessionId', icon: <FaEye />, label: 'Detail' },
                                 { key: 'date', icon: <FaClock />, label: 'Tgl. Laporan' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
                                 // { key: 'from', icon: <FaPhone />, label: 'No. Kontak' },
@@ -168,7 +173,6 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD Terkait' },
-                                { key: 'timer', icon: <FaClock />, label: 'Waktu Berjalan' },
                                 { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
                             ].map(({ key, icon, label }) => (
                                 <th
@@ -207,7 +211,7 @@ const TableSection: React.FC<Props> = ({
                         {loading ? (
                             // Loading spinner
                             <tr>
-                                <td colSpan={12} className="py-8 text-center">
+                                <td colSpan={11} className="py-8 text-center">
                                     <div className="flex justify-center items-center space-x-2">
                                         <div className="w-5 h-5 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin" />
                                         <span className="text-sm text-gray-600">Memuat data...</span>
@@ -225,7 +229,7 @@ const TableSection: React.FC<Props> = ({
                                         : '';
 
                                 return (
-                                    <tr key={chat.sessionId} className={`border-b border-gray-300 ${rowClass}`}>
+                                    <tr key={chat.sessionId} className={`border-b border-gray-300 hover:bg-gray-100 transition-colors duration-200 ${rowClass}`}>
                                         {/* Kolom prioritas toggle */}
                                         <td className="px-4 py-2">
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
@@ -240,17 +244,28 @@ const TableSection: React.FC<Props> = ({
                                         </td>
 
                                         {/* Bot Switch */}
-                                        {/* <td className="px-4 py-2">
+                                        <td className="px-4 py-2">
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
-                                                <Switch
-                                                    checked={isPrioritas}
-                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
-                                                    className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
-                                                >
-                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                </Switch>
-                                            ) : chat.tindakan?.prioritas || '-'}
-                                        </td> */}
+                                                <div className="flex items-center justify-center">
+                                                    {loadingForceMode[chat.from] ? (
+                                                        <div className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                                                    ) : (
+                                                        <Switch
+                                                            checked={forceModeStates[chat.from] || false}
+                                                            onChange={() => toggleForceMode(chat.from, forceModeStates[chat.from] || false)}
+                                                            className={`${forceModeStates[chat.from] ? 'bg-red-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                                                            title={forceModeStates[chat.from] ? 'Bot Mode OFF (Force Manual)' : 'Bot Mode ON (Normal)'}
+                                                        >
+                                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${forceModeStates[chat.from] ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                        </Switch>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center">
+                                                    <span className={`inline-block w-3 h-3 rounded-full ${forceModeStates[chat.from] ? 'bg-red-500' : 'bg-green-500'}`} title={forceModeStates[chat.from] ? 'Bot OFF' : 'Bot ON'}></span>
+                                                </div>
+                                            )}
+                                        </td>
 
                                         {/* Pinned */}
                                         <td className="px-4 py-2">
@@ -259,25 +274,46 @@ const TableSection: React.FC<Props> = ({
                                                     onClick={() => togglePin(chat.sessionId)}
                                                     disabled={loadingPin[chat.sessionId]}
                                                     className="p-1 rounded-full hover:bg-gray-100 transition-all focus:outline-none"
-                                                    title={pinnedReports[chat.sessionId] ? "Hapus pin laporan" : "Pin laporan"}
+                                                    title={pinnedReports[chat.sessionId] ? "Hapus love laporan" : "Love laporan"}
                                                 >
                                                     {loadingPin[chat.sessionId] ? (
                                                         <div className="w-5 h-5 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
                                                     ) : pinnedReports[chat.sessionId] ? (
-                                                        <RiPushpin2Fill size={20} className="text-red-500" />
+                                                        <FaHeart size={20} className="text-red-500" />
                                                     ) : (
-                                                        <RiPushpin2Line size={20} className="text-gray-500" />
+                                                        <FaRegHeart size={20} className="text-gray-500" />
                                                     )}
                                                 </button>
                                             ) : (
                                                 chat.is_pinned ? (
-                                                    <RiPushpin2Fill size={20} className="text-red-500 mx-auto" />
+                                                    <FaHeart size={20} className="text-red-500 mx-auto" />
                                                 ) : '-'
                                             )}
                                         </td>
 
                                         {/* Admin */}
-                                        <td className="px-4 py-2">{chat?.processed_by?.nama_admin || '-'}</td>
+                                        <td className="px-4 py-2">
+                                            <div className="flex items-center gap-2">
+                                                {/* Icon User dengan warna dinamis */}
+                                                <FaUser
+                                                    className={`w-4 h-4 ${chat?.processed_by?.role === "Bupati"
+                                                        ? "text-red-600"
+                                                        : "text-gray-400"
+                                                        }`}
+                                                />
+                                                {/* Nama Admin, tetap di satu baris, jika panjang di-ellipsis */}
+                                                <span
+                                                    className="max-w-[80px] whitespace-nowrap overflow-hidden text-ellipsis block"
+                                                    title={chat?.processed_by?.nama_admin || "-"}
+                                                >
+                                                    {chat?.processed_by?.nama_admin
+                                                        ? chat.processed_by.nama_admin.length > 8
+                                                            ? chat.processed_by.nama_admin.slice(0, 8) + "..."
+                                                            : chat.processed_by.nama_admin
+                                                        : "-"}
+                                                </span>
+                                            </div>
+                                        </td>
 
                                         {/* Tag */}
                                         <td className="px-4 py-2">
@@ -292,23 +328,27 @@ const TableSection: React.FC<Props> = ({
                                                             // Jika object
                                                             if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
                                                                 return (
-                                                                    <span
+                                                                    <button
                                                                         key={tagItem._id || `tag-obj-${index}`}
-                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                                        onClick={() => setSearch(`${tagItem.hash_tag}`)}
+                                                                        title={`Klik untuk mencari tag: #${tagItem.hash_tag}`}
                                                                     >
                                                                         #{tagItem.hash_tag}
-                                                                    </span>
+                                                                    </button>
                                                                 );
                                                             }
                                                             // Jika string (legacy)
                                                             if (typeof tagItem === "string") {
                                                                 return (
-                                                                    <span
+                                                                    <button
                                                                         key={`tag-str-${index}`}
-                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                                        onClick={() => setSearch(`${tagItem}`)}
+                                                                        title={`Klik untuk mencari tag: #${tagItem}`}
                                                                     >
                                                                         #{tagItem}
-                                                                    </span>
+                                                                    </button>
                                                                 );
                                                             }
                                                             return null;
@@ -317,12 +357,14 @@ const TableSection: React.FC<Props> = ({
                                                     {/* Render tags dari root (legacy, jika tindakan.tag kosong) */}
                                                     {(!chat.tindakan?.tag || chat.tindakan.tag.length === 0) && Array.isArray(chat.tags) && chat.tags.length > 0 &&
                                                         chat.tags.map((tag, idx) => (
-                                                            <span
+                                                            <button
                                                                 key={`legacy-root-tag-${idx}`}
-                                                                className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                                className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                                onClick={() => setSearch(`${tag}`)}
+                                                                title={`Klik untuk mencari tag: #${tag}`}
                                                             >
                                                                 #{tag}
-                                                            </span>
+                                                            </button>
                                                         ))
                                                     }
                                                 </div>
@@ -333,26 +375,42 @@ const TableSection: React.FC<Props> = ({
 
                                         {/* Link ke halaman detail */}
                                         <td className="px-4 py-2">
-                                            <Tooltip text="Klik di sini untuk melihat detail laporan">
-                                                <Link href={`/pengaduan/${chat.sessionId}`} className="text-blue-600 hover:underline">
-                                                    {chat.sessionId}
-                                                </Link>
-                                            </Tooltip>
+                                            <Link href={`/pengaduan/${chat.sessionId}`} legacyBehavior>
+                                                <a
+                                                    className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap"
+                                                    tabIndex={0}
+                                                >
+                                                    Lihat Detail
+                                                </a>
+                                            </Link>
                                         </td>
 
-                                        {/* Tanggal laporan */}
+                                        {/* Tanggal laporan dengan timer */}
                                         <td className="px-4 py-2">
-                                            {chat.createdAt
-                                                ? new Date(chat.createdAt).toLocaleString('id-ID', {
-                                                    day: '2-digit',
-                                                    month: 'long',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    timeZone: 'Asia/Jakarta',
-                                                    hour12: false,
-                                                })
-                                                : '-'}
+                                            <div className="flex flex-col items-center justify-center leading-tight">
+                                                {/* Baris 1: Tanggal */}
+                                                <div className="text-[10px] font-medium">
+                                                    {chat.createdAt
+                                                        ? (() => {
+                                                            const date = new Date(chat.createdAt);
+                                                            const day = date.toLocaleDateString("id-ID", { day: "2-digit", timeZone: "Asia/Jakarta" });
+                                                            const month = date.toLocaleDateString("id-ID", { month: "short", timeZone: "Asia/Jakarta" });
+                                                            const year = date.toLocaleDateString("id-ID", { year: "numeric", timeZone: "Asia/Jakarta" });
+                                                            const time = date.toLocaleTimeString("id-ID", {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                                timeZone: "Asia/Jakarta",
+                                                                hour12: false,
+                                                            });
+                                                            return `${day} ${month} ${year}, ${time} WIB`;
+                                                        })()
+                                                        : "-"}
+                                                </div>
+                                                {/* Baris 2: Timer */}
+                                                <div className="text-[8px] text-gray-500 mt-0.5">
+                                                    {getElapsedTime(chat.createdAt)}
+                                                </div>
+                                            </div>
                                         </td>
 
                                         {/* Nama Pelapor */}
@@ -400,6 +458,7 @@ const TableSection: React.FC<Props> = ({
                                                 </div>
                                             ) : <span className="text-sm text-gray-500">-</span>}
                                         </td>
+
                                         <td className="px-4 py-2">
                                             {chat.tindakan?.opd ? (
                                                 // Handle string array (actual API response)
@@ -457,9 +516,6 @@ const TableSection: React.FC<Props> = ({
                                             ) : "-"}
                                         </td>
 
-                                        {/* Timer */}
-                                        <td className="px-4 py-2">{getElapsedTime(chat.createdAt)}</td>
-
                                         {/* Foto */}
                                         <td className="px-2 py-2">
                                             <div className="flex justify-center items-center">
@@ -494,7 +550,7 @@ const TableSection: React.FC<Props> = ({
                         ) : (
                             // Data kosong
                             <tr>
-                                <td colSpan={12} className="py-4 text-center text-gray-500">
+                                <td colSpan={11} className="py-4 text-center text-gray-500">
                                     Tidak ada data ditemukan.
                                 </td>
                             </tr>

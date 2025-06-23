@@ -30,7 +30,6 @@ export default function Home() {
   return (
     <div className="pt-3">
       {/* Section Header */}
-      <h2 className="mb-2 text-2xl font-bold text-gray-900 px-3">Dashboard Lapor AA</h2>
       
       <div className="w-full min-h-screen overflow-y-auto bg-white px-3 pb-6 space-y-6">
 

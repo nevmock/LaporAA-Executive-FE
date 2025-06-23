@@ -9,6 +9,7 @@ import axios from "../../../../utils/axiosInstance";
 import { TindakanActionProps } from "../../../../components/pengaduan/laporan/tindakan";
 import ActionButtons from "../../../../components/pengaduan/laporan/ActionButtons";
 import { Tooltip } from "../../../../components/Tooltip";
+import { useBotModeWithTab } from "../../../../hooks/useBotMode";
 
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
@@ -27,9 +28,22 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"pesan" | "tindakan">("tindakan");
-  const [modeReady, setModeReady] = useState(false);
-  const [mode, setMode] = useState<"manual" | "bot">("bot");
   const [tindakanActionProps, setTindakanActionProps] = useState<TindakanActionProps | null>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  
+  // Bot Mode Management with auto-switching and force mode protection
+  const botMode = useBotModeWithTab({
+    userId: data?.from || '',
+    activeTab,
+    messageTabKey: 'pesan',
+    debug: process.env.NODE_ENV === 'development'
+  });
+  
+  // Manual mode change handler for Message component
+  const handleModeChange = (newMode: "bot" | "manual") => {
+    console.log(`Mode manually changed to: ${newMode}`);
+    // The mode will be automatically updated by the hook
+  };
   
   // This function is passed to tindakan component to get action props and break render loop
   const handleActionProps = useCallback((props: TindakanActionProps): React.ReactNode => {
@@ -54,7 +68,20 @@ export default function ChatPage() {
     // This prevents the "Objects are not valid as React children" error
     return null;
   }, []);
-  const ensureModeRef = useRef<{ running: boolean, lastTarget: string | null }>({ running: false, lastTarget: null });
+
+  // Debug panel toggle (only in development)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const handleKeyPress = (e: KeyboardEvent) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+          setShowDebugPanel(prev => !prev);
+        }
+      };
+      
+      window.addEventListener('keydown', handleKeyPress);
+      return () => window.removeEventListener('keydown', handleKeyPress);
+    }
+  }, []);
 
   // Auth check
   useEffect(() => {
@@ -75,50 +102,6 @@ export default function ChatPage() {
       })
       .finally(() => setLoading(false));
   }, [sessionId]);
-
-  // Mode (manual/bot) auto switch by tab
-  const ensureMode = async (from: string, target: "manual" | "bot") => {
-    if (!from) return;
-    if (ensureModeRef.current.running && ensureModeRef.current.lastTarget === target) return;
-    ensureModeRef.current.running = true;
-    ensureModeRef.current.lastTarget = target;
-    try {
-      const check = await axios.get(`${API_URL}/user/user-mode/${from}`);
-      const current = check.data?.mode || check.data?.session?.mode;
-      setMode(current === "manual" ? "manual" : "bot");
-      if (current === target) {
-        setModeReady(target === "manual");
-        ensureModeRef.current.running = false;
-        return;
-      }
-      await axios.patch(`${API_URL}/user/user-mode/${from}`, { mode: target });
-      setMode(target);
-      setModeReady(target === "manual");
-    } catch {
-      setModeReady(false);
-    } finally {
-      ensureModeRef.current.running = false;
-    }
-  };
-
-  // Tab change triggers mode
-  useEffect(() => {
-    if (!data?.from) return;
-    const from = data.from;
-    if (activeTab === "pesan") {
-      setModeReady(false);
-      ensureMode(from, "manual");
-    } else {
-      setModeReady(false);
-      ensureMode(from, "bot");
-    }
-    // Kembalikan ke bot kalau reload/leave
-    const handleBeforeUnload = () => {
-      navigator.sendBeacon(`${API_URL}/user/user-mode/${from}`, JSON.stringify({ mode: "bot" }));
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [activeTab, data?.from]);
 
   // Helper: ProgressBar
   const renderProgressBar = () => {
@@ -298,13 +281,27 @@ export default function ChatPage() {
         <div className="absolute inset-0 overflow-y-auto" style={{ overflowX: 'hidden' }}>
           <div className="h-full px-3 py-3">
             {activeTab === 'pesan' ? (
-              modeReady ? (
-                <div className="h-full">
-                  <MemoMessage from={data?.from || ""} mode={mode} />
+              <div className="h-full relative">
+                <MemoMessage 
+                  from={data?.from || ""} 
+                  mode={botMode.mode} 
+                  onModeChange={handleModeChange}
+                  forceMode={botMode.forceMode}
+                />
+                {/* Smart Mode Indicator with Force Mode display */}
+                <div className="absolute top-2 right-4 z-20">
+                  <div className={`px-2 py-1 rounded text-xs font-medium ${
+                    botMode.mode === 'manual' 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {botMode.mode === 'manual' ? 'Manual' : 'Bot'}
+                    {botMode.forceMode && (
+                      <span className="ml-1 px-1 bg-red-500 text-white rounded-sm text-xs">F</span>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full"><LoadingPage /></div>
-              )
+              </div>
             ) : (
               data && sessionId ? (
                 <div className="h-full">
@@ -333,6 +330,9 @@ export default function ChatPage() {
           <ActionButtons {...tindakanActionProps} />
         </footer>
       )}
+
+      {/* Debug Panel - DISABLED untuk prevent loops */}
+      {/* Debug panel disabled until bot mode service is stabilized */}
     </div>
   );
 }

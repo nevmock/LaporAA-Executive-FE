@@ -47,6 +47,10 @@ export default function Laporan() {
 
   const [opdList, setOpdList] = useState<{ opd: string; count: number }[]>([]);
   const [selectedOpd, setSelectedOpd] = useState("Semua");
+  
+  // State untuk force mode bot
+  const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
+  const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
 
   const [isPinnedOnly, setIsPinnedOnly] = useState(false);
 
@@ -172,6 +176,13 @@ export default function Laporan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly]);
 
+  // Load force mode states setelah data diambil
+  useEffect(() => {
+    if (!hydrated || data.length === 0) return;
+    loadForceModeStates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, data]);
+
   useEffect(() => {
     if (!hydrated) return;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,6 +304,102 @@ export default function Laporan() {
     }
   };
 
+  // Toggle force mode untuk bot WhatsApp - GUNAKAN botModeService
+  const toggleForceMode = async (from: string, currentForceMode: boolean) => {
+    if (loadingForceMode[from]) return; // Hindari multiple calls
+
+    try {
+      setLoadingForceMode(prev => ({ ...prev, [from]: true }));
+      
+      const newForceMode = !currentForceMode;
+      
+      // Gunakan botModeService untuk konsistensi
+      const { getBotModeService } = await import('../../services/botModeService');
+      const service = getBotModeService();
+      
+      if (service) {
+        await service.setForceMode(from, newForceMode);
+      } else {
+        // Fallback ke direct API call jika service tidak ada
+        await axios.post(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/mode/force/${from}`, {
+          force: newForceMode
+        });
+      }
+      
+      // Update state force mode
+      setForceModeStates(prev => ({
+        ...prev,
+        [from]: newForceMode
+      }));
+      
+      console.log(`Force mode ${newForceMode ? 'enabled' : 'disabled'} for ${from}`);
+    } catch (err) {
+      console.error("Gagal ubah force mode:", err);
+      alert("Terjadi kesalahan saat mengubah mode bot.");
+    } finally {
+      setLoadingForceMode(prev => ({ ...prev, [from]: false }));
+    }
+  };
+
+  // Load force mode status untuk semua user - GUNAKAN botModeService
+  const loadForceModeStates = async () => {
+    try {
+      const uniqueUsers = [...new Set(data.map(chat => chat.from))];
+      
+      // Gunakan botModeService untuk konsistensi dan caching
+      const { getBotModeService } = await import('../../services/botModeService');
+      const service = getBotModeService();
+      
+      if (service) {
+        // Gunakan service dengan caching
+        const forceModePromises = uniqueUsers.map(async (from) => {
+          try {
+            const force = await service.getForceMode(from);
+            return { from, force };
+          } catch (error) {
+            console.error(`Failed to get force mode for ${from}:`, error);
+            return { from, force: false };
+          }
+        });
+
+        const results = await Promise.all(forceModePromises);
+        const newForceModeStates = results.reduce((acc, { from, force }) => {
+          acc[from] = force;
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        setForceModeStates(newForceModeStates);
+        console.log('Loaded force mode states:', newForceModeStates);
+      } else {
+        // Fallback ke direct API call
+        const forceModePromises = uniqueUsers.map(async (from) => {
+          try {
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/mode/${from}`);
+            return { 
+              from, 
+              // Update field sesuai API response terbaru
+              force: response.data?.forceModeManual || response.data?.forceMode || response.data?.force || false 
+            };
+          } catch (error) {
+            console.error(`Failed to get force mode for ${from}:`, error);
+            return { from, force: false };
+          }
+        });
+
+        const results = await Promise.all(forceModePromises);
+        const newForceModeStates = results.reduce((acc, { from, force }) => {
+          acc[from] = force;
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        setForceModeStates(newForceModeStates);
+        console.log('Loaded force mode states (fallback):', newForceModeStates);
+      }
+    } catch (error) {
+      console.error("Failed to load force mode states:", error);
+    }
+  };
+
   // ----------------------- RENDER -----------------------
   return (
     <div className="flex flex-col h-full">
@@ -322,18 +429,6 @@ export default function Laporan() {
               setIsPinnedOnly={setIsPinnedOnly}
             />
           </div>
-          {/* Tombol Hide/Show di tengah bawah */}
-          <button
-            className="absolute left-1/2 -translate-x-1/2 top-0 z-10 bg-gray-100 hover:bg-gray-200 w-[180px] h-[20px] rounded-b-full px-4 py-1 shadow border transition-all flex justify-center items-center text-xs text-black"
-            onClick={() => setShowHeader((prev) => !prev)}
-          >
-            <span>{showHeader ? "Sembunyikan Filter" : "Tampilkan Filter"}</span>
-            <svg
-              className={`w-4 h-4 ml-1 transition-transform duration-200 ${showHeader ? "-rotate-180" : "rotate-0"}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -352,10 +447,14 @@ export default function Laporan() {
               allSelected={allSelected}
               handleDeleteSelected={handleDeleteSelected}
               toggleMode={toggleMode}
+              toggleForceMode={toggleForceMode}
+              forceModeStates={forceModeStates}
+              loadingForceMode={loadingForceMode}
               setSelectedLoc={setSelectedLoc}
               setPhotoModal={setPhotoModal}
               loading={loading}
               setSorts={setSorts}
+              setSearch={setSearch}
             />
           </div>
           {/* Pagination */}
