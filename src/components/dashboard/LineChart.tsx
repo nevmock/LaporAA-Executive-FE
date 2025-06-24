@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
 import axios from '../../utils/axiosInstance';
 import dayjs from 'dayjs';
+import { LineChartSkeleton } from './DashboardSkeleton';
 
 // Dynamic import untuk komponen Chart dari ApexCharts (agar tidak dirender di server)
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -37,6 +38,7 @@ export default function LineChart() {
     // Data chart
     const [categories, setCategories] = useState<string[]>([]);
     const [totals, setTotals] = useState<number[]>([]);
+    const [loading, setLoading] = useState(true);
 
     // Tahun berjalan + 4 tahun sebelumnya
     const years = useMemo(() => Array.from({ length: 5 }, (_, i) => now.year() - i), []);
@@ -84,6 +86,7 @@ export default function LineChart() {
 
     // Ambil data dari API berdasarkan filter waktu
     const fetchData = React.useCallback(() => {
+        setLoading(true);
         let url = `${API_URL}/dashboard/harian?mode=${filter}&year=${year}`;
         if (filter !== 'yearly') url += `&month=${month}`;
         if (filter === 'weekly') url += `&week=${week}`;
@@ -93,7 +96,8 @@ export default function LineChart() {
             .catch(() => {
                 setCategories([]);
                 setTotals([]);
-            });
+            })
+            .finally(() => setLoading(false));
     }, [filter, year, month, week]);
 
     // Fungsi export data ke format CSV
@@ -200,15 +204,19 @@ export default function LineChart() {
             </div>
 
             {/* Tampilan chart */}
-            <div className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]">
-                {isAllZero ? (
-                    <div className="flex items-center justify-center h-full text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
-                        Tidak ada data
-                    </div>
-                ) : (
-                    <Chart options={chartOptions} series={chartSeries} type="line" width="100%" height="100%" />
-                )}
-            </div>
+            {loading ? (
+                <LineChartSkeleton />
+            ) : (
+                <div className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]">
+                    {isAllZero ? (
+                        <div className="flex items-center justify-center h-full text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
+                            Tidak ada data
+                        </div>
+                    ) : (
+                        <Chart options={chartOptions} series={chartSeries} type="line" width="100%" height="100%" />
+                    )}
+                </div>
+            )}
         </div>
     );
 }

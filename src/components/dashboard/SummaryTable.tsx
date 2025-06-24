@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from '../../utils/axiosInstance';
 import dayjs from "dayjs";
+import { SummaryTableSkeleton } from './DashboardSkeleton';
 
 const STATUS_ORDER = [
     "Perlu Verifikasi",
@@ -206,7 +207,7 @@ export default function SummaryTable() {
             {/* Tabel dan mobile */}
             <div className="bg-white shadow-md text-gray-800 rounded-lg p-4 overflow-y-auto max-h-[500px]">
                 {loading ? (
-                    <div className="text-center text-gray-500 py-10">Memuat data...</div>
+                    <SummaryTableSkeleton />
                 ) : (
                     <>
                         {/* Desktop */}

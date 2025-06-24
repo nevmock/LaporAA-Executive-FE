@@ -12,9 +12,10 @@ interface TopNavbarProps {
     onLogout: () => void;
     isMobile?: boolean;
     countPending?: number;
+    namaAdmin?: string;
 }
 
-const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, countPending = 0 }) => {
+const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, countPending = 0, namaAdmin }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -98,7 +99,12 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                 )}
                 
                 {/* User Avatar Dropdown */}
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative flex items-center gap-2" ref={dropdownRef}>
+                    {/* Nama Admin - Desktop Only */}
+                    {!isMobile && namaAdmin && (
+                        <span className="text-xs text-gray-600 font-medium">{namaAdmin}</span>
+                    )}
+                    
                     {/* User Avatar - Clickable */}
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -121,6 +127,9 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                                         {role && (
                                             <span className="text-xs text-gray-500">{role}</span>
                                         )}
+                                        {!isMobile && namaAdmin && (
+                                            <span className="text-xs text-blue-600 font-medium">{namaAdmin}</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -129,7 +138,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                             <div className="p-2">
                                 <button
                                     onClick={handleLogoutClick}
-                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md flex items-center gap-3 transition-all duration-200"
+                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md flex justify-center items-center gap-3 transition-all duration-200"
                                 >
                                     <FiLogOut size={16} className="text-red-500" />
                                     <span>Sign out</span>

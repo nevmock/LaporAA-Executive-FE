@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import HeaderDesktop from "./HeaderDesktop";
 import HeaderMobile from "./HeaderMobile";
 
@@ -18,11 +18,16 @@ interface Props {
     setPage: (val: number) => void;
     selectedSituasi: string;
     setSelectedSituasi: (val: string) => void;
+    situasiList: Array<{situasi: string; count: number}>;
+    situasiTotal: number;
     opdList: Array<{opd: string; count: number}>;
+    opdTotal: number;
     selectedOpd: string;
     setSelectedOpd: (val: string) => void;
     isPinnedOnly: boolean;
     setIsPinnedOnly: (val: boolean) => void;
+    isByMeOnly: boolean;
+    setIsByMeOnly: (val: boolean) => void;
 }
 
 const HeaderSection: React.FC<Props> = ({
@@ -38,25 +43,17 @@ const HeaderSection: React.FC<Props> = ({
     setPage,
     selectedSituasi,
     setSelectedSituasi,
+    situasiList,
+    situasiTotal,
     opdList,
+    opdTotal,
     selectedOpd,
     setSelectedOpd,
     isPinnedOnly,
     setIsPinnedOnly,
+    isByMeOnly,
+    setIsByMeOnly,
 }) => {
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-        const checkScreenSize = () => {
-            setIsDesktop(window.innerWidth >= 768); // Changed from 640px to 768px for iPad support
-        };
-
-        checkScreenSize();
-        window.addEventListener('resize', checkScreenSize);
-        
-        return () => window.removeEventListener('resize', checkScreenSize);
-    }, []);
-
     const headerProps = {
         search,
         setSearch,
@@ -69,14 +66,19 @@ const HeaderSection: React.FC<Props> = ({
         setPage,
         selectedSituasi,
         setSelectedSituasi,
+        situasiList,
+        situasiTotal,
         opdList,
+        opdTotal,
         selectedOpd,
         setSelectedOpd,
         isPinnedOnly,
         setIsPinnedOnly,
+        isByMeOnly,
+        setIsByMeOnly,
     };
 
-    return isDesktop ? <HeaderDesktop {...headerProps} /> : <HeaderMobile {...headerProps} />;
+    return !isMobile ? <HeaderDesktop {...headerProps} /> : <HeaderMobile {...headerProps} />;
 };
 
 export default HeaderSection;

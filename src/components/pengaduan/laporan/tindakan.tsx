@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
+import axios from "../../../utils/axiosInstance";
 import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../lib/types";
 import Profile from "./profile";
@@ -60,12 +61,14 @@ const TindakanComponent = function Tindakan({
     processed_by: rawProcessedBy,
     actionProps,
     reportData,
+    role,
 }: {
     tindakan: TindakanClientState | null;
     sessionId: string;
     processed_by?: any; // Changed to any to handle different types safely
     actionProps?: (props: TindakanActionProps) => React.ReactNode;
     reportData?: any;
+    role?: string | null;
 }) {
     // Safely handle processed_by to ensure it's a string
     // Gunakan custom hook untuk state dan handler utama

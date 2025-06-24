@@ -47,7 +47,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const [year, setYear] = useState(now.year());
   const [month, setMonth] = useState(now.month() + 1);
   const [week, setWeek] = useState(1);
-  const [selectedStatus, setSelectedStatus] = useState('Semua');
+  const [selectedStatus, setSelectedStatus] = useState('Semua Status');
   const [mapReady, setMapReady] = useState(false);
   const mapParentRef = useRef<HTMLDivElement>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
@@ -75,7 +75,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
     if (filter !== 'yearly') url += `&month=${month}`;
     if (filter === 'weekly') url += `&week=${week}`;
-    if (selectedStatus !== 'Semua') url += `&status=${encodeURIComponent(selectedStatus)}`;
+    if (selectedStatus !== 'Semua Status') url += `&status=${encodeURIComponent(selectedStatus)}`;
     try {
       const res = await axios.get(url);
       setReports(res.data.data || []);

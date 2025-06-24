@@ -2,14 +2,33 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
+import { DashboardHomeSkeleton, SummaryTableSkeleton, SummaryPieChartSkeleton, LineChartSkeleton, BarOpdChartSkeleton, BarWilayahChartKecamatanSkeleton, MapPersebaranSkeleton } from '../../../components/dashboard/DashboardSkeleton';
 
-const BarOpdChart = dynamic(() => import('../../../components/dashboard/BarOpdChart'), { ssr: false });
-const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/BarWilayahChartKecamatan'), { ssr: false });
+const BarOpdChart = dynamic(() => import('../../../components/dashboard/BarOpdChart'), { 
+  ssr: false,
+  loading: () => <BarOpdChartSkeleton />
+});
+const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/BarWilayahChartKecamatan'), { 
+  ssr: false,
+  loading: () => <BarWilayahChartKecamatanSkeleton />
+});
 const FullScreen = dynamic(() => import('../../../components/dashboard/FullScreen'), { ssr: false });
-const LineChart = dynamic(() => import('../../../components/dashboard/LineChart'), { ssr: false });
-const MapPersebaran = dynamic(() => import('../../../components/dashboard/MapPersebaran'), { ssr: false });
-const SummaryPieChart = dynamic(() => import('../../../components/dashboard/SummaryPieChart'), { ssr: false });
-const SummaryTable = dynamic(() => import('../../../components/dashboard/SummaryTable'), { ssr: false });
+const LineChart = dynamic(() => import('../../../components/dashboard/LineChart'), { 
+  ssr: false,
+  loading: () => <LineChartSkeleton />
+});
+const MapPersebaran = dynamic(() => import('../../../components/dashboard/MapPersebaran'), { 
+  ssr: false,
+  loading: () => <MapPersebaranSkeleton />
+});
+const SummaryPieChart = dynamic(() => import('../../../components/dashboard/SummaryPieChart'), { 
+  ssr: false,
+  loading: () => <SummaryPieChartSkeleton />
+});
+const SummaryTable = dynamic(() => import('../../../components/dashboard/SummaryTable'), { 
+  ssr: false,
+  loading: () => <SummaryTableSkeleton />
+});
 
 export default function Home() {
   const router = useRouter();
@@ -25,7 +44,7 @@ export default function Home() {
     }
   }, [router]);
 
-  if (isCheckingAuth) return null;
+  if (isCheckingAuth) return <DashboardHomeSkeleton />;
 
   return (
     <div className="pt-3">

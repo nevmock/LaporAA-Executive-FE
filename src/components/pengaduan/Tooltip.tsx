@@ -22,7 +22,7 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({
     text,
     children,
-    position = "right",
+    position = "left",
     className = ""
 }) => {
     // Mapping posisi ke class Tailwind

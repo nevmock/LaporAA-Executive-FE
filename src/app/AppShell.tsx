@@ -6,6 +6,7 @@ import TopNavbar from "../components/TopNavbar";
 import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
+import { AppShellSkeleton } from "../components/LayoutSkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -13,6 +14,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [countPending, setCountPending] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
+    const [namaAdmin, setNamaAdmin] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -35,8 +38,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         } else {
             const username = localStorage.getItem("username");
             const role = localStorage.getItem("role");
+            const namaAdminLocal = localStorage.getItem("nama_admin");
             setUserName(username || "Pengguna");
             setRole(role);
+            setNamaAdmin(namaAdminLocal);
+            setIsLoading(false);
         }
     }, [router]);
 
@@ -67,6 +73,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         router.push("/login");
     };
 
+    if (isLoading) {
+        return <AppShellSkeleton />;
+    }
+
     return (
         <div className="flex h-screen w-screen flex-col sm:flex-row">
             {isMobile ? (
@@ -80,6 +90,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             onLogout={handleLogout}
                             isMobile={true}
                             countPending={countPending}
+                            namaAdmin={namaAdmin || undefined}
                         />
 
                         {/* CONTENT */}
@@ -100,6 +111,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             onLogout={handleLogout}
                             isMobile={false}
                             countPending={countPending}
+                            namaAdmin={namaAdmin || undefined}
                         />
 
                         {/* CONTENT */}

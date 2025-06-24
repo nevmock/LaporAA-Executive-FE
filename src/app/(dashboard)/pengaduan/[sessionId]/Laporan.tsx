@@ -3,18 +3,25 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FaWhatsapp, FaCheck, FaExclamationCircle, FaFileAlt, FaCog, FaClipboardCheck, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaWhatsapp, FaCheck, FaExclamationCircle, FaFileAlt, FaCog, FaClipboardCheck, FaCheckCircle, FaTimesCircle, FaRobot } from "react-icons/fa";
 import { Data } from "../../../../lib/types";
 import axios from "../../../../utils/axiosInstance";
 import { TindakanActionProps } from "../../../../components/pengaduan/laporan/tindakan";
 import ActionButtons from "../../../../components/pengaduan/laporan/ActionButtons";
 import { Tooltip } from "../../../../components/Tooltip";
 import { useBotModeWithTab } from "../../../../hooks/useBotMode";
+import { LaporanDetailSkeleton, MessageSkeleton, TindakanSkeleton } from "../../../../components/pengaduan/PengaduanSkeleton";
 
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
-const MemoTindakan = dynamic(() => import("../../../../components/pengaduan/laporan/tindakan"), { loading: () => <LoadingPage />, ssr: false });
-const MemoMessage = dynamic(() => import("../../../../components/pengaduan/laporan/message"), { loading: () => <LoadingPage />, ssr: false });
+const MemoTindakan = dynamic(() => import("../../../../components/pengaduan/laporan/tindakan"), { 
+  loading: () => <TindakanSkeleton />, 
+  ssr: false 
+});
+const MemoMessage = dynamic(() => import("../../../../components/pengaduan/laporan/message"), { 
+  loading: () => <MessageSkeleton />, 
+  ssr: false 
+});
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -30,6 +37,11 @@ export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<"pesan" | "tindakan">("tindakan");
   const [tindakanActionProps, setTindakanActionProps] = useState<TindakanActionProps | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  
+  // Force mode state - menggunakan pattern yang sama seperti di tableSection
+  const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
+  const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
   
   // Bot Mode Management with auto-switching and force mode protection
   const botMode = useBotModeWithTab({
@@ -45,6 +57,43 @@ export default function ChatPage() {
     // The mode will be automatically updated by the hook
   };
   
+  // Toggle force mode - menggunakan pattern yang sama seperti di laporan.tsx
+  const toggleForceMode = async (from: string, currentForceMode: boolean) => {
+    if (loadingForceMode[from]) return; // Hindari multiple calls
+
+    try {
+      setLoadingForceMode(prev => ({ ...prev, [from]: true }));
+
+      const newForceMode = !currentForceMode;
+
+      // Gunakan botModeService untuk konsistensi
+      const { getBotModeService } = await import('../../../../services/botModeService');
+      const service = getBotModeService();
+
+      if (service) {
+        await service.setForceMode(from, newForceMode);
+      } else {
+        // Fallback ke direct API call jika service tidak ada
+        await axios.post(`${API_URL}/mode/force/${from}`, {
+          force: newForceMode
+        });
+      }
+
+      // Update state force mode
+      setForceModeStates(prev => ({
+        ...prev,
+        [from]: newForceMode
+      }));
+
+      console.log(`Force mode ${newForceMode ? 'enabled' : 'disabled'} for ${from}`);
+    } catch (err) {
+      console.error("Gagal ubah force mode:", err);
+      alert("Terjadi kesalahan saat mengubah mode bot.");
+    } finally {
+      setLoadingForceMode(prev => ({ ...prev, [from]: false }));
+    }
+  };
+
   // This function is passed to tindakan component to get action props and break render loop
   const handleActionProps = useCallback((props: TindakanActionProps): React.ReactNode => {
     // Use requestAnimationFrame to break out of the current render cycle
@@ -86,6 +135,8 @@ export default function ChatPage() {
   // Auth check
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const userRole = localStorage.getItem("role");
+    setRole(userRole);
     if (!token) router.push("/login");
   }, [router]);
 
@@ -102,6 +153,42 @@ export default function ChatPage() {
       })
       .finally(() => setLoading(false));
   }, [sessionId]);
+
+  // Load force mode status - menggunakan pattern yang sama seperti di laporan.tsx
+  useEffect(() => {
+    const loadForceModeState = async () => {
+      if (!data?.from) return;
+
+      try {
+        const { getBotModeService } = await import('../../../../services/botModeService');
+        const service = getBotModeService();
+
+        if (service) {
+          const forceMode = await service.getForceMode(data.from);
+          setForceModeStates(prev => ({
+            ...prev,
+            [data.from]: forceMode
+          }));
+        } else {
+          // Fallback ke direct API call jika service tidak ada
+          const response = await axios.get(`${API_URL}/mode/force/${data.from}`);
+          setForceModeStates(prev => ({
+            ...prev,
+            [data.from]: response.data.force || false
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading force mode state:', error);
+        // Set default false jika error
+        setForceModeStates(prev => ({
+          ...prev,
+          [data.from]: false
+        }));
+      }
+    };
+
+    loadForceModeState();
+  }, [data?.from]);
 
   // Helper: ProgressBar
   const renderProgressBar = () => {
@@ -216,7 +303,7 @@ export default function ChatPage() {
   };
 
   if (!sessionId) return null;
-  if (loading) return <LoadingPage />;
+  if (loading) return <LaporanDetailSkeleton />;
   if (error) return (
     <div className="flex flex-col items-center justify-center h-full text-red-600">
       <p className="mb-2">{error}</p>
@@ -253,26 +340,63 @@ export default function ChatPage() {
         </div>
         
         {/* Navigation tabs */}
-        <nav className="flex h-[35px] border-b px-4 md:px-8 bg-white">
-          {['tindakan', 'pesan'].map((tab) => (
-            <button
-              key={tab}
-              className={`py-2 md:py-3 px-4 md:px-6 font-semibold flex items-center gap-2 transition-all rounded-t-md focus:outline-none
-                ${activeTab === tab
-                  ? tab === 'pesan'
-                    ? 'border-b-4 border-green-600 text-green-700 bg-green-50 shadow-sm'
-                    : 'border-b-4 border-gray-800 text-gray-900 bg-gray-100 shadow-sm'
-                  : tab === 'pesan'
-                    ? 'text-green-600 bg-green-50 hover:bg-green-100'
-                    : 'text-gray-500 bg-gray-50 hover:bg-gray-100'
-                }`}
-              onClick={() => setActiveTab(tab as 'pesan' | 'tindakan')}
-              style={{ minWidth: 100 }}
-            >
-              {tab === 'pesan' && <FaWhatsapp className="text-lg" />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        <nav className="flex h-[35px] border-b px-4 md:px-8 bg-white justify-between items-center">
+          <div className="flex">
+            {['tindakan', 'pesan'].map((tab) => (
+              <button
+                key={tab}
+                className={`py-2 md:py-3 px-4 h-[35px] md:px-6 font-semibold flex justify-center items-center gap-2 transition-all rounded-t-md focus:outline-none
+                  ${activeTab === tab
+                    ? tab === 'pesan'
+                      ? 'border-b-4 border-green-600 text-green-700 bg-green-50 shadow-sm'
+                      : 'border-b-4 border-gray-800 text-gray-900 bg-gray-100 shadow-sm'
+                    : tab === 'pesan'
+                      ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                      : 'text-gray-500 bg-gray-50 hover:bg-gray-100'
+                  }`}
+                onClick={() => setActiveTab(tab as 'pesan' | 'tindakan')}
+                style={{ minWidth: 100 }}
+              >
+                {tab === 'pesan' && <FaWhatsapp className="text-lg" />}
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          
+          {/* Force Mode Button - Show on both tabs, styled like navigation tab */}
+          {(role === "Bupati" || role === "SuperAdmin" || role === "Admin") && data?.from && (
+            <div className="h-[35px]">
+              {loadingForceMode[data.from] ? (
+                <div className="h-[35px] py-2 md:py-3 px-4 md:px-6 font-semibold flex justify-center items-center gap-2 bg-gray-50 rounded-t-md">
+                  <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                  <span className="text-xs text-gray-500">Loading...</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => toggleForceMode(data.from, forceModeStates[data.from] || false)}
+                  className={`h-[35px] py-2 md:py-3 px-4 md:px-6 font-semibold flex justify-center items-center gap-2 transition-all rounded-t-md focus:outline-none hover:opacity-80
+                    ${forceModeStates[data.from] 
+                      ? 'border-b-4 border-green-600 text-green-700 bg-green-50 shadow-sm' 
+                      : 'border-b-4 border-gray-400 text-gray-600 bg-gray-50'
+                    }`}
+                  title={forceModeStates[data.from] ? 'Bot Mode: Manual (Click to Auto)' : 'Bot Mode: Auto (Click to Manual)'}
+                  style={{ minWidth: 120 }}
+                >
+                  {forceModeStates[data.from] ? (
+                    <>
+                      <FaWhatsapp className="text-lg" />
+                      Manual
+                    </>
+                  ) : (
+                    <>
+                      <FaRobot className="text-lg" />
+                      Auto
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </nav>
       </header>
       
@@ -312,6 +436,7 @@ export default function ChatPage() {
                     processed_by={data?.processed_by}
                     reportData={data}
                     actionProps={handleActionProps}
+                    role={role}
                   />
                 </div>
               ) : (

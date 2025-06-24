@@ -1,10 +1,11 @@
 "use client";
 
-import React, { Fragment, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Search, Filter, ChevronUp, ChevronDown } from "lucide-react";
 import { Listbox } from "@headlessui/react";
-import { FaHeart } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
 import { MdFilterAltOff } from "react-icons/md";
+import { BsFillPersonLinesFill } from "react-icons/bs";
 
 interface HeaderMobileProps {
     search: string;
@@ -18,11 +19,16 @@ interface HeaderMobileProps {
     setPage: (val: number) => void;
     selectedSituasi: string;
     setSelectedSituasi: (val: string) => void;
+    situasiList: Array<{ situasi: string; count: number }>;
+    situasiTotal: number;
     opdList: Array<{ opd: string; count: number }>;
+    opdTotal: number;
     selectedOpd: string;
     setSelectedOpd: (val: string) => void;
     isPinnedOnly: boolean;
     setIsPinnedOnly: (val: boolean) => void;
+    isByMeOnly: boolean; // Optional prop for filtering by user
+    setIsByMeOnly: (val: boolean) => void; // Optional setter for filtering by user
 }
 
 const statusColors: Record<string, string> = {
@@ -36,7 +42,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusTabs = [
-    "Semua",
+    "Semua Status",
     "Perlu Verifikasi",
     "Verifikasi Situasi",
     "Verifikasi Kelengkapan Berkas",
@@ -46,15 +52,6 @@ const statusTabs = [
     "Ditutup",
 ];
 
-const situasiOptions = [
-    "Semua",
-    "Darurat",
-    "Permintaan Informasi",
-    "Berpengawasan",
-    "Tidak Berpengawasan"
-];
-
-// Helper Listbox untuk filter mobile
 function ListBoxFilter({
     label,
     options,
@@ -63,6 +60,7 @@ function ListBoxFilter({
     colorMap,
     statusCounts,
     opdCounts,
+    situasiCounts,
     className = "",
     zIndex = 1000,
 }: {
@@ -73,61 +71,108 @@ function ListBoxFilter({
     colorMap?: Record<string, string>;
     statusCounts?: Record<string, number>;
     opdCounts?: Record<string, number>;
+    situasiCounts?: Record<string, number>;
     className?: string;
     zIndex?: number;
 }) {
-    // Determine which counts to use
-    const counts = statusCounts || opdCounts;
+    // Pakai counts yang tersedia
+    const counts = statusCounts || opdCounts || situasiCounts;
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+    // Dynamic dropdown position (biar dropdown tetap di bawah button)
+    const updateDropdownPosition = () => {
+        if (buttonRef.current && typeof window !== 'undefined') {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setDropdownStyle({
+                position: 'fixed' as const,
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width,
+                zIndex: zIndex + 1,
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const handleScroll = () => updateDropdownPosition();
+        const handleResize = () => updateDropdownPosition();
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("resize", handleResize, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleResize);
+        };
+    }, []);
+
     return (
-        <div className={`flex flex-col ${className}`} style={{ position: 'relative' }}>
-            <span className="text-xs font-semibold text-gray-700 mb-1 ml-1">{label}</span>
+        <div className={`relative w-full ${className || ""}`} style={{ zIndex }}>
+            <span className="text-xs font-medium text-gray-700">{label}</span>
             <Listbox value={selected} onChange={setSelected}>
-                <div className="relative w-full" style={{ zIndex }}>
-                    <Listbox.Button className="w-full border rounded-lg h-10 text-xs bg-white text-left shadow flex items-center justify-between text-gray-700 hover:ring-2 hover:ring-blue-200 px-3">
-                        <div className="flex items-center gap-2">
-                            {colorMap && selected !== "Semua" && (
-                                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: colorMap[selected] }} />
-                            )}
-                            <span className="truncate">
-                                {selected}
-                                {counts && (
-                                    <span className="ml-1 font-bold text-blue-700">
-                                        ({selected === 'Semua'
-                                            ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                            : counts[selected] || 0})
-                                    </span>
+                {({ open }) => (
+                    <div className="relative">
+                        <Listbox.Button
+                            ref={buttonRef}
+                            className="w-full border rounded-lg h-10 text-sm bg-white text-left shadow-sm flex items-center justify-between text-gray-700 px-4 mt-1"
+                            onClick={updateDropdownPosition}
+                        >
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                                {colorMap && !selected.startsWith("Semua") && (
+                                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[selected] }} />
                                 )}
-                            </span>
-                        </div>
-                        <span className="text-gray-500">▼</span>
-                    </Listbox.Button>
-                    <Listbox.Options
-                        className="absolute mt-1 w-full bg-white border rounded shadow-lg max-h-60 overflow-auto"
-                        style={{ zIndex: zIndex + 1 }}
-                    >
-                        {options.map((option) => (
-                            <Listbox.Option key={option} value={option} as={Fragment}>
-                                {({ active }) => (
-                                    <li className={`px-3 py-2 flex items-center gap-2 text-xs cursor-pointer ${active ? 'bg-gray-100' : ''} text-gray-700`}>
-                                        {colorMap && option !== "Semua" && (
-                                            <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: colorMap[option] }} />
-                                        )}
-                                        <span className="truncate">
-                                            {option}
-                                            {counts && (
-                                                <span className="ml-1 font-bold text-blue-700">
-                                                    ({option === 'Semua'
-                                                        ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                                        : counts[option] || 0})
-                                                </span>
-                                            )}
+                                <span className="flex-1 break-words leading-tight">
+                                    {selected}
+                                    {counts && (
+                                        <span className="ml-1 font-bold text-blue-700">
+                                            (
+                                            {selected.startsWith("Semua")
+                                                ? Object.values(counts).reduce((a, b) => a + b, 0)
+                                                : counts[selected] || 0}
+                                            )
                                         </span>
-                                    </li>
-                                )}
-                            </Listbox.Option>
-                        ))}
-                    </Listbox.Options>
-                </div>
+                                    )}
+                                </span>
+                            </div>
+                            <span className="text-gray-400 text-xs ml-2 flex-shrink-0">▼</span>
+                        </Listbox.Button>
+                        {open && typeof window !== 'undefined' && (
+                            <div
+                                className="bg-white border rounded-lg shadow-xl max-h-60 overflow-auto absolute"
+                                style={dropdownStyle}
+                            >
+                                <Listbox.Options static>
+                                    {options.map((option) => (
+                                        <Listbox.Option key={option} value={option}>
+                                            {({ active, selected: isSelected }) => (
+                                                <li className={`px-3 py-2 flex items-start gap-2 text-xs cursor-pointer ${active ? 'bg-gray-100' : ''} text-gray-700`}>
+                                                    {colorMap && !option.startsWith("Semua") && (
+                                                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[option] }} />
+                                                    )}
+                                                    <span className="flex-1 break-words leading-tight">
+                                                        {option}
+                                                        {counts && (
+                                                            <span className="ml-1 font-bold text-blue-700">
+                                                                (
+                                                                {option.startsWith("Semua")
+                                                                    ? Object.values(counts).reduce((a, b) => a + b, 0)
+                                                                    : counts[option] || 0}
+                                                                )
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {isSelected && (
+                                                        <span className="text-blue-600 flex-shrink-0">✓</span>
+                                                    )}
+                                                </li>
+                                            )}
+                                        </Listbox.Option>
+                                    ))}
+                                </Listbox.Options>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Listbox>
         </div>
     );
@@ -145,19 +190,30 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     setPage,
     selectedSituasi,
     setSelectedSituasi,
+    situasiList,
+    situasiTotal,
     opdList,
+    opdTotal,
     selectedOpd,
     setSelectedOpd,
     isPinnedOnly,
     setIsPinnedOnly,
+    isByMeOnly,
+    setIsByMeOnly,
 }) => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
     // Prepare OPD options with counts
     const opdOptions = [
-        { opd: "Semua", count: opdList.reduce((total, item) => total + item.count, 0) },
+        { opd: "Semua OPD", count: opdTotal },
         ...opdList
+    ];
+
+    // Prepare Situasi options with counts
+    const situasiOptions = [
+        { situasi: "Semua Situasi", count: situasiTotal },
+        ...situasiList
     ];
 
     return (
@@ -194,11 +250,20 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
 
                             {/* Love Button */}
                             <button
-                                className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition ${isPinnedOnly ? 'border-pink-600 bg-pink-600 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
+                                className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition ${isPinnedOnly ? 'border-yellow-600 bg-yellow-500 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
                                 onClick={() => setIsPinnedOnly(!isPinnedOnly)}
                                 title="Tampilkan hanya yang di-love"
                             >
-                                <FaHeart />
+                                <FaStar />
+                            </button>
+
+                            {/* By Me Only Button */}
+                            <button
+                                className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition flex-shrink-0 ${isByMeOnly ? 'border-blue-600 bg-blue-500 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
+                                onClick={() => setIsByMeOnly(!isByMeOnly)}
+                                title="Yang Di Kerjakan Saya"
+                            >
+                                <BsFillPersonLinesFill className="w-4 h-4" />
                             </button>
 
                         </div>
@@ -210,10 +275,12 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
             <div className="sticky top-0 z-[210] bg-gray-100 flex justify-center">
                 <button
                     onClick={() => setIsHeaderVisible(!isHeaderVisible)}
-                    className="h-5 w-20 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-lg flex items-center justify-center shadow-md"
+                    className="h-5 w-20 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-all duration-300 text-lg flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105"
                     title={isHeaderVisible ? "Sembunyikan Header" : "Tampilkan Header"}
                 >
-                    {isHeaderVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <span className="transition-transform duration-300 ease-in-out">
+                        {isHeaderVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
                 </button>
             </div>
 
@@ -225,7 +292,6 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                         className="fixed inset-0 bg-black bg-opacity-25 z-[250]"
                         onClick={() => setShowMobileFilters(false)}
                     />
-
                     {/* Filters Panel */}
                     <div className="fixed top-[120px] left-3 right-3 bg-white rounded-lg shadow-xl border z-[300] p-4">
                         <div className="flex justify-between items-center mb-3">
@@ -237,7 +303,6 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                                 ✕
                             </button>
                         </div>
-
                         <div className="grid grid-cols-1 gap-3">
                             {/* Status Dropdown */}
                             <ListBoxFilter
@@ -253,20 +318,22 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                                 className="w-full"
                                 zIndex={1000}
                             />
-
                             {/* Situasi Dropdown */}
                             <ListBoxFilter
                                 label="Situasi"
-                                options={situasiOptions}
+                                options={situasiOptions.map(opt => opt.situasi)}
                                 selected={selectedSituasi}
                                 setSelected={(val: string) => {
                                     setSelectedSituasi(val);
                                     setPage(1);
                                 }}
+                                situasiCounts={situasiOptions.reduce((acc, item) => {
+                                    acc[item.situasi] = item.count;
+                                    return acc;
+                                }, {} as Record<string, number>)}
                                 className="w-full"
                                 zIndex={900}
                             />
-
                             {/* OPD Dropdown */}
                             <ListBoxFilter
                                 label="OPD"
@@ -276,14 +343,13 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                                     setSelectedOpd(val);
                                     setPage(1);
                                 }}
-                                className="w-full"
-                                zIndex={800}
                                 opdCounts={opdOptions.reduce((acc, item) => {
                                     acc[item.opd] = item.count;
                                     return acc;
                                 }, {} as Record<string, number>)}
+                                className="w-full"
+                                zIndex={800}
                             />
-
                             {/* Limit Dropdown */}
                             <ListBoxFilter
                                 label="Items per Page"
@@ -296,14 +362,15 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                                 className="w-full"
                                 zIndex={700}
                             />
-
                             {/* Reset Filter Button */}
                             <button
                                 onClick={() => {
-                                    setSelectedStatus("Semua");
-                                    setSelectedSituasi("Semua");
-                                    setSelectedOpd("Semua");
+                                    setSelectedStatus("Semua Status");
+                                    setSelectedSituasi("Semua Situasi");
+                                    setSelectedOpd("Semua OPD");
                                     setIsPinnedOnly(false);
+                                    setIsByMeOnly(false);
+                                    setSearch(""); // Reset search juga
                                     setPage(1);
                                 }}
                                 className="h-10 w-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm flex items-center justify-center flex-shrink-0"

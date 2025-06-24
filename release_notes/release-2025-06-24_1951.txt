@@ -1,0 +1,28 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/app/(dashboard)/dashboard/Home.tsx, src/app/(dashboard)/pengaduan/Pengaduan.tsx, src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+📅 2025-06-24_1951
+
+📂 Perubahan file:
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/(dashboard)/pengaduan/Pengaduan.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/AppShell.tsx
+src/app/globals.css
+src/app/layout.tsx
+src/components/LoadingPage.tsx
+src/components/TopNavbar.tsx
+src/components/dashboard/LineChart.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/SummaryPieChart.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/pengaduan/HeaderDesktop.tsx
+src/components/pengaduan/HeaderMobile.tsx
+src/components/pengaduan/Tooltip.tsx
+src/components/pengaduan/headerSection.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/tableSection.tsx
+src/components/sidebar.tsx
+
+🚀 Meluncur
