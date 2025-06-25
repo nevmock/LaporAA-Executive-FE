@@ -4,7 +4,7 @@ import { IoMdCloseCircle } from "react-icons/io";
 import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
 import { FaCheckDouble } from "react-icons/fa";
 import { RiArrowGoBackLine } from "react-icons/ri";
-import axiosInstance from "../../../utils/axiosInstance";
+import axios from "../../../utils/axiosInstance";
 
 interface ActionButtonsProps {
     currentStepIndex: number;
@@ -123,7 +123,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 keterangan: effectiveRejectReason.trim(),
             };
             
-            const response = await axiosInstance.put(`/tindakan/${formData.report}`, updated);
+            const response = await axios.put(`/tindakan/${formData.report}`, updated);
             
             if (response.status === 200) {
                 safeSetShowRejectModal(false);
@@ -158,7 +158,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 keterangan: effectiveSelesaiReason.trim(),
             };
             
-            const response = await axiosInstance.put(`/tindakan/${formData.report}`, updated);
+            const response = await axios.put(`/tindakan/${formData.report}`, updated);
             
             if (response.status === 200) {
                 safeSetShowSelesaiModal(false);

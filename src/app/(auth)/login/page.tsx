@@ -3,7 +3,7 @@
 import "../../globals.css";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios from '../../../utils/axiosInstance';
 import { Eye } from "lucide-react"; // Gunakan satu icon saja (tidak toggle)
 
 export default function LoginPage() {
@@ -16,7 +16,7 @@ export default function LoginPage() {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/auth/login`, {
+            const res = await axios.post(`/auth/login`, {
                 username,
                 password,
             });

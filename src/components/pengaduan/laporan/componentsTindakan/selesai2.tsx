@@ -19,7 +19,7 @@ export default function Selesai2({
     saveData?: (nextStatus?: string) => Promise<any>;
 }) {
     // Gunakan reportData untuk info laporan utama
-    const laporan = reportData || {};
+    const laporan = data || {};
     // Fungsi bantu untuk render bintang
     const renderStars = (rating?: number | null) => {
         const stars = [];
