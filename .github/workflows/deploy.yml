@@ -1,10 +1,12 @@
 on:
   push:
     branches:
-      - 'main'
+      #      - 'main'
+      - 'misc'
   pull_request:
-    branches: 
-      - 'main'
+    branches:
+      #      - 'main'
+      - 'misc'
 
 jobs:
   build:
