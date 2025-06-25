@@ -20,7 +20,7 @@ const MapView = ({
     description: string;
 }) => (
     <div className="w-full h-72 rounded-md overflow-hidden z-0">
-        <MapContainer center={[lat, lon]} zoom={17} scrollWheelZoom={false} className="h-full w-full">
+        <MapContainer center={[lat, lon]} zoom={17} scrollWheelZoom={false} className="h-full w-full z-[50]">
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'

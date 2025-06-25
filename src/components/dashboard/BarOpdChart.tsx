@@ -82,7 +82,10 @@ export default function HorizontalBarPerangkatDaerahChart() {
                 console.info("🔥 Data fetched:", res.data);
                 const resData = res.data || {};
                 const formatted = Object.entries(resData)
-                    .map(([opd, val]) => ({ opd, value: Number(val) }))
+                    .map(([opd, val]) => ({ 
+                        opd: opd.trim() === '' ? 'Tidak Ada OPD' : opd, 
+                        value: Number(val) 
+                    }))
                     .sort((a, b) => b.value - a.value);
 
                 setData({

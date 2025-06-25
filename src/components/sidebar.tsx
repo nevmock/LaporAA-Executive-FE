@@ -56,42 +56,38 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                 {/* MENU */}
                 <nav className="flex flex-col gap-5 mt-4 px-3">
                     {/* Dashboard */}
-                    <Link href="/dashboard" passHref>
-                        <div className={navItemClass(isActive("/dashboard"))}>
-                            {isCollapsed ? (
-                                <Tooltip text="Dashboard">
-                                    <FiHome size={22} />
-                                </Tooltip>
-                            ) : (
-                                <>
-                                    <FiHome size={22} />
-                                    <span className="text-sm font-medium">Dashboard</span>
-                                </>
-                            )}
-                        </div>
+                    <Link href="/dashboard" className={navItemClass(isActive("/dashboard"))}>
+                        {isCollapsed ? (
+                            <Tooltip text="Dashboard">
+                                <FiHome size={22} />
+                            </Tooltip>
+                        ) : (
+                            <>
+                                <FiHome size={22} />
+                                <span className="text-sm font-medium">Dashboard</span>
+                            </>
+                        )}
                     </Link>
 
                     {/* Pengaduan */}
-                    <Link href="/pengaduan" passHref>
-                        <div className={`relative ${navItemClass(isActive("/pengaduan"))}`}>
-                            {isCollapsed ? (
-                                <Tooltip text="Pengaduan">
-                                    <FiInbox size={22} />
-                                </Tooltip>
-                            ) : (
-                                <>
-                                    <FiInbox size={22} />
-                                    <span className="text-sm font-medium">Pengaduan</span>
-                                </>
-                            )}
-                            {countPending > 0 && (
-                                <div
-                                    className={`absolute -top-3 left-6 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
-                                >
-                                    {countPending}
-                                </div>
-                            )}
-                        </div>
+                    <Link href="/pengaduan" className={`relative ${navItemClass(isActive("/pengaduan"))}`}>
+                        {isCollapsed ? (
+                            <Tooltip text="Pengaduan">
+                                <FiInbox size={22} />
+                            </Tooltip>
+                        ) : (
+                            <>
+                                <FiInbox size={22} />
+                                <span className="text-sm font-medium">Pengaduan</span>
+                            </>
+                        )}
+                        {countPending > 0 && (
+                            <div
+                                className={`absolute -top-3 left-6 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
+                            >
+                                {countPending}
+                            </div>
+                        )}
                     </Link>
                 </nav>
             </div>

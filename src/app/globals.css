@@ -33,3 +33,47 @@ body {
   color: #0ea5e9 !important;
   /* warna tulisan 'Laporan Masuk' */
 }
+
+/* Header optimizations to prevent flickering */
+.header-container {
+  contain: layout style;
+  will-change: opacity, max-height;
+}
+
+.dropdown-portal {
+  contain: layout style paint;
+  transform-origin: top left;
+}
+
+/* Prevent layout shifts during dropdown animations */
+.listbox-button {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth dropdown animations */
+.dropdown-options {
+  animation: fadeInDropdown 0.15s ease-out;
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optimize rendering performance */
+.header-filters {
+  contain: layout;
+}
+
+/* Fix for Safari flickering */
+.header-toggle {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}

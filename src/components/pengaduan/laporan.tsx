@@ -8,6 +8,7 @@ import HeaderSection from "./headerSection";
 import TableSection from "./tableSection";
 import Pagination from "./pagination";
 import PhotoModal from "./PhotoModal";
+import { LaporanListSkeleton } from "./PengaduanSkeleton";
 
 const MapModal = dynamic(() => import("./MapModal"), { ssr: false });
 
@@ -24,7 +25,9 @@ const statusOrder = [
 export default function Laporan() {
   // ----------------------- STATE HOOKS -----------------------
   const [data, setData] = useState<Chat[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState("Semua");
+  const [selectedStatus, setSelectedStatus] = useState("Semua Status");
+  const [selectedSituasi, setSelectedSituasi] = useState("Semua Situasi");
+  const [selectedOpd, setSelectedOpd] = useState("Semua OPD");
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(100);
   const [page, setPage] = useState(1);
@@ -40,11 +43,50 @@ export default function Laporan() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [hydrated, setHydrated] = useState(false); // <--- PAKAI useState
+  const [hydrated, setHydrated] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
+
+  const [opdList, setOpdList] = useState<{ opd: string; count: number }[]>([]);  
+  const [opdTotal, setOpdTotal] = useState<number>(0);  
+  const [situasiList, setSituasiList] = useState<{ situasi: string; count: number }[]>([]);  
+  const [situasiTotal, setSituasiTotal] = useState<number>(0);  
+
+  // State untuk force mode bot
+  const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
+  const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
+
+  const [isPinnedOnly, setIsPinnedOnly] = useState(false);
+  const [isByMeOnly, setIsByMeOnly] = useState(false);
 
   // Helpers
   const username = typeof window !== "undefined" ? localStorage.getItem("username") || "guest" : "guest";
+  const namaAdmin = typeof window !== "undefined" ? localStorage.getItem("nama_admin") || "" : "";
   const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
+
+  // ----------------------- API FUNCTIONS -----------------------
+  const getOpdList = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`);
+      setOpdList(res.data?.data || []);
+      setOpdTotal(res.data?.total || 0);
+    } catch (err) {
+      console.error("❌ Failed to fetch OPD list:", err);
+      setOpdList([]);
+      setOpdTotal(0);
+    }
+  };
+
+  const getSituasiList = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/situasi-list`);
+      setSituasiList(res.data?.data || []);
+      setSituasiTotal(res.data?.total || 0);
+    } catch (err) {
+      console.error("❌ Failed to fetch Situasi list:", err);
+      setSituasiList([]);
+      setSituasiTotal(0);
+    }
+  };
 
   // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
@@ -53,9 +95,13 @@ export default function Laporan() {
       const params: any = {
         page,
         limit,
-        status: selectedStatus !== "Semua" ? selectedStatus : undefined,
+        status: selectedStatus !== "Semua Status" ? selectedStatus : undefined,
         search: search?.trim() || undefined,
         sorts: JSON.stringify(sorts),
+        situasi: selectedSituasi !== "Semua Situasi" ? selectedSituasi : undefined,
+        opd: selectedOpd !== "Semua OPD" ? selectedOpd : undefined,
+        is_pinned: isPinnedOnly || undefined,
+        admin_filter: isByMeOnly && namaAdmin ? namaAdmin : undefined,
       };
       const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { params });
       const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -119,8 +165,13 @@ export default function Laporan() {
     const savedLimit = localStorage.getItem(LS_KEY("limit"));
     const savedSorts = localStorage.getItem(LS_KEY("sorts"));
     const savedSearch = localStorage.getItem(LS_KEY("search"));
+    const savedShowHeader = localStorage.getItem(LS_KEY("showHeader"));
+    const savedSituasi = localStorage.getItem(LS_KEY("situasi"));
+    const savedOpd = localStorage.getItem(LS_KEY("opd"));
+    const savedPinned = localStorage.getItem(LS_KEY("pinned"));
+    const savedByMeOnly = localStorage.getItem(LS_KEY("byMeOnly"));
 
-    setSelectedStatus(savedStatus || "Semua");
+    setSelectedStatus(savedStatus || "Semua Status");
     setPage(Number(savedPage) || 1);
     setLimit(Number(savedLimit) || 100);
     setSorts(savedSorts ? JSON.parse(savedSorts) : [
@@ -128,6 +179,19 @@ export default function Laporan() {
       { key: "date", order: "desc" },
     ]);
     setSearch(savedSearch || "");
+    setShowHeader(savedShowHeader === null ? true : savedShowHeader === "true");
+    setSelectedSituasi(savedSituasi || "Semua Situasi");
+    setSelectedOpd(savedOpd || "Semua OPD");
+    setIsPinnedOnly(savedPinned === "true");
+    
+    // Set isByMeOnly dan handle auto search
+    const isByMeOnlyValue = savedByMeOnly === "true";
+    setIsByMeOnly(isByMeOnlyValue);
+    
+    // Jika isByMeOnly true dan ada nama_admin, override search dengan nama_admin
+    if (isByMeOnlyValue && namaAdmin) {
+      setSearch(namaAdmin);
+    }
 
     sessionStorage.clear();
     setHydrated(true);
@@ -139,7 +203,27 @@ export default function Laporan() {
     getSummary();
     getReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, selectedStatus, search, page, limit, sorts]);
+  }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly, isByMeOnly]);
+
+  // Fetch OPD list only once after hydration (tidak perlu re-fetch setiap filter berubah)
+  useEffect(() => {
+    if (!hydrated) return;
+    getOpdList();
+    getSituasiList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  // Load force mode states setelah data diambil
+  useEffect(() => {
+    if (!hydrated || data.length === 0) return;
+    loadForceModeStates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, data]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, showHeader]);
 
   // ----------------------- EFFECTS: SYNC STORAGE (AFTER HYDRATED) -----------------------
   useEffect(() => {
@@ -149,16 +233,40 @@ export default function Laporan() {
     localStorage.setItem(LS_KEY("limit"), limit.toString());
     localStorage.setItem(LS_KEY("sorts"), JSON.stringify(sorts));
     localStorage.setItem(LS_KEY("search"), search);
+    localStorage.setItem(LS_KEY("situasi"), selectedSituasi);
+    localStorage.setItem(LS_KEY("opd"), selectedOpd);
+    localStorage.setItem(LS_KEY("pinned"), isPinnedOnly.toString());
+    localStorage.setItem(LS_KEY("byMeOnly"), isByMeOnly.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, selectedStatus, search, page, limit, sorts]);
+  }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly, isByMeOnly]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(LS_KEY("showHeader"), showHeader.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, showHeader]);
 
   // Responsive
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1200);
+    const handleResize = () => setIsMobile(window.innerWidth < 1080);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Handler untuk toggle isByMeOnly dengan auto search
+  const handleToggleByMeOnly = (newValue: boolean) => {
+    if (newValue && namaAdmin) {
+      // Hapus key search dari localStorage
+      localStorage.removeItem(LS_KEY("search"));
+      // Set search dengan nama admin
+      setSearch(namaAdmin);
+    } else {
+      // Jika dimatikan, kosongkan search
+      setSearch("");
+    }
+    setIsByMeOnly(newValue);
+  };
 
   // ----------------------- SORTING, TOGGLE, HANDLERS -----------------------
   const toggleSort = (key: SortKey) => {
@@ -188,8 +296,13 @@ export default function Laporan() {
           valA = a.location?.desa || "";
           valB = b.location?.desa || "";
         } else if (key === "opd") {
-          valA = a.tindakan?.opd || "";
-          valB = b.tindakan?.opd || "";
+          // Handle both array and string values for opd
+          const opdA = a.tindakan?.opd || "";
+          const opdB = b.tindakan?.opd || "";
+
+          // Convert to string for sorting
+          valA = Array.isArray(opdA) ? opdA.join(", ") : opdA;
+          valB = Array.isArray(opdB) ? opdB.join(", ") : opdB;
         } else if (key === "timer" || key === "date") {
           valA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           valB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -243,29 +356,143 @@ export default function Laporan() {
     }
   };
 
+  // Toggle force mode untuk bot WhatsApp - GUNAKAN botModeService
+  const toggleForceMode = async (from: string, currentForceMode: boolean) => {
+    if (loadingForceMode[from]) return; // Hindari multiple calls
+
+    try {
+      setLoadingForceMode(prev => ({ ...prev, [from]: true }));
+
+      const newForceMode = !currentForceMode;
+
+      // Gunakan botModeService untuk konsistensi
+      const { getBotModeService } = await import('../../services/botModeService');
+      const service = getBotModeService();
+
+      if (service) {
+        await service.setForceMode(from, newForceMode);
+      } else {
+        // Fallback ke direct API call jika service tidak ada
+        await axios.post(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/mode/force/${from}`, {
+          force: newForceMode
+        });
+      }
+
+      // Update state force mode
+      setForceModeStates(prev => ({
+        ...prev,
+        [from]: newForceMode
+      }));
+
+      console.log(`Force mode ${newForceMode ? 'enabled' : 'disabled'} for ${from}`);
+    } catch (err) {
+      console.error("Gagal ubah force mode:", err);
+      alert("Terjadi kesalahan saat mengubah mode bot.");
+    } finally {
+      setLoadingForceMode(prev => ({ ...prev, [from]: false }));
+    }
+  };
+
+  // Load force mode status untuk semua user - GUNAKAN botModeService
+  const loadForceModeStates = async () => {
+    try {
+      const uniqueUsers = [...new Set(data.map(chat => chat.from))];
+
+      // Gunakan botModeService untuk konsistensi dan caching
+      const { getBotModeService } = await import('../../services/botModeService');
+      const service = getBotModeService();
+
+      if (service) {
+        // Gunakan service dengan caching
+        const forceModePromises = uniqueUsers.map(async (from) => {
+          try {
+            const force = await service.getForceMode(from);
+            return { from, force };
+          } catch (error) {
+            console.error(`Failed to get force mode for ${from}:`, error);
+            return { from, force: false };
+          }
+        });
+
+        const results = await Promise.all(forceModePromises);
+        const newForceModeStates = results.reduce((acc, { from, force }) => {
+          acc[from] = force;
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        setForceModeStates(newForceModeStates);
+        console.log('Loaded force mode states:', newForceModeStates);
+      } else {
+        // Fallback ke direct API call
+        const forceModePromises = uniqueUsers.map(async (from) => {
+          try {
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/mode/${from}`);
+            return {
+              from,
+              // Update field sesuai API response terbaru
+              force: response.data?.forceModeManual || response.data?.forceMode || response.data?.force || false
+            };
+          } catch (error) {
+            console.error(`Failed to get force mode for ${from}:`, error);
+            return { from, force: false };
+          }
+        });
+
+        const results = await Promise.all(forceModePromises);
+        const newForceModeStates = results.reduce((acc, { from, force }) => {
+          acc[from] = force;
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        setForceModeStates(newForceModeStates);
+        console.log('Loaded force mode states (fallback):', newForceModeStates);
+      }
+    } catch (error) {
+      console.error("Failed to load force mode states:", error);
+    }
+  };
+
   // ----------------------- RENDER -----------------------
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-[500] bg-white">
-        <HeaderSection
-          search={search}
-          setSearch={setSearch}
-          statusCounts={statusCounts}
-          selectedStatus={selectedStatus}
-          setSelectedStatus={setSelectedStatus}
-          isMobile={isMobile}
-          limit={limit}
-          setLimit={setLimit}
-          page={page}
-          setPage={setPage}
-        />
+      <div className="sticky top-0 z-[90] bg-white shadow-md">
+        <div
+          className={`relative transition-all duration-300 ${showHeader ? "opacity-100" : "opacity-0 max-h-0 overflow-hidden"}`}
+        >
+          <HeaderSection
+            search={search}
+            setSearch={setSearch}
+            statusCounts={statusCounts}
+            selectedStatus={selectedStatus}
+            setSelectedStatus={setSelectedStatus}
+            isMobile={isMobile}
+            limit={limit}
+            setLimit={setLimit}
+            page={page}
+            setPage={setPage}
+            selectedSituasi={selectedSituasi}
+            setSelectedSituasi={setSelectedSituasi}
+            situasiList={situasiList}
+            situasiTotal={situasiTotal}
+            opdList={opdList}
+            opdTotal={opdTotal}
+            selectedOpd={selectedOpd}
+            setSelectedOpd={setSelectedOpd}
+            isPinnedOnly={isPinnedOnly}
+            setIsPinnedOnly={setIsPinnedOnly}
+            isByMeOnly={isByMeOnly}
+            setIsByMeOnly={handleToggleByMeOnly}
+          />
+        </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 h-full overflow-y-auto">
+          {loading ? (
+            <LaporanListSkeleton />
+          ) : (
             <TableSection
               filteredData={filteredData}
               toggleSort={toggleSort}
@@ -277,16 +504,20 @@ export default function Laporan() {
               allSelected={allSelected}
               handleDeleteSelected={handleDeleteSelected}
               toggleMode={toggleMode}
+              toggleForceMode={toggleForceMode}
+              forceModeStates={forceModeStates}
+              loadingForceMode={loadingForceMode}
               setSelectedLoc={setSelectedLoc}
               setPhotoModal={setPhotoModal}
               loading={loading}
               setSorts={setSorts}
+              setSearch={setSearch}
             />
-          </div>
-          {/* Pagination */}
-          <div className="sticky bottom-0 z-10 bg-white border-t px-2 py-2">
-            <Pagination page={page} setPage={setPage} totalPages={totalPages} />
-          </div>
+          )}
+        </div>
+        {/* Pagination */}
+        <div className="sticky bottom-0 z-10 bg-white border-t px-2 py-2">
+          <Pagination page={page} setPage={setPage} totalPages={totalPages} />
         </div>
       </div>
       {/* Modal */}

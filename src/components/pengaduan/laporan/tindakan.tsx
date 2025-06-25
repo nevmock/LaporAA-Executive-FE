@@ -1,19 +1,19 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "../../../utils/axiosInstance";
+import React, { useEffect, useState, useMemo } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import { useSwipeable } from "react-swipeable";
+import axios from "../../../utils/axiosInstance";
 import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../lib/types";
-import LoadingSpinner from "../../LoadingPage"
+import Profile from "./profile";
+import { useTindakanState } from "./useTindakanState";
+import { STATUS_LIST } from "./useTindakanState";
+import Modal from "./Modal";
+import LoadingModal from "./LoadingModal";
+import AdminSection from "./AdminSection";
 
 // Icons
-import { IoMdCloseCircle } from "react-icons/io";
-import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
-import { FaCheckDouble } from "react-icons/fa";
-import { RiSave3Fill } from "react-icons/ri";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 // Step Components
 import Verifikasi from "./componentsTindakan/verifikasi";
@@ -24,211 +24,104 @@ import Selesai from "./componentsTindakan/selesai";
 import Selesai2 from "./componentsTindakan/selesai2";
 import Ditutup from "./componentsTindakan/ditutup";
 
+// AdminSelector component is now imported from a separate file
+
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-
-const statusColors: Record<string, string> = {
-    "Perlu Verifikasi": "#FF3131",
-    "Verifikasi Situasi": "#5E17EB",
-    "Verifikasi Kelengkapan Berkas": "#FF9F12",
-    "Proses OPD Terkait": "rgb(250 204 21)",
-    "Selesai Penanganan": "rgb(96 165 250)",
-    "Selesai Pengaduan": "rgb(74 222 128)",
-    "Ditutup": "black",
-};
-
-const STATUS_LIST = [
-    "Perlu Verifikasi",
-    "Verifikasi Situasi",
-    "Verifikasi Kelengkapan Berkas",
-    "Proses OPD Terkait",
-    "Selesai Penanganan",
-    "Selesai Pengaduan",
-    "Ditutup",
-];
 
 const STEP_COMPONENTS = [Verifikasi, Verifikasi1, Verifikasi2, Proses, Selesai, Selesai2, Ditutup];
 
-export default function Tindakan({
+export interface TindakanActionProps {
+    currentStepIndex: number;
+    NEXT_STEP_LABELS: string[];
+    isButtonDisabled: boolean;
+    tooltipMessage: string;
+    isLoading: boolean;
+    isSaving: boolean;
+    showRejectModal: boolean;
+    showSelesaiModal: boolean;
+    rejectReason: string;
+    selesaiReason: string;
+    setShowRejectModal: (v: boolean) => void;
+    setShowSelesaiModal: (v: boolean) => void;
+    setRejectReason: (v: string) => void;
+    setSelesaiReason: (v: string) => void;
+    handlePreviousStep: () => void;
+    handleNextStep: () => void;
+    saveData: (nextStatus?: string) => Promise<any>; // Changed return type to Promise<any> to accommodate AxiosResponse
+    formData: any;
+    API_URL: string;
+    router: any;
+    setIsSaving: (v: boolean) => void;
+    confirmedVerifikasi2: boolean;
+}
+
+const TindakanComponent = function Tindakan({
     tindakan,
     sessionId,
-    processed_by,
+    processed_by: rawProcessedBy,
+    actionProps,
+    reportData,
+    role,
 }: {
     tindakan: TindakanClientState | null;
     sessionId: string;
-    processed_by?: string;
+    processed_by?: any; // Changed to any to handle different types safely
+    actionProps?: (props: TindakanActionProps) => React.ReactNode;
+    reportData?: any;
+    role?: string | null;
 }) {
-    const [formData, setFormData] = useState<Partial<TindakanClientState>>({});
-    const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [showModal, setShowModal] = useState(false);
-    const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-    const [showKeluhan, setShowKeluhan] = useState(true);
-    const [notif, setNotif] = useState<string | null>(null);
-    const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
-    const [showLaporModal, setShowLaporModal] = useState(false);
-    const [pendingNextStatus, setPendingNextStatus] = useState<string | null>(null);
-    const [confirmedVerifikasi2, setConfirmedVerifikasi2] = useState(false);
-    const [confirmedProses, setConfirmedProses] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showSelesaiModal, setShowSelesaiModal] = useState(false);
-    const [rejectReason, setRejectReason] = useState("");
-    const [selesaiReason, setSelesaiReason] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    // Safely handle processed_by to ensure it's a string
+    // Gunakan custom hook untuk state dan handler utama
+    const state = useTindakanState(tindakan);
+    const {
+        formData, setFormData,
+        currentStepIndex, setCurrentStepIndex,
+        notif, setNotif,
+        saveSuccessModalVisible, setSaveSuccessModalVisible,
+        showModal, setShowModal,
+        activePhotoIndex, setActivePhotoIndex,
+        showConfirmModal, setShowConfirmModal,
+        showLaporModal, setShowLaporModal,
+        showBackModal, setShowBackModal,
+        pendingNextStatus, setPendingNextStatus,
+        isLoading, setIsLoading,
+        isSaving, setIsSaving,
+        showRejectModal, setShowRejectModal,
+        showSelesaiModal, setShowSelesaiModal,
+        rejectReason, setRejectReason,
+        selesaiReason, setSelesaiReason,
+        confirmedVerifikasi2, setConfirmedVerifikasi2,
+        saveData, handleNextStep, handlePreviousStep, confirmPreviousStep,
+        router
+    } = state;
 
-    const router = useRouter();
+    // State untuk show/hide section
+    const [showProfileState, setShowProfileState] = useState(currentStepIndex === 0);
+    const [showKeluhanState, setShowKeluhanState] = useState(currentStepIndex === 0);
+    const [openedSteps, setOpenedSteps] = useState<Set<number>>(new Set());
 
+    // Set the processed_by data from Laporan.tsx into formData
     useEffect(() => {
-        console.info(formData)
-    }, [formData]);
-
-    const showPrompt = (title: string, placeholder: string, callback: (input: string) => void) => {
-        const input = window.prompt(title, placeholder);
-        if (input && input.trim()) callback(input.trim());
-    };
-
-    useEffect(() => {
-        if (tindakan) {
-            setFormData(tindakan);
-            const stepIndex = STATUS_LIST.indexOf(tindakan.status || "Perlu Verifikasi");
-            setCurrentStepIndex(stepIndex >= 0 ? stepIndex : 0);
+        // Only update if rawProcessedBy exists and is different from formData.processed_by
+        if (rawProcessedBy && (!formData.processed_by ||
+            (typeof formData.processed_by === 'object' && formData.processed_by.nama_admin !== rawProcessedBy.nama_admin))) {
+            console.log("Setting processed_by from Laporan.tsx to formData:", rawProcessedBy);
+            setFormData((prev: any) => ({
+                ...prev,
+                processed_by: rawProcessedBy
+            }));
         }
-    }, [tindakan]);
+    }, [rawProcessedBy, formData.processed_by, setFormData]);
 
-    const validateCurrentStep = () => {
-        const status = STATUS_LIST[currentStepIndex];
+    // isButtonDisabled
+    const isButtonDisabled =
+        isLoading ||
+        (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId) ||
+        (currentStepIndex === 3 && !formData.opd) ||
+        (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
+        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
 
-        let requiredFields: string[] = [];
-
-        if (status === "Verifikasi Situasi") {
-            requiredFields = ["situasi"];
-        } else if (status === "Verifikasi Kelengkapan Berkas") {
-            requiredFields = ["trackingId", "url", "status_laporan"];
-        } else if (status === "Proses OPD Terkait") {
-            requiredFields = ["kesimpulan", "opd"];
-        }
-
-        return requiredFields.every((field) =>
-            field in formData ? !!formData[field as keyof TindakanClientState] : true
-        );
-    };
-
-    const saveData = async (nextStatus?: string) => {
-        try {
-            if (!formData.report) return;
-
-            // Ambil data user login
-            const userId = localStorage.getItem('nama_admin');
-            if (!userId) {
-                setNotif("❌ User belum login.");
-                return;
-            }
-
-            const updatedData = {
-                ...formData,
-                updatedAt: new Date().toISOString(),
-                status: formData.situasi === "Darurat" ? "Selesai Pengaduan" : nextStatus || formData.status,
-                processed_by: userId
-            };
-
-            await axios.put(
-                `${API_URL}/tindakan/${formData.report}`,
-                updatedData
-            );
-            setFormData(updatedData);
-            setSaveSuccessModalVisible(true);
-        } catch (err: any) {
-            console.error("❌ Gagal menyimpan:", err);
-        } finally {
-            setTimeout(() => setNotif(null), 3000);
-        }
-    };
-
-    const processedBy = async () => {
-    try {
-        if (!formData.report) return;
-
-        // Ambil ID user login (pastikan key-nya benar, misal 'user_id' atau 'userLoginId')
-        const userLoginId = localStorage.getItem('user_id');
-        if (!userLoginId) {
-            setNotif("❌ User belum login.");
-            return;
-        }
-
-        // PATCH hanya kirim userLoginId saja
-        await axios.patch(
-            `${API_URL}/tindakan/${formData.report}/processed-by`,
-            { userLoginId }
-        );
-
-        // Optional: update state lokal kalau mau
-        setFormData({
-            ...formData,
-            processed_by: userLoginId,
-        });
-    } catch (err) {
-        console.error("❌ Gagal menyimpan:", err);
-    } finally {
-        setTimeout(() => setNotif(null), 3000);
-    }
-};
-
-    const handleNextStep = async () => {
-        if (!validateCurrentStep()) {
-            alert("Harap lengkapi semua data terlebih dahulu.");
-            return;
-        }
-
-        const statusNow = STATUS_LIST[currentStepIndex];
-        const nextIndex = currentStepIndex + 1;
-        const nextStatus = STATUS_LIST[nextIndex];
-
-        // Step khusus, misal 'Proses OPD Terkait'
-        if (statusNow === "Proses OPD Terkait") {
-            setShowConfirmModal(true);
-            setPendingNextStatus(nextStatus);
-            return;
-        }
-
-        if (statusNow === "Verifikasi Situasi" && nextStatus === "Verifikasi Kelengkapan Berkas") {
-            setShowLaporModal(true);
-            setPendingNextStatus(nextStatus);
-            return;
-        }
-
-        setIsLoading(true);
-
-        // === UPDATE processed_by HANYA DI STEP 1 ===
-        if (currentStepIndex === 0) {
-            // Step pertama, update processed_by
-            await processedBy();
-            await saveData(nextStatus);
-        } else {
-            // Step selain pertama, cukup update data saja
-            await saveData(nextStatus);
-        }
-
-        setIsLoading(false);
-        setCurrentStepIndex(nextIndex);
-        router.refresh();
-    };
-
-    const handlePreviousStep = async () => {
-        const prevIndex = currentStepIndex - 1;
-        if (prevIndex < 0) return;
-        const prevStatus = STATUS_LIST[prevIndex];
-        await saveData(prevStatus);
-        setCurrentStepIndex(prevIndex);
-    };
-
-    const StepComponent = STEP_COMPONENTS[currentStepIndex];
-
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setActivePhotoIndex((prev) => (prev < (formData.photos?.length || 0) - 1 ? prev + 1 : 0)),
-        onSwipedRight: () => setActivePhotoIndex((prev) => (prev > 0 ? prev - 1 : (formData.photos?.length || 0) - 1)),
-        trackMouse: true,
-    });
-
+    // Tambahkan deklarasi NEXT_STEP_LABELS dan tooltipMessage di atas return utama
     const NEXT_STEP_LABELS = [
         "Lanjut Verifikasi",
         "Konfirmasi Tindak Lanjut",
@@ -238,18 +131,11 @@ export default function Tindakan({
         "Selesai",
     ];
 
-    const isButtonDisabled =
-        isLoading ||
-        (currentStepIndex === 2 && !confirmedVerifikasi2) && !formData.trackingId ||
-        (currentStepIndex === 3 && !confirmedProses) && !formData.opd ||
-        (currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait") ||
-        (currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait");
-
     const tooltipMessage = isLoading
         ? "Sedang memproses..."
         : currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId
             ? "Konfirmasi Isi Data Ke SP4N Lapor Terlebih Dahulu"
-            : currentStepIndex === 3 && !confirmedProses && !formData.opd
+            : currentStepIndex === 3 && !formData.opd
                 ? "Pastikan Data Tindak Lanjut Sudah Tersedia di SP4N Lapor"
                 : currentStepIndex === 2 && formData.status_laporan !== "Sedang Diproses OPD Terkait"
                     ? "Pastikan Status laporan SP4N Lapor sudah 'Sedang Diproses OPD Terkait'"
@@ -257,479 +143,594 @@ export default function Tindakan({
                         ? "Pastikan Status laporan SP4N Lapor sudah 'Selesai'"
                         : "";
 
+    // Guard: only render if sessionId and (tindakan or reportData) exist
+    if (!sessionId || (!tindakan && !reportData)) {
+        return <div className="flex items-center justify-center h-full text-gray-500">Data tidak tersedia.</div>;
+    }
+
+    // Create a stable subset of formData that contains only what's needed by actionProps
+    const formDataForAction = useMemo(() => ({
+        opd: formData.opd,
+        trackingId: formData.trackingId,
+        status_laporan: formData.status_laporan,
+        report: formData.report,
+        situasi: formData.situasi,
+        // Add any other formData fields needed by ActionButtons component
+    }), [
+        formData.opd,
+        formData.trackingId,
+        formData.status_laporan,
+        formData.report,
+        formData.situasi,
+    ]);
+
+    // Use memoization to create stable props for actionProps with reduced dependency list
+    const actionPropsParams = useMemo(() => ({
+        currentStepIndex,
+        NEXT_STEP_LABELS,
+        isButtonDisabled,
+        tooltipMessage,
+        isLoading,
+        isSaving,
+        showRejectModal,
+        showSelesaiModal,
+        rejectReason,
+        selesaiReason,
+        setShowRejectModal,
+        setShowSelesaiModal,
+        setRejectReason,
+        setSelesaiReason,
+        handlePreviousStep,
+        handleNextStep,
+        saveData,
+        formData: formDataForAction,
+        API_URL: API_URL || '',
+        router,
+        setIsSaving,
+        confirmedVerifikasi2,
+    }), [
+        // Only include dependencies that should trigger re-rendering of action buttons
+        currentStepIndex,
+        isButtonDisabled,
+        isLoading,
+        isSaving,
+        formDataForAction.status_laporan,
+        formDataForAction.opd,
+        formDataForAction.trackingId,
+        confirmedVerifikasi2
+        // Deliberately excluding other dependencies to prevent render loops
+    ]);
+
+    // Memoize reportData untuk referensi stabil - hanya pakai fields yang dibutuhkan
+    const memoizedReportData = useMemo(() => {
+        if (!reportData) return null;
+
+        // Return just the necessary fields to avoid deep comparisons on the entire reportData
+        return {
+            _id: reportData._id,
+            sessionId: reportData.sessionId,
+            message: reportData.message,
+            from: reportData.from,
+            user: reportData.user,
+            location: reportData.location,
+            photos: reportData.photos,
+            createdAt: reportData.createdAt
+        };
+    }, [
+        reportData?._id,
+        reportData?.sessionId,
+        reportData?.message,
+        reportData?.from,
+        reportData?.user?.name,
+        reportData?.location?.latitude,
+        reportData?.location?.longitude,
+        reportData?.photos?.length,
+        reportData?.createdAt
+    ]);
+
+    // Call actionProps once when the component mounts or when critical dependencies change
+    useEffect(() => {
+        // Safety check for actionProps
+        if (typeof actionProps !== 'function') {
+            console.log("No actionProps function provided or not a function");
+            return;
+        }
+
+        try {
+            console.debug("Setting up actionProps effect with currentStepIndex:", currentStepIndex);
+
+            // Use a delay to allow rendering to complete before triggering prop callback
+            const timeoutId = setTimeout(() => {
+                try {
+                    actionProps(actionPropsParams as TindakanActionProps);
+                } catch (error) {
+                    // Continue normal operation despite error - don't block UI
+                }
+            }, 200); // Delay to ensure stable render cycle
+
+            return () => {
+                clearTimeout(timeoutId);
+            };
+        } catch (err) {
+            // Fall back gracefully without blocking the UI
+        }
+    }, [
+        actionProps,
+        currentStepIndex,
+        isButtonDisabled,
+        isLoading,
+        isSaving,
+        actionPropsParams?.formData?.opd,
+        actionPropsParams?.formData?.trackingId,
+        actionPropsParams?.formData?.status_laporan
+    ]);
+
     return (
-        <div className="p-6 bg-gray-100 text-sm text-gray-800 space-y-6">
+        <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 text-sm text-gray-800">
+            {/* Notif & Modal */}
             {notif && (
-                <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded mb-4 shadow-sm">
-                    {notif}
-                </div>
-            )}
-
-            {/* Modal Simpan Berhasil */}
-            {saveSuccessModalVisible && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10001]"
-                    onClick={() => setSaveSuccessModalVisible(false)}
-                >
-                    <div
-                        className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <p className="text-gray-700 font-semibold">✅ Data berhasil disimpan.</p>
-                        <button
-                            onClick={() => setSaveSuccessModalVisible(false)}
-                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"
-                        >
-                            Oke
-                        </button>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 px-3 sm:px-6 py-3 rounded-lg mb-4 sm:mb-6 mx-2 sm:mx-0 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs sm:text-sm">{notif}</span>
                     </div>
                 </div>
             )}
-
-            {/* Progress Bar */}
-            {formData.status === "Ditutup" ? (
-                <div className="flex justify-center">
-                    <div className="flex flex-col items-center text-xs">
-                        <div className="w-8 h-8 rounded-full bg-red-300 text-white flex items-center justify-center font-bold">
-                            ❌
-                        </div>
-                        <span className="mt-1 text-red-600 font-semibold">Ditutup</span>
+            {/* KONTEN UTAMA (scrollable) */}
+            <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 pb-4 sm:pb-6 h-full">
+                <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+                    {/* Detail Admin */}
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <AdminSection
+                            formData={formData}
+                            setFormData={setFormData}
+                            setNotif={setNotif}
+                            setIsSaving={setIsSaving}
+                            router={router}
+                            API_URL={API_URL || ''}
+                        />
                     </div>
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <div className="relative flex justify-between px-6">
-                        {(() => {
-                            // Filter status "Ditutup" dari list
-                            const STATUS_LIST_FILTERED = STATUS_LIST.filter((s) => s !== "Ditutup");
-                            const status = formData.status ?? ""; // Pastikan string
-                            const currentStepIndexFiltered = Math.max(
-                                0,
-                                STATUS_LIST_FILTERED.indexOf(status)
-                            );
-
-                            return (
-                                <>
-                                    {/* Garis dasar (abu-abu) */}
-                                    <div
-                                        className="absolute top-4 h-1 bg-gray-300 z-0"
-                                        style={{
-                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-                                            right: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-                                        }}
-                                    />
-
-                                    {/* Garis progress (hijau) */}
-                                    <div
-                                        className="absolute top-4 h-1 bg-green-500 z-0 transition-all duration-300"
-                                        style={{
-                                            left: `calc((100% / ${STATUS_LIST_FILTERED.length * 2}))`,
-                                            width: `calc(((100% / ${STATUS_LIST_FILTERED.length}) * ${currentStepIndexFiltered}))`,
-                                        }}
-                                    />
-
-                                    {/* Titik-titik progress */}
-                                    {STATUS_LIST_FILTERED.map((status, idx) => {
-                                        const isDone = idx < currentStepIndexFiltered;
-                                        const isCurrent = idx === currentStepIndexFiltered;
-                                        const color = statusColors[status] || "#D1D5DB";
-
-                                        return (
-                                            <div
-                                                key={status}
-                                                className="relative flex flex-col items-center min-w-[80px] z-10"
-                                            >
-                                                {/* Lingkaran */}
-                                                <div
-                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                                                    style={{
-                                                        backgroundColor: isDone || isCurrent ? color : "#D1D5DB",
-                                                        color: isDone || isCurrent ? "white" : "#6B7280",
-                                                    }}
-                                                >
-                                                    {idx + 1}
-                                                </div>
-
-                                                {/* Label */}
-                                                <div className="mt-2 text-xs break-words text-center max-w-[80px]">
-                                                    <span
-                                                        className="font-semibold"
-                                                        style={{
-                                                            color: isCurrent ? color : "#9CA3AF",
-                                                        }}
-                                                    >
-                                                        {status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
-
-            {/* Detail Laporan */}
-            <div className="border-b pb-4">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-lg font-medium flex items-center gap-2">
-                        Detail Keluhan
-                        <button
-                            onClick={() => setShowKeluhan((prev) => !prev)}
-                            className="text-xs flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
-                        >
-                            {showKeluhan ? "Sembunyikan Detail" : "Lihat Detail"}
-                        </button>
-                    </h2>
-                </div>
-
-                {showKeluhan && (
-                    <Keluhan sessionId={sessionId} />
-                )}
-            </div>
-
-            {/* Step Form */}
-            <div className="border-b pb-4">
-                {/* Komponen Step */}
-                {STATUS_LIST[currentStepIndex] === "Verifikasi Kelengkapan Berkas" ? (
-                    <Verifikasi2
-                        data={formData}
-                        onChange={setFormData}
-                        onConfirmChange={(val) => setConfirmedVerifikasi2(val)}
-                    />
-                ) : STATUS_LIST[currentStepIndex] === "Proses OPD Terkait" ? (
-                    <Proses
-                        data={formData}
-                        onChange={setFormData}
-                        onConfirmChange={(val) => setConfirmedProses(val)}
-                        saveData={saveData}
-                    />
-                ) : STATUS_LIST[currentStepIndex] === "Selesai Pengaduan" ? (
-                    <Selesai2 data={{ ...formData, sessionId }} />
-                ) : STATUS_LIST[currentStepIndex] === "Verifikasi Situasi" ? (
-                    <Verifikasi1 data={{ ...formData }} onChange={setFormData} />
-                )
-                    : (
-                        <StepComponent data={{ ...formData, sessionId }} onChange={setFormData} />
-                    )}
-
-                {/* Tombol Navigasi */}
-                {!["Ditutup", "Selesai Penanganan", "Selesai Pengaduan"].includes(formData.status || "") && (
-                    <div className="flex justify-center gap-2 mt-4">
-                        {/* Tombol Tutup (hanya di step pertama) */}
-                        {currentStepIndex === 0 && (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        setRejectReason("");
-                                        setShowRejectModal(true);
-                                    }}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
-                                >
-                                    <IoMdCloseCircle size={18} />
-                                    Tutup Pengaduan
-                                </button>
-
-                                {/* Modal Tutup Pengaduan */}
-                                {showRejectModal && (
-                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                                        <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
-                                            <h3 className="text-lg font-semibold text-red-700">Alasan Penutupan</h3>
-                                            <textarea
-                                                value={rejectReason}
-                                                onChange={(e) => setRejectReason(e.target.value)}
-                                                placeholder="Masukkan alasan penutupan pengaduan"
-                                                className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
-                                                rows={4}
-                                            />
-                                            <div className="flex justify-end gap-2 mt-4">
-                                                <button
-                                                    onClick={() => setShowRejectModal(false)}
-                                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
-                                                >
-                                                    Batal
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!rejectReason.trim()) {
-                                                            alert("Alasan penutupan harus diisi.");
-                                                            return;
-                                                        }
-                                                        try {
-                                                            const updated = {
-                                                                ...formData,
-                                                                status: "Ditutup",
-                                                                updatedAt: new Date().toISOString(),
-                                                                keterangan: `${rejectReason.trim()}`,
-                                                            };
-                                                            await axios.put(
-                                                                `${API_URL}/tindakan/${formData.report}`,
-                                                                updated
-                                                            );
-                                                            setShowRejectModal(false);
-                                                            router.push("/pengaduan");
-                                                        } catch (error) {
-                                                            alert("Gagal menolak pengaduan. Silakan coba lagi.");
-                                                        }
-                                                    }}
-                                                    className="px-4 py-2 bg-red-600 text-white rounded-md text-sm"
-                                                >
-                                                    Tutup
-                                                </button>
-                                            </div>
-                                        </div>
+                    
+                    {/* Detail Pelapor */}
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                        </svg>
                                     </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Tombol Kembali (jika bukan step pertama) */}
-                        {currentStepIndex > 0 && (
-                            <button
-                                onClick={handlePreviousStep}
-                                className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2"
-
-                            >
-                                <GrLinkPrevious size={18} />
-                                Kembali
-                            </button>
-                        )}
-
-                        {/* Tombol Simpan Perubahan (hanya di index 2) */}
-                        {[2].includes(currentStepIndex) && (
-                            <button
-                                onClick={async () => {
-                                    setIsSaving(true);
-                                    await saveData();
-                                    setIsSaving(false);
-                                }}
-                                disabled={
-                                    isSaving ||
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId)
-                                }
-                                className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 ${(
-                                    (currentStepIndex === 2 && !confirmedVerifikasi2 && !formData.trackingId))
-                                    ? "bg-gray-300 cursor-not-allowed"
-                                    : "bg-emerald-500 hover:bg-emerald-600"
-                                    }`}
-                            >
-                                {isSaving ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <LoadingSpinner />
-                                        <span>Sedang menyimpan...</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <RiSave3Fill size={18} />
-                                        <span>Simpan Perubahan</span>
-                                    </>
-                                )}
-                            </button>
-                        )}
-
-                        {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
-                        {currentStepIndex < NEXT_STEP_LABELS.length && (
-
-                            <div className="relative group inline-block">
+                                    <span className="truncate">Detail Pelapor</span>
+                                </h2>
                                 <button
-                                    onClick={() => handleNextStep()}
-                                    disabled={isButtonDisabled}
-                                    className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 ${isButtonDisabled
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-indigo-500 hover:bg-indigo-600"
-                                        }`}
+                                    onClick={() => setShowProfileState((prev) => !prev)}
+                                    className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-blue-200 text-blue-700 rounded-md sm:rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 flex-shrink-0"
                                 >
-                                    {isLoading ? (
-                                        <LoadingSpinner />
+                                    {showProfileState ? (
+                                        <>
+                                            <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Sembunyikan</span>
+                                            <span className="sm:hidden">Hide</span>
+                                        </>
                                     ) : (
                                         <>
-                                            {NEXT_STEP_LABELS[currentStepIndex] || "Lanjutkan"}
-                                            <GrLinkNext size={16} />
+                                            <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Lihat Detail</span>
+                                            <span className="sm:hidden">Show</span>
                                         </>
                                     )}
                                 </button>
-
-                                {isButtonDisabled && tooltipMessage && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-max bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                                        {tooltipMessage}
-                                    </div>
-                                )}
+                            </div>
+                        </div>
+                        {showProfileState && (
+                            <div className="p-3 sm:p-6">
+                                <Profile sessionId={sessionId} data={reportData} />
                             </div>
                         )}
-
-                        {/* Tombol Selesai (hanya di step pertama) */}
-                        {currentStepIndex === 0 && (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        setSelesaiReason("");
-                                        setShowSelesaiModal(true);
-                                    }}
-                                    className="bg-[rgb(96,165,250)] text-white px-4 py-2 rounded-md flex items-center gap-2"
-                                >
-                                    <FaCheckDouble size={18} />
-                                    Selesai Penanganan
-                                </button>
-
-                                {/* Modal Selesai Penanganan */}
-                                {showSelesaiModal && (
-                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                                        <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
-                                            <h3 className="text-lg font-semibold text-[rgb(96,165,250)]">Alasan Penyelesaian</h3>
-                                            <textarea
-                                                value={selesaiReason}
-                                                onChange={(e) => setSelesaiReason(e.target.value)}
-                                                placeholder="Masukkan alasan penyelesaian pengaduan"
-                                                className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
-                                                rows={4}
-                                            />
-                                            <div className="flex justify-end gap-2 mt-4">
-                                                <button
-                                                    onClick={() => setShowSelesaiModal(false)}
-                                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
-                                                >
-                                                    Batal
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!selesaiReason.trim()) {
-                                                            alert("Alasan penyelesaian harus diisi.");
-                                                            return;
-                                                        }
-                                                        try {
-                                                            const updated = {
-                                                                ...formData,
-                                                                status: "Selesai Penanganan",
-                                                                updatedAt: new Date().toISOString(),
-                                                                keterangan: `${selesaiReason.trim()}`,
-                                                            };
-                                                            await axios.put(
-                                                                `${API_URL}/tindakan/${formData.report}`,
-                                                                updated
-                                                            );
-                                                            setShowSelesaiModal(false);
-                                                            router.push("/pengaduan");
-                                                        } catch (error) {
-                                                            alert("Gagal menyelesaikan pengaduan. Silakan coba lagi.");
-                                                        }
-                                                    }}
-                                                    className="px-4 py-2 bg-[rgb(96,165,250)] text-white rounded-md text-sm"
-                                                >
-                                                    Selesai
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
-
                     </div>
-                )}
-            </div>
+                    
+                    {/* Detail Keluhan */}
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <span className="truncate">Detail Keluhan</span>
+                                </h2>
+                                <button
+                                    onClick={() => setShowKeluhanState((prev) => !prev)}
+                                    className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-amber-200 text-amber-700 rounded-md sm:rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 flex-shrink-0"
+                                >
+                                    {showKeluhanState ? (
+                                        <>
+                                            <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Sembunyikan</span>
+                                            <span className="sm:hidden">Hide</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Lihat Detail</span>
+                                            <span className="sm:hidden">Show</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                        {showKeluhanState && memoizedReportData && (
+                            <div className="p-3 sm:p-6">
+                                <Keluhan
+                                    key={`keluhan-${sessionId}`}
+                                    sessionId={sessionId}
+                                    data={memoizedReportData}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
 
+                {/* Previous Steps (show with toggle) */}
+                <div className="max-w-6xl mx-auto mt-4 sm:mt-6 space-y-3 sm:space-y-4">
+                    {Array.from({ length: currentStepIndex }).map((_, idx) => (
+                        <div key={`prev-step-${idx}`} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-400 rounded-full"></div>
+                                        </div>
+                                        <span className="truncate text-sm sm:text-base">{STATUS_LIST[idx]}</span>
+                                        <span className="px-2 py-0.5 sm:py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full flex-shrink-0">
+                                            Selesai
+                                        </span>
+                                    </h2>
+                                    <button
+                                        onClick={() => {
+                                            const newOpenedSteps = new Set(openedSteps);
+                                            if (newOpenedSteps.has(idx)) {
+                                                newOpenedSteps.delete(idx);
+                                            } else {
+                                                newOpenedSteps.add(idx);
+                                            }
+                                            setOpenedSteps(newOpenedSteps);
+                                        }}
+                                        className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-gray-200 text-gray-700 rounded-md sm:rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex-shrink-0"
+                                    >
+                                        {openedSteps.has(idx) ? (
+                                            <>
+                                                <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                                <span className="hidden sm:inline">Sembunyikan</span>
+                                                <span className="sm:hidden">Hide</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                                <span className="hidden sm:inline">Lihat Detail</span>
+                                                <span className="sm:hidden">Show</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                            {openedSteps.has(idx) && (
+                                <div className="p-3 sm:p-6 bg-gray-50/30">
+                                    {(() => {
+                                        if (idx === 2) { // Verifikasi2
+                                            return (
+                                                <Verifikasi2
+                                                    data={formData}
+                                                    onChange={setFormData}
+                                                    onConfirmChange={val => setConfirmedVerifikasi2(val)}
+                                                    saveData={saveData}
+                                                />
+                                            );
+                                        } else if (idx === 0) { // Verifikasi
+                                            return <Verifikasi data={{ ...formData, sessionId }} onChange={setFormData} />;
+                                        } else if (idx === 1) { // Verifikasi1
+                                            return <Verifikasi1 data={{ ...formData }} onChange={setFormData} saveData={saveData} />;
+                                        } else if (idx === 3) { // Proses
+                                            return <Proses data={formData} onChange={setFormData} saveData={saveData} />;
+                                        } else if (idx === 4) { // Selesai
+                                            return <Selesai data={{ ...formData, sessionId }} reportData={reportData} saveData={saveData} />;
+                                        } else if (idx === 5) { // Selesai2
+                                            return <Selesai2 data={{ ...formData, sessionId }} reportData={reportData} saveData={saveData} />;
+                                        } else if (idx === 6) { // Ditutup
+                                            return <Ditutup data={{ ...formData, sessionId }} saveData={saveData} />;
+                                        }
+                                        return null;
+                                    })()}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Current Active Step (always shown) */}
+                <div className="max-w-6xl mx-auto mt-4 sm:mt-6">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-blue-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 sm:gap-3">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
+                                        <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full animate-pulse"></div>
+                                    </div>
+                                    <span className="truncate text-base sm:text-xl">{STATUS_LIST[currentStepIndex]}</span>
+                                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-medium bg-white/20 text-white rounded-full backdrop-blur-sm flex-shrink-0">
+                                        Aktif
+                                    </span>
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="p-3 sm:p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
+                            {(() => {
+                                const status = STATUS_LIST[currentStepIndex];
+                                if (status === "Verifikasi Situasi") {
+                                    return (
+                                        <Verifikasi1
+                                            data={{ ...formData }}
+                                            onChange={setFormData}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                }
+                                else if (status === "Verifikasi Kelengkapan Berkas") {
+                                    return (
+                                        <Verifikasi2
+                                            data={{ ...formData }}
+                                            onChange={setFormData}
+                                            onConfirmChange={val => setConfirmedVerifikasi2(val)}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                } else if (status === "Proses OPD Terkait") {
+                                    return (
+                                        <Proses
+                                            data={{ ...formData }}
+                                            onChange={setFormData}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                } else if (status === "Selesai Pengaduan") {
+                                    return (
+                                        <Selesai2
+                                            data={{ ...formData, sessionId }}
+                                            reportData={reportData}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                } else if (status === "Selesai Penanganan") {
+                                    return (
+                                        <Selesai
+                                            data={{ ...formData, sessionId }}
+                                            reportData={reportData}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                } else if (status === "Ditutup") {
+                                    return (
+                                        <Ditutup
+                                            data={{ ...formData, sessionId }}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                } else {
+                                    const StepComponent = STEP_COMPONENTS[currentStepIndex];
+                                    return (
+                                        <StepComponent
+                                            data={{ ...formData, sessionId }}
+                                            onChange={setFormData}
+                                            saveData={saveData}
+                                        />
+                                    );
+                                }
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
             {/* Modal Zoom Foto */}
-            {showModal && formData.photos && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center" onClick={() => setShowModal(false)}>
-                    <div className="relative bg-white rounded-md p-4 max-w-lg w-[90%] shadow-lg" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setShowModal(false)} className="absolute top-2 right-3 text-gray-600 hover:text-black text-lg">✕</button>
-                        <div {...handlers}>
+            <Modal open={showModal && !!formData.photos} onClose={() => setShowModal(false)} maxWidth="max-w-4xl">
+                {formData.photos && formData.photos.length > 0 && (
+                    <div className="relative bg-white rounded-lg sm:rounded-xl overflow-hidden">
+                        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
+                            <button 
+                                onClick={() => setShowModal(false)} 
+                                className="w-8 h-8 sm:w-10 sm:h-10 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-colors"
+                            >
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="bg-gray-50">
                             <Zoom>
-                                <img src={`${API_URL}${formData.photos[activePhotoIndex]}`} className="w-full h-96 object-contain rounded-md cursor-zoom-in" />
+                                <img
+                                    src={`${API_URL}${formData.photos[activePhotoIndex]}`}
+                                    className="w-full h-64 sm:h-96 object-contain cursor-zoom-in"
+                                    alt={`Foto ${activePhotoIndex + 1}`}
+                                />
                             </Zoom>
                         </div>
-                        <div className="flex justify-between mt-4 text-sm font-medium">
-                            <button onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : (formData.photos!.length || 1) - 1)} className="text-blue-600 hover:underline">←</button>
-                            <span>Foto {activePhotoIndex + 1} dari {formData.photos?.length}</span>
-                            <button onClick={() => setActivePhotoIndex((prev) => prev < (formData.photos!.length || 1) - 1 ? prev + 1 : 0)} className="text-blue-600 hover:underline">→</button>
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-white border-t border-gray-200">
+                            <button 
+                                onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : (formData.photos.length - 1))} 
+                                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md sm:rounded-lg transition-colors"
+                            >
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                                <span className="hidden sm:inline">Sebelumnya</span>
+                                <span className="sm:hidden">Prev</span>
+                            </button>
+                            <span className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 bg-gray-100 rounded-md sm:rounded-lg">
+                                Foto {activePhotoIndex + 1} dari {formData.photos.length}
+                            </span>
+                            <button 
+                                onClick={() => setActivePhotoIndex((prev) => prev < (formData.photos.length - 1) ? prev + 1 : 0)} 
+                                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md sm:rounded-lg transition-colors"
+                            >
+                                <span className="hidden sm:inline">Selanjutnya</span>
+                                <span className="sm:hidden">Next</span>
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Modal Simpan Loading */}
-            {isSaving && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
-                        <LoadingSpinner />
-                        <p className="text-gray-700 font-semibold">Sedang menyimpan...</p>
-                    </div>
-                </div>
-            )}
-
+                )}
+            </Modal>
+            <LoadingModal open={isSaving} />
             {/* Modal Konfirmasi Proses OPD Terkait */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
-                        <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Lanjutkan Proses</h3>
-                        <p className="mb-2 text-sm text-gray-700">
-                            Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
-                        </p>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <button
-                                onClick={() => setShowConfirmModal(false)}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (pendingNextStatus) {
+            <Modal open={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Lanjutkan Proses</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setShowConfirmModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (pendingNextStatus) {
+                                    try {
                                         setIsLoading(true);
                                         await saveData(pendingNextStatus);
-                                        setCurrentStepIndex((prev) => prev + 1);
+                                        setCurrentStepIndex((prev: number) => prev + 1);
                                         setPendingNextStatus(null);
                                         setShowConfirmModal(false);
+                                    } catch (error: any) {
+                                        console.error("Error saving data:", error);
+                                        alert(`Gagal menyimpan data: ${error?.message || "Terjadi kesalahan"}`);
+                                    } finally {
                                         setIsLoading(false);
                                     }
-                                }}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
-                            >
-                                Lanjutkan
-                            </button>
-                        </div>
+                                }
+                            }}
+                            disabled={isLoading}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
+                                isLoading 
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-green-600 hover:bg-green-700"
+                            }`}
+                        >
+                            {isLoading ? "Memproses..." : "Lanjutkan"}
+                        </button>
                     </div>
                 </div>
-            )}
-
+            </Modal>
             {/* Modal Konfirmasi SP4N Lapor */}
-            {showLaporModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
-                        <h3 className="text-lg font-semibold text-yellow-700">Konfirmasi Tindak Lanjut</h3>
-                        <p className="mb-2 text-sm text-gray-700">
-                            Yakin data sudah di croscheck{formData.situasi === 'Darurat' ? '' : `, lanjutkan ke SP4N Lapor`}?
-                        </p>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <button
-                                onClick={() => setShowLaporModal(false)}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (pendingNextStatus) {
+            <Modal open={showLaporModal} onClose={() => setShowLaporModal(false)}>
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Tindak Lanjut</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                Yakin data sudah di croscheck{formData.situasi === 'Darurat' ? '' : `, lanjutkan ke SP4N Lapor`}?
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setShowLaporModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (pendingNextStatus) {
+                                    try {
+                                        setIsSaving(true);
                                         await saveData(pendingNextStatus);
-                                        setCurrentStepIndex((prev) => formData.situasi === 'Darurat' ? 5 : prev + 1);
+                                        setCurrentStepIndex((prev: number) => formData.situasi === 'Darurat' ? 5 : prev + 1);
                                         setPendingNextStatus(null);
                                         setShowLaporModal(false);
-
                                         if (currentStepIndex === 1 && formData.situasi !== 'Darurat') {
                                             window.open("https://www.lapor.go.id/", "_blank", "noopener,noreferrer");
                                         }
+                                    } catch (error: any) {
+                                        console.error("Error saving data:", error);
+                                        alert(`Gagal menyimpan data: ${error?.message || "Terjadi kesalahan"}`);
+                                    } finally {
+                                        setIsSaving(false);
                                     }
-                                }}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
-                            >
-                                Lanjutkan
-                            </button>
-                        </div>
+                                }
+                            }}
+                            disabled={isSaving}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
+                                isSaving 
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                            }`}
+                        >
+                            {isSaving ? "Memproses..." : "Lanjutkan"}
+                        </button>
                     </div>
                 </div>
-            )}
+            </Modal>
+            {/* Modal Konfirmasi Kembali */}
+            <Modal open={showBackModal} onClose={() => setShowBackModal(false)}>
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Mundur</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                Yakin ingin mundur ke tahapan status sebelumnya? Data pada tahapan status saat ini akan disimpan terlebih dahulu.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setShowBackModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={confirmPreviousStep}
+                            disabled={isLoading}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
+                                isLoading 
+                                    ? "bg-gray-400 cursor-not-allowed" 
+                                    : "bg-orange-600 hover:bg-orange-700"
+                            }`}
+                        >
+                            {isLoading ? "Menyimpan..." : "Ya, Kembali"}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
+
+export default React.memo(TindakanComponent);

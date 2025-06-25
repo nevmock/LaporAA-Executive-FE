@@ -1,0 +1,26 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update public/LAPOR, AA, BUPATI.png, src/app/(auth)/layout.tsx, src/app/(auth)/login/page.tsx
+📅 2025-06-25_1618
+
+📂 Perubahan file:
+public/LAPOR AA BUPATI.png
+src/app/(auth)/layout.tsx
+src/app/(auth)/login/page.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/HomeClient.tsx
+src/components/LayoutSkeleton.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/pengaduan/HeaderDesktop.tsx
+src/components/pengaduan/HeaderMobile.tsx
+src/components/pengaduan/MapModal.tsx
+src/components/pengaduan/PhotoModal.tsx
+src/components/pengaduan/laporan/ActionButtons.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi2.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/laporan/profile.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/laporan/useTindakanState.ts
+
+🚀 Meluncur

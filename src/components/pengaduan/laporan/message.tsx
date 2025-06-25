@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "../../../utils/axiosInstance";
 import { io } from "socket.io-client";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 const socket = io(`${API_URL}`, { autoConnect: false });
@@ -17,18 +17,52 @@ interface MessageItem {
     mediaUrl?: string;     // for image
 }
 
-export default function Message({ from }: { from: string }) {
+// Props interface untuk manual mode control
+interface MessageProps {
+    from: string;
+    mode: "bot" | "manual";
+    onModeChange?: (newMode: "bot" | "manual") => void;
+    forceMode?: boolean; // Receive force mode from parent
+}
+
+export default function Message({ from, mode, onModeChange, forceMode = false }: MessageProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
     const [isScrolledUp, setIsScrolledUp] = useState(false);
-    const [mode, setMode] = useState<"bot" | "manual">("bot");
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [modeChanging, setModeChanging] = useState(false);
     const limit = 20;
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
+    // Manual mode toggle function
+    const toggleMode = async () => {
+        if (modeChanging || !onModeChange) return;
+        
+        setModeChanging(true);
+        try {
+            const newMode = mode === "bot" ? "manual" : "bot";
+            
+            if (newMode === "manual") {
+                // Set manual mode dengan timeout 30 menit
+                await axios.post(`${API_URL}/mode/manual/${from}`, { minutes: 30 });
+            } else {
+                // Set bot mode
+                await axios.put(`${API_URL}/mode/${from}`, { mode: "bot" });
+            }
+            
+            onModeChange(newMode);
+            console.log(`Mode manually changed to ${newMode} for ${from}`);
+        } catch (error) {
+            console.error("Failed to change mode:", error);
+            alert("Gagal mengubah mode. Silakan coba lagi.");
+        } finally {
+            setModeChanging(false);
+        }
+    };
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -69,16 +103,7 @@ export default function Message({ from }: { from: string }) {
 
     useEffect(() => {
         if (!from) return;
-
-        axios.get(`${API_URL}/user/user-mode/${from}`)
-            .then(res => {
-                const mode = res.data?.mode || res.data?.session?.mode;
-                if (mode === "manual" || mode === "bot") setMode(mode);
-            })
-            .catch(err => console.error("Gagal fetch mode:", err));
-
         fetchMessages(true);
-        socket.connect();
 
         const handleNewMessage = (msg: MessageItem) => {
             if (msg.from !== from) return;
@@ -120,9 +145,15 @@ export default function Message({ from }: { from: string }) {
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
+        const nama_admin = localStorage.getItem("nama_admin") || "Admin";
+        const role = localStorage.getItem("role") || "Admin";
         axios.post(
             `${API_URL}/chat/send/${from}`,
-            { message: newMessage }
+            {
+                message: newMessage,
+                nama_admin,
+                role
+            }
         )
             .then(() => setNewMessage(""))
             .catch(err => console.error(err));
@@ -165,13 +196,6 @@ export default function Message({ from }: { from: string }) {
 
     return (
         <div className="flex flex-col h-full relative">
-            {/* Mode */}
-            <div className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-white shadow px-3 py-1 rounded-full border text-xs">
-                <span className="text-gray-700">Mode:</span>
-                <span className={`w-3 h-3 rounded-full ${mode === "manual" ? "bg-green-500" : "bg-red-500"}`} />
-                <span className="text-gray-700">{mode === "manual" ? "Manual" : "Bot"}</span>
-            </div>
-
             {/* Chat Area */}
             <div
                 className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#EFEAE2]"

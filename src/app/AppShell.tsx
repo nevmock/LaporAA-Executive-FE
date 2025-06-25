@@ -2,10 +2,11 @@
 
 import Sidebar from "../components/sidebar";
 import SidebarHorizontal from "../components/sidebarHorizontal";
-import { useRouter } from "next/navigation";
+import TopNavbar from "../components/TopNavbar";
+import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
-import { FiLogOut } from "react-icons/fi";
+import { AppShellSkeleton } from "../components/LayoutSkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -13,9 +14,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [countPending, setCountPending] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
+    const [namaAdmin, setNamaAdmin] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const pathname = usePathname();
 
     const [role, setRole] = useState<string | null>(null);
+
+    // Get page title based on pathname
+    const getPageTitle = () => {
+        if (pathname.includes('/dashboard')) {
+            return 'Dashboard';
+        } else if (pathname.includes('/pengaduan')) {
+            return 'Daftar Pengaduan';
+        }
+        return 'Laporan AA';
+    };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -24,8 +38,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         } else {
             const username = localStorage.getItem("username");
             const role = localStorage.getItem("role");
+            const namaAdminLocal = localStorage.getItem("nama_admin");
             setUserName(username || "Pengguna");
             setRole(role);
+            setNamaAdmin(namaAdminLocal);
+            setIsLoading(false);
         }
     }, [router]);
 
@@ -56,39 +73,54 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         router.push("/login");
     };
 
+    if (isLoading) {
+        return <AppShellSkeleton />;
+    }
+
     return (
-        <div className="flex h-screen w-screen overflow-hidden flex-col sm:flex-row">
+        <div className="flex h-screen w-screen flex-col sm:flex-row">
             {isMobile ? (
-                <SidebarHorizontal countPending={countPending} onLogout={handleLogout} />
-            ) : (
-                <Sidebar countPending={countPending} />
-            )}
+                <>
+                    <div className="flex flex-col h-screen overflow-hidden">
+                        {/* Combined TopNavbar with SidebarHorizontal for Mobile */}
+                        <TopNavbar 
+                            title={getPageTitle()}
+                            userName={userName || "Pengguna"}
+                            role={role}
+                            onLogout={handleLogout}
+                            isMobile={true}
+                            countPending={countPending}
+                            namaAdmin={namaAdmin || undefined}
+                        />
 
-            <main className="flex-1 overflow-y-auto bg-gray-900 text-white flex flex-col">
-                {/* TOP NAVBAR */}
-                <div className="bg-gray-900 px-4 py-3 h-[35px] shadow-lg text-white text-xs flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {role && (
-                            <span className={`w-2.5 h-2.5 rounded-full bg-white`} />
-                        )}
-                        <span>
-                            User : {userName || "Pengguna"}
-                        </span>
+                        {/* CONTENT */}
+                        <div className="flex-1 overflow-auto bg-white">
+                            {children}
+                        </div>
                     </div>
+                </>
+            ) : (
+                <>
+                    <Sidebar countPending={countPending} />
+                    <main className="flex-1 bg-gray-900 text-white flex flex-col overflow-hidden">
+                        {/* TOP NAVBAR */}
+                        <TopNavbar 
+                            title={getPageTitle()}
+                            userName={userName || "Pengguna"}
+                            role={role}
+                            onLogout={handleLogout}
+                            isMobile={false}
+                            countPending={countPending}
+                            namaAdmin={namaAdmin || undefined}
+                        />
 
-                    <button
-                        onClick={handleLogout}
-                        className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1"
-                    >
-                        Logout <FiLogOut size={12} />
-                    </button>
-                </div>
-
-                {/* CONTENT */}
-                <div className="flex-1 overflow-y-auto bg-white">
-                    {children}
-                </div>
-            </main>
+                        {/* CONTENT */}
+                        <div className="flex-1 overflow-auto bg-white">
+                            {children}
+                        </div>
+                    </main>
+                </>
+            )}
         </div>
     );
 }

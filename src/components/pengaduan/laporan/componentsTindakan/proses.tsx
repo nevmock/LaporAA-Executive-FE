@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+
+import { useRef, useState, useEffect } from "react";
 import { TindakanClientState } from "../../../../lib/types";
 import axios from "../../../../utils/axiosInstance";
 import { Plus } from "lucide-react";
@@ -20,14 +21,55 @@ export default function Proses({
     data: Partial<TindakanClientState>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanClientState>>>;
     onConfirmChange?: (val: boolean) => void;
-    saveData?: () => Promise<void>;
+    saveData?: (nextStatus?: string) => Promise<any>; // Updated to match the actual return type
 }) {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [newKesimpulan, setNewKesimpulan] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [isFormSaving, setIsFormSaving] = useState(false); // Separate state for form save
     const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
+    const [saveMessage, setSaveMessage] = useState("Data berhasil disimpan. Dan dikirimkan kepada Warga");
+    const [initialData, setInitialData] = useState<Partial<TindakanClientState>>({});
+    const [hasFormChanges, setHasFormChanges] = useState(false);
+    
+    // Track initial form data for change detection
+    useEffect(() => {
+        if (data && Object.keys(data).length > 0 && Object.keys(initialData).length === 0) {
+            setInitialData({...data});
+        }
+    }, [data, initialData]);
+    
+    // Check for form changes whenever data changes
+    useEffect(() => {
+        if (Object.keys(initialData).length > 0) {
+            const opdChanged = JSON.stringify(initialData.opd) !== JSON.stringify(data.opd);
+            const statusChanged = initialData.status_laporan !== data.status_laporan;
+            const photosChanged = JSON.stringify(initialData.photos) !== JSON.stringify(data.photos);
+            
+            setHasFormChanges(opdChanged || statusChanged || photosChanged);
+            console.log("Form has changes:", opdChanged || statusChanged || photosChanged);
+        }
+    }, [data, initialData]);
+
+    // Safety timeout to prevent infinite loading state
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout | undefined;
+        if (isSaving || isFormSaving) {
+            // Reset loading state after 30 seconds if it's still saving
+            timeoutId = setTimeout(() => {
+                console.warn("Save operation timed out after 30 seconds");
+                setIsSaving(false);
+                setIsFormSaving(false);
+                alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
+            }, 30000);
+        }
+        
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [isSaving, isFormSaving]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -45,9 +87,11 @@ export default function Proses({
             );
             onChange(prev => ({ ...prev, kesimpulan: res.data.kesimpulan }));
             setNewKesimpulan("");
+            setSaveMessage("Tindak lanjut berhasil ditambahkan dan dikirimkan kepada Warga");
             setSaveSuccessModalVisible(true);
         } catch (err) {
             console.error("❌ Gagal menambahkan kesimpulan:", err);
+            alert("Gagal menambahkan tindak lanjut. Silakan coba lagi.");
         }
         setIsSaving(false);
     };
@@ -110,7 +154,7 @@ export default function Proses({
         onChange(prev => ({ ...prev, photos: updated }));
     };
 
-    if (!isConfirmed && !data.opd) {
+    if (!isConfirmed && (!data.opd || (Array.isArray(data.opd) && data.opd.length === 0))) {
         return (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
                 <h3 className="text-md font-semibold text-yellow-800 mb-2">Konfirmasi Data SP4N Lapor</h3>
@@ -147,25 +191,14 @@ export default function Proses({
             {/* ✅ Kesimpulan */}
             <div className="col-span-4">
 
-                <div className="grid grid-cols-4 items-center gap-2 mb-5">
-                    <div className="relative col-span-1">
-                        <label className="text-lg font-medium">
-                            Tingkat Kedaruratan
-                        </label>
-                    </div>
-                    <div className="col-span-3">
-                        {data.situasi || ""}
-                    </div>
-                </div>
-
-                <hr className="border-t border-gray-200 my-4" />
+                {/* <hr className="border-t border-gray-200 my-4" /> */}
 
                 <h3 className="text-lg font-medium mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
-                    <Tooltip text="Klik disini untuk langsung membuka laporan">
-                        <button
+                    <button
                             onClick={() => window.open(`${data.url}`, "_blank")}
                             className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                            title="Buka Laporan SP4N Lapor"
                         >
                             <img
                                 src="/Spanlapor-icon.png"
@@ -174,7 +207,6 @@ export default function Proses({
                             />
                             Buka Laporan #{data.trackingId}
                         </button>
-                    </Tooltip>
                 </div>
 
                 <ul className="space-y-2">
@@ -183,7 +215,11 @@ export default function Proses({
                     <div className="grid grid-cols-4 items-start gap-2">
                         <label className="col-span-1 font-medium mt-2">Terdisposisi ke</label>
                         <div className="col-span-3">
-                            <OPDSelect value={data.opd || ""} onChange={(val) => onChange((prev) => ({ ...prev, opd: val }))} />
+                            <OPDSelect
+                                value={data.opd || []}
+                                onChange={(val) => onChange((prev) => ({ ...prev, opd: val }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Anda dapat menambahkan lebih dari satu OPD</p>
                         </div>
                     </div>
 
@@ -205,47 +241,92 @@ export default function Proses({
                     </div>
 
                     <div className="mt-2 flex justify-center">
-                        <button
-    onClick={() => {
-        setIsSaving(true);
-        saveData?.().finally(() => setIsSaving(false));
-    }}
-    disabled={isSaving}
-    className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
-        isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-    }`}
->
-    {isSaving ? (
-        <div className="flex items-center justify-center gap-2">
-            <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-            >
-                <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                ></circle>
-                <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                ></path>
-            </svg>
-            <span>Sedang menyimpan...</span>
-        </div>
-    ) : (
-        <>
-            <RiSave3Fill size={16} />
-            <span>Simpan Perubahan</span>
-        </>
-    )}
-</button>
+                        {saveData ? (
+                            <button
+                                onClick={() => {
+                                    // Enhanced version with reliable error handling and timeouts for Simpan Perubahan button
+                                    setIsFormSaving(true);
+                                    
+                                    // Track start time to detect slow operations or hangs
+                                    const startTime = Date.now();
+                                    console.log("Starting form save operation at", new Date().toISOString());
+                                    
+                                    // Set a failsafe timeout to prevent permanent loading state
+                                    const timeoutId = setTimeout(() => {
+                                        console.warn("Form save operation timed out after 15 seconds");
+                                        setIsFormSaving(false);
+                                        alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
+                                    }, 15000);
+                                    
+                                    try {
+                                        // Direct saveData call with proper error handling
+                                        console.log("Calling saveData function to save form data");
+                                        saveData()
+                                            .then((result) => {
+                                                console.log("Form save succeeded in", Date.now() - startTime, "ms");
+                                                setSaveMessage("Perubahan berhasil disimpan");
+                                                setSaveSuccessModalVisible(true);
+                                                // Update tracked data after successful save
+                                                setInitialData({...data});
+                                                setHasFormChanges(false);
+                                            })
+                                            .catch((error: any) => {
+                                                console.error("Error in form save operation:", error);
+                                                alert(`Gagal menyimpan perubahan: ${error?.message || 'Terjadi kesalahan'}`);
+                                            })
+                                            .finally(() => {
+                                                console.log("Form save operation completed in", Date.now() - startTime, "ms");
+                                                setIsFormSaving(false);
+                                                clearTimeout(timeoutId);
+                                            });
+                                    } catch (error: any) {
+                                        console.error("Unexpected error in save button handler:", error);
+                                        setIsFormSaving(false);
+                                        clearTimeout(timeoutId);
+                                        alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
+                                    }
+                                }}
+                                disabled={isFormSaving || !hasFormChanges}
+                                className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
+                                    isFormSaving || !hasFormChanges ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                                }`}
+                            >
+                                {isFormSaving ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <svg
+                                            className="animate-spin h-5 w-5 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v8H4z"
+                                            ></path>
+                                        </svg>
+                                        <span>Sedang menyimpan...</span>
+                                    </div>
+                                ) : (
+                                    <>                                <RiSave3Fill size={16} />
+                                    <span>{!hasFormChanges ? "Tidak Ada Perubahan" : "Simpan Perubahan"}</span>
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <div className="text-center">
+                                <p className="text-sm text-gray-500 mb-2">Fitur simpan tidak tersedia pada tahap ini atau Anda berada dalam mode baca saja.</p>
+                                <p className="text-xs text-yellow-600">Untuk melanjutkan, silahkan isi data yang diperlukan atau gunakan tombol navigasi di bawah.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Tindak Lanjut List */}
@@ -308,8 +389,12 @@ export default function Proses({
                     <div className="mt-2 flex justify-center">
                         <button
                             onClick={handleAddKesimpulan}
-                            disabled={isSaving}
-                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"}`}
+                            disabled={isSaving || !newKesimpulan.trim()}
+                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${
+                                isSaving ? "bg-gray-300 cursor-not-allowed" : 
+                                !newKesimpulan.trim() ? "bg-gray-300 cursor-not-allowed" : 
+                                "bg-emerald-500 hover:bg-emerald-600"
+                            }`}
                         >
                             {isSaving ? (
                                 <div className="flex items-center justify-center gap-2">
@@ -317,7 +402,7 @@ export default function Proses({
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
-                                    <span>Sedang menyimpan...</span>
+                                    <span>Mengirimkan tindak lanjut...</span>
                                 </div>
                             ) : (
                                 <>
@@ -380,7 +465,8 @@ export default function Proses({
                 </div>
                 <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
             </div>
-            {/* Modal Simpan Loading */}
+            
+            {/* Modal Simpan Loading for Kirimkan Tindak Lanjut */}
             {isSaving && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
                     <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
@@ -388,7 +474,20 @@ export default function Proses({
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <p className="text-gray-700 font-semibold">Sedang menyimpan...</p>
+                        <p className="text-gray-700 font-semibold">Sedang mengirimkan tindak lanjut...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Form Save Loading for Simpan Perubahan */}
+            {isFormSaving && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4">
+                        <svg className="animate-spin h-10 w-10 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <p className="text-gray-700 font-semibold">Sedang menyimpan perubahan...</p>
                     </div>
                 </div>
             )}
@@ -403,7 +502,12 @@ export default function Proses({
                         className="bg-white p-6 rounded-md shadow-lg w-full max-w-sm flex flex-col items-center gap-4"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <p className="text-gray-700 font-semibold">Data berhasil disimpan. Dan dikirimkan kepada Warga</p>
+                        <div className="bg-green-100 p-2 rounded-full mb-2">
+                            <svg className="h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <p className="text-gray-700 font-semibold text-center">{saveMessage}</p>
                         <button
                             onClick={() => setSaveSuccessModalVisible(false)}
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"

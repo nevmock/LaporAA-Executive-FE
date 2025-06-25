@@ -7,9 +7,18 @@ const withAnalyzer = withBundleAnalyzer({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  experimental: {
-    // appDir: true, // kalau kamu pakai App Router
-  },
+  // Remove webpack config when using Turbopack in development
+  // Only apply webpack config for production builds
+  webpack: process.env.NODE_ENV === 'production' 
+    ? (config, { isServer }) => {
+        // Resolve paths with spaces correctly for Next.js build
+        config.watchOptions = {
+          ...config.watchOptions,
+          followSymlinks: false,
+        };
+        return config;
+      }
+    : undefined,
 };
 
 export default withAnalyzer(nextConfig);

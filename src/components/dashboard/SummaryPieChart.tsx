@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 import axios from '../../utils/axiosInstance';
+import { SummaryPieChartSkeleton } from './DashboardSkeleton';
 
 // Filter waktu yang tersedia
 const FILTERS = [
@@ -41,6 +42,7 @@ export default function SummaryPieChart() {
     const [month, setMonth] = useState(now.month() + 1);
     const [week, setWeek] = useState(1);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
 
     // Daftar tahun terakhir (5 tahun)
     const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
@@ -61,6 +63,7 @@ export default function SummaryPieChart() {
     // Ambil data rekap status dari API
     const fetchStatusSummary = async () => {
         try {
+            setLoading(true);
             let url = `${API_URL}/dashboard/status-summary?mode=${filter}&year=${year}`;
             if (filter !== 'yearly') url += `&month=${month}`;
             if (filter === 'weekly') url += `&week=${week}`;
@@ -68,6 +71,8 @@ export default function SummaryPieChart() {
             setStatusCounts(res.data ?? {});
         } catch {
             setStatusCounts({});
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -227,7 +232,11 @@ export default function SummaryPieChart() {
             </div>
 
             {/* Chart container */}
-            <div ref={chartRef} className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]" />
+            {loading ? (
+                <SummaryPieChartSkeleton />
+            ) : (
+                <div ref={chartRef} className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]" />
+            )}
         </div>
     );
 }

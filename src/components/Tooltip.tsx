@@ -25,7 +25,7 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({
     text,
     children,
-    position = "top",
+    position = "bottom",
     className = ""
 }) => {
     // Posisi tooltip relatif terhadap elemen pemicu

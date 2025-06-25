@@ -47,10 +47,11 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const [year, setYear] = useState(now.year());
   const [month, setMonth] = useState(now.month() + 1);
   const [week, setWeek] = useState(1);
-  const [selectedStatus, setSelectedStatus] = useState('Semua');
+  const [selectedStatus, setSelectedStatus] = useState('Semua Status');
   const [mapReady, setMapReady] = useState(false);
   const mapParentRef = useRef<HTMLDivElement>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
+  const [limitView, setLimitView] = useState(100); // default 100
 
   // Daftar 5 tahun terakhir
   const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
@@ -74,7 +75,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
     if (filter !== 'yearly') url += `&month=${month}`;
     if (filter === 'weekly') url += `&week=${week}`;
-    if (selectedStatus !== 'Semua') url += `&status=${encodeURIComponent(selectedStatus)}`;
+    if (selectedStatus !== 'Semua Status') url += `&status=${encodeURIComponent(selectedStatus)}`;
     try {
       const res = await axios.get(url);
       setReports(res.data.data || []);
@@ -133,8 +134,13 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     URL.revokeObjectURL(url);
   };
 
-  // Cari pusat peta dari laporan pertama yang valid (berkoordinat)
-  const validReports = reports.filter(r => r.location?.latitude && r.location?.longitude);
+  // Cari pusat peta dari laporan pertama yang valid (berkoordinat) Sort dulu, lalu limit, lalu filter valid koordinat
+  const sortedLimitedReports = reports
+    .slice()
+    .sort((a, b) => new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime())
+    .slice(0, limitView);
+
+  const validReports = sortedLimitedReports.filter(r => r.location?.latitude && r.location?.longitude);
   const firstValid = validReports[0];
   const mapCenter: [number, number] = firstValid
     ? [firstValid.location.latitude, firstValid.location.longitude]
@@ -169,6 +175,9 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
         <h4 className="text-lg font-semibold text-gray-800">Peta Persebaran</h4>
         <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
           {/* Dropdown filter */}
+          <select value={limitView} onChange={e => setLimitView(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
+            {[100, 200, 300, 400, 500].map(opt => (<option key={opt} value={opt}>Tampilkan {opt}</option>))}
+          </select>
           <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
             {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
           </select>
