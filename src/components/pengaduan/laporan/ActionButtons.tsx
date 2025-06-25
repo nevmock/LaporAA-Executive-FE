@@ -272,7 +272,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             )}
 
             {/* Tombol Kembali (jika bukan step pertama) */}
-            {currentStepIndex > 0 && (
+            {currentStepIndex > 0 && currentStepIndex <= 3 && (
                 <button
                     onClick={async () => {
                         await handlePreviousStep();

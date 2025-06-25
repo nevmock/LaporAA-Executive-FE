@@ -202,15 +202,15 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             </div>
 
                             {/* Items per Page Filter */}
-                            <div className="min-w-[150px] max-w-[170px] relative z-[7]">
+                            <div className="min-w-[80px] max-w-[80px] relative z-[7]">
                                 {!isHydrated ? (
                                     <FilterSkeleton 
-                                        selected={`${limit} Laporan`}
+                                        selected={`${limit}`}
                                     />
                                 ) : (
                                     <ListBoxFilter
-                                        options={[100, 200, 300, 500].map(num => `${num} Laporan`)}
-                                        selected={`${limit} Laporan`}
+                                        options={[100, 200, 300, 500].map(num => `${num}`)}
+                                        selected={`${limit}`}
                                         setSelected={(val) => {
                                             const numValue = parseInt(val.split(' ')[0]);
                                             setLimit(numValue);
@@ -308,7 +308,7 @@ function FilterSkeleton({
                             <span className="ml-1 font-semibold text-blue-600 text-xs">
                                 ({isAllOption
                                     ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                    : counts[selected] || 0} laporan)
+                                    : counts[selected] || 0})
                             </span>
                         )}
                     </span>
@@ -419,7 +419,7 @@ function ListBoxFilter({
                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                             ({(selected && selected.startsWith("Semua"))
                                                 ? counts["Semua OPD"] || counts["Semua Status"] || counts["Semua Situasi"] || Object.values(counts).reduce((a, b) => a + b, 0)
-                                                : counts[selected] || 0} laporan)
+                                                : counts[selected] || 0})
                                         </span>
                                     )}
                                 </span>
@@ -448,7 +448,7 @@ function ListBoxFilter({
                                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                                             ({(option && option.startsWith("Semua"))
                                                                 ? counts["Semua OPD"] || counts["Semua Status"] || counts["Semua Situasi"] || Object.values(counts).reduce((a, b) => a + b, 0)
-                                                                : counts[option] || 0} laporan)
+                                                                : counts[option] || 0})
                                                         </span>
                                                     )}
                                                 </span>

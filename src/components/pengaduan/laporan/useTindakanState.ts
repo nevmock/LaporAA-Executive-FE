@@ -246,10 +246,10 @@ export function useTindakanState(tindakan: any) {
   }, [formData, API_URL]);
 
   const handleNextStep = useCallback(async () => {
-    if (!validateCurrentStep()) {
-      alert("Harap lengkapi semua data terlebih dahulu.");
-      return;
-    }
+    // if (!validateCurrentStep()) {
+    //   alert("Harap lengkapi semua data terlebih dahulu.");
+    //   return;
+    // }
     
     const nextIndex = currentStepIndex + 1;
     const nextStatus = STATUS_LIST[nextIndex];
