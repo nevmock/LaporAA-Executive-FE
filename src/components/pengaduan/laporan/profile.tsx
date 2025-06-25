@@ -75,6 +75,8 @@ export default function Profile({ sessionId, data: propData }: { sessionId: stri
             setSaveNameSuccess(true);
             setIsEditingName(false);
             setTimeout(() => setSaveNameSuccess(false), 2000);
+            // Reload halaman setelah berhasil menyimpan
+            window.location.reload();
         } catch (error) {
             setSaveError("Gagal menyimpan Isi Laporan.");
         } finally {
@@ -96,6 +98,8 @@ export default function Profile({ sessionId, data: propData }: { sessionId: stri
             setSaveSexSuccess(true);
             setIsEditingSex(false);
             setTimeout(() => setSaveSexSuccess(false), 2000);
+            // Reload halaman setelah berhasil menyimpan
+            window.location.reload();
         } catch (error) {
             setSaveError("Gagal menyimpan Isi Laporan.");
         } finally {

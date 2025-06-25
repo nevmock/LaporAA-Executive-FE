@@ -202,17 +202,18 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             </div>
 
                             {/* Items per Page Filter */}
-                            <div className="min-w-[100px] max-w-[120px] relative z-[7]">
+                            <div className="min-w-[150px] max-w-[170px] relative z-[7]">
                                 {!isHydrated ? (
                                     <FilterSkeleton 
-                                        selected={String(limit)}
+                                        selected={`${limit} Laporan`}
                                     />
                                 ) : (
                                     <ListBoxFilter
-                                        options={[100, 200, 300, 500].map(String)}
-                                        selected={String(limit)}
+                                        options={[100, 200, 300, 500].map(num => `${num} Laporan`)}
+                                        selected={`${limit} Laporan`}
                                         setSelected={(val) => {
-                                            setLimit(Number(val));
+                                            const numValue = parseInt(val.split(' ')[0]);
+                                            setLimit(numValue);
                                             setPage(1);
                                         }}
                                         zIndex={7}
@@ -307,7 +308,7 @@ function FilterSkeleton({
                             <span className="ml-1 font-semibold text-blue-600 text-xs">
                                 ({isAllOption
                                     ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                    : counts[selected] || 0})
+                                    : counts[selected] || 0} laporan)
                             </span>
                         )}
                     </span>
@@ -409,7 +410,7 @@ function ListBoxFilter({
                             onClick={updateDropdownPosition}
                         >
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                                {colorMap && !selected.startsWith("Semua") && (
+                                {colorMap && selected && !selected.startsWith("Semua") && (
                                     <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: colorMap[selected] }} />
                                 )}
                                 <span className="truncate">
@@ -418,7 +419,7 @@ function ListBoxFilter({
                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                             ({(selected && selected.startsWith("Semua"))
                                                 ? counts["Semua OPD"] || counts["Semua Status"] || counts["Semua Situasi"] || Object.values(counts).reduce((a, b) => a + b, 0)
-                                                : counts[selected] || 0})
+                                                : counts[selected] || 0} laporan)
                                         </span>
                                     )}
                                 </span>
@@ -438,7 +439,7 @@ function ListBoxFilter({
                                             <li className={`px-4 py-2.5 flex items-center gap-2 text-sm cursor-pointer transition-colors ${active ? 'bg-blue-50' : ''
                                                 } ${isSelected ? 'bg-blue-100 text-blue-900' : 'text-gray-700'
                                                 } ${(isOpdFilter || isSituasiFilter) ? 'whitespace-nowrap' : ''}`}>
-                                                {colorMap && !(option && option.startsWith("Semua")) && (
+                                                {colorMap && option && !option.startsWith("Semua") && (
                                                     <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: colorMap[option] }} />
                                                 )}
                                                 <span className={`flex-1 ${(isOpdFilter || isSituasiFilter) ? 'whitespace-nowrap' : 'truncate'}`}>
@@ -447,7 +448,7 @@ function ListBoxFilter({
                                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                                             ({(option && option.startsWith("Semua"))
                                                                 ? counts["Semua OPD"] || counts["Semua Status"] || counts["Semua Situasi"] || Object.values(counts).reduce((a, b) => a + b, 0)
-                                                                : counts[option] || 0})
+                                                                : counts[option] || 0} laporan)
                                                         </span>
                                                     )}
                                                 </span>

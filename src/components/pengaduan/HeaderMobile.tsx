@@ -118,7 +118,7 @@ function ListBoxFilter({
                             onClick={updateDropdownPosition}
                         >
                             <div className="flex items-start gap-2 flex-1 min-w-0">
-                                {colorMap && !selected.startsWith("Semua") && (
+                                {colorMap && selected && !selected.startsWith("Semua") && (
                                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[selected] }} />
                                 )}
                                 <span className="flex-1 break-words leading-tight">
@@ -126,9 +126,9 @@ function ListBoxFilter({
                                     {counts && (
                                         <span className="ml-1 font-bold text-blue-700">
                                             (
-                                            {selected.startsWith("Semua")
+                                            {selected && selected.startsWith("Semua")
                                                 ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                                : counts[selected] || 0}
+                                                : counts[selected] || 0} laporan
                                             )
                                         </span>
                                     )}
@@ -146,7 +146,7 @@ function ListBoxFilter({
                                         <Listbox.Option key={option} value={option}>
                                             {({ active, selected: isSelected }) => (
                                                 <li className={`px-3 py-2 flex items-start gap-2 text-xs cursor-pointer ${active ? 'bg-gray-100' : ''} text-gray-700`}>
-                                                    {colorMap && !option.startsWith("Semua") && (
+                                                    {colorMap && option && !option.startsWith("Semua") && (
                                                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[option] }} />
                                                     )}
                                                     <span className="flex-1 break-words leading-tight">
@@ -154,9 +154,9 @@ function ListBoxFilter({
                                                         {counts && (
                                                             <span className="ml-1 font-bold text-blue-700">
                                                                 (
-                                                                {option.startsWith("Semua")
+                                                                {option && option.startsWith("Semua")
                                                                     ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                                                    : counts[option] || 0}
+                                                                    : counts[option] || 0} laporan
                                                                 )
                                                             </span>
                                                         )}
@@ -353,10 +353,11 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                             {/* Limit Dropdown */}
                             <ListBoxFilter
                                 label="Items per Page"
-                                options={[100, 200, 300, 500].map(String)}
-                                selected={String(limit)}
+                                options={[100, 200, 300, 500].map(num => `${num} Laporan`)}
+                                selected={`${limit} Laporan`}
                                 setSelected={(val: string) => {
-                                    setLimit(Number(val));
+                                    const numValue = parseInt(val.split(' ')[0]);
+                                    setLimit(numValue);
                                     setPage(1);
                                 }}
                                 className="w-full"

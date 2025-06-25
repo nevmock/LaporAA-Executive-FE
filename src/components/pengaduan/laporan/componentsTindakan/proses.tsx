@@ -195,10 +195,10 @@ export default function Proses({
 
                 <h3 className="text-lg font-medium mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
-                    <Tooltip text="Klik disini untuk langsung membuka laporan">
-                        <button
+                    <button
                             onClick={() => window.open(`${data.url}`, "_blank")}
                             className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                            title="Buka Laporan SP4N Lapor"
                         >
                             <img
                                 src="/Spanlapor-icon.png"
@@ -207,7 +207,6 @@ export default function Proses({
                             />
                             Buka Laporan #{data.trackingId}
                         </button>
-                    </Tooltip>
                 </div>
 
                 <ul className="space-y-2">

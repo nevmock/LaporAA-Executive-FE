@@ -59,7 +59,14 @@ export default function Verifikasi2({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        onChange((prev) => ({ ...prev, [name]: value }));
+        
+        // Auto-add https:// for URL field if missing protocol
+        if (name === 'url' && value.trim() && !value.match(/^https?:\/\//i)) {
+            const formattedValue = `https://${value}`;
+            onChange((prev) => ({ ...prev, [name]: formattedValue }));
+        } else {
+            onChange((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     if (!isConfirmed && !data.trackingId) {

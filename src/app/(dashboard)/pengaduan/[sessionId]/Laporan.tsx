@@ -57,29 +57,26 @@ export default function ChatPage() {
     // The mode will be automatically updated by the hook
   };
   
-  // Toggle force mode - menggunakan pattern yang sama seperti di laporan.tsx
+  // Toggle force mode - menggunakan hook botMode untuk konsistensi
   const toggleForceMode = async (from: string, currentForceMode: boolean) => {
+    if (!botMode || !botMode.setForceMode) {
+      console.error('Bot mode service not available');
+      return;
+    }
+
     if (loadingForceMode[from]) return; // Hindari multiple calls
 
     try {
       setLoadingForceMode(prev => ({ ...prev, [from]: true }));
 
       const newForceMode = !currentForceMode;
+      
+      console.log(`Toggling force mode for ${from}: ${currentForceMode} -> ${newForceMode}`);
 
-      // Gunakan botModeService untuk konsistensi
-      const { getBotModeService } = await import('../../../../services/botModeService');
-      const service = getBotModeService();
+      // Gunakan hook botMode.setForceMode untuk konsistensi
+      await botMode.setForceMode(newForceMode);
 
-      if (service) {
-        await service.setForceMode(from, newForceMode);
-      } else {
-        // Fallback ke direct API call jika service tidak ada
-        await axios.post(`${API_URL}/mode/force/${from}`, {
-          force: newForceMode
-        });
-      }
-
-      // Update state force mode
+      // Update state force mode lokal (untuk UI)
       setForceModeStates(prev => ({
         ...prev,
         [from]: newForceMode
@@ -154,41 +151,16 @@ export default function ChatPage() {
       .finally(() => setLoading(false));
   }, [sessionId]);
 
-  // Load force mode status - menggunakan pattern yang sama seperti di laporan.tsx
+  // Load force mode status - sinkronisasi dengan hook botMode
   useEffect(() => {
-    const loadForceModeState = async () => {
-      if (!data?.from) return;
+    if (!data?.from || !botMode.isReady) return;
 
-      try {
-        const { getBotModeService } = await import('../../../../services/botModeService');
-        const service = getBotModeService();
-
-        if (service) {
-          const forceMode = await service.getForceMode(data.from);
-          setForceModeStates(prev => ({
-            ...prev,
-            [data.from]: forceMode
-          }));
-        } else {
-          // Fallback ke direct API call jika service tidak ada
-          const response = await axios.get(`${API_URL}/mode/force/${data.from}`);
-          setForceModeStates(prev => ({
-            ...prev,
-            [data.from]: response.data.force || false
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading force mode state:', error);
-        // Set default false jika error
-        setForceModeStates(prev => ({
-          ...prev,
-          [data.from]: false
-        }));
-      }
-    };
-
-    loadForceModeState();
-  }, [data?.from]);
+    // Sinkronkan state lokal dengan hook botMode
+    setForceModeStates(prev => ({
+      ...prev,
+      [data.from]: botMode.forceMode
+    }));
+  }, [data?.from, botMode.isReady, botMode.forceMode]);
 
   // Helper: ProgressBar
   const renderProgressBar = () => {
@@ -282,8 +254,8 @@ export default function ChatPage() {
           </div>
         </div>
         <span 
-          className="text-xs md:text-sm font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded bg-gray-100 border whitespace-nowrap" 
-          style={{ color: statusColors[data.tindakan.status], borderColor: statusColors[data.tindakan.status] }}
+          className="text-xs md:text-sm font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded bg-gray-100 border whitespace-nowrap text-black" 
+          style={{borderColor: statusColors[data.tindakan.status] }}
         >
           {data.tindakan.status}
         </span>
@@ -373,24 +345,41 @@ export default function ChatPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => toggleForceMode(data.from, forceModeStates[data.from] || false)}
-                  className={`h-[35px] py-2 md:py-3 px-4 md:px-6 font-semibold flex justify-center items-center gap-2 transition-all rounded-t-md focus:outline-none hover:opacity-80
-                    ${forceModeStates[data.from] 
+                  onClick={(e) => {
+                    if (activeTab === 'pesan') return; // Disable click pada tab pesan
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Force mode button clicked, activeTab:', activeTab);
+                    toggleForceMode(data.from, botMode.forceMode);
+                  }}
+                  className={`h-[35px] py-2 md:py-3 px-4 md:px-6 font-semibold flex justify-center items-center gap-2 transition-all rounded-t-md focus:outline-none
+                    ${activeTab === 'pesan' 
+                      ? 'cursor-not-allowed opacity-50' 
+                      : 'hover:opacity-80 cursor-pointer'
+                    }
+                    ${(activeTab === 'pesan' || botMode.forceMode)
                       ? 'border-b-4 border-green-600 text-green-700 bg-green-50 shadow-sm' 
                       : 'border-b-4 border-gray-400 text-gray-600 bg-gray-50'
                     }`}
-                  title={forceModeStates[data.from] ? 'Bot Mode: Manual (Click to Auto)' : 'Bot Mode: Auto (Click to Manual)'}
+                  title={
+                    activeTab === 'pesan' 
+                      ? 'Mode Manual aktif di tab Pesan. Ubah di tab Tindakan.' 
+                      : (botMode.forceMode ? 'Bot Mode: Manual (Click to Auto)' : 'Bot Mode: Auto (Click to Manual)')
+                  }
                   style={{ minWidth: 120 }}
+                  type="button"
+                  disabled={activeTab === 'pesan'}
                 >
-                  {forceModeStates[data.from] ? (
+                  {(activeTab === 'pesan' || botMode.forceMode) ? (
                     <>
+                      Mode Manual
                       <FaWhatsapp className="text-lg" />
-                      Manual
+                      
                     </>
                   ) : (
                     <>
                       <FaRobot className="text-lg" />
-                      Auto
+                      Mode Bot On
                     </>
                   )}
                 </button>
@@ -413,7 +402,7 @@ export default function ChatPage() {
                   forceMode={botMode.forceMode}
                 />
                 {/* Smart Mode Indicator with Force Mode display */}
-                <div className="absolute top-2 right-4 z-20">
+                {/* <div className="absolute top-2 right-4 z-20">
                   <div className={`px-2 py-1 rounded text-xs font-medium ${
                     botMode.mode === 'manual' 
                       ? 'bg-green-100 text-green-700' 
@@ -424,7 +413,7 @@ export default function ChatPage() {
                       <span className="ml-1 px-1 bg-red-500 text-white rounded-sm text-xs">F</span>
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             ) : (
               data && sessionId ? (

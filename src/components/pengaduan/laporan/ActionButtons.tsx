@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { IoMdCloseCircle } from "react-icons/io";
 import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
 import { FaCheckDouble } from "react-icons/fa";
-import { RiSave3Fill } from "react-icons/ri";
-import LoadingSpinner from "../../LoadingPage";
+import { RiArrowGoBackLine } from "react-icons/ri";
+import axiosInstance from "../../../utils/axiosInstance";
 
 interface ActionButtonsProps {
     currentStepIndex: number;
@@ -55,52 +56,125 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     confirmedVerifikasi2,
 }) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
+    
+    // Local fallback states jika parent tidak mengelola state dengan benar
+    const [localShowRejectModal, setLocalShowRejectModal] = useState(false);
+    const [localShowSelesaiModal, setLocalShowSelesaiModal] = useState(false);
+    const [localRejectReason, setLocalRejectReason] = useState("");
+    const [localSelesaiReason, setLocalSelesaiReason] = useState("");
+    const [modalContainer, setModalContainer] = useState<HTMLElement | null>(null);
+    
+    // Create modal container on mount
+    useEffect(() => {
+        const container = document.createElement('div');
+        container.id = 'action-buttons-modal-container';
+        document.body.appendChild(container);
+        setModalContainer(container);
+        
+        return () => {
+            if (document.body.contains(container)) {
+                document.body.removeChild(container);
+            }
+        };
+    }, []);
+    
+    // Use local state as fallback if parent states are not working
+    const effectiveShowRejectModal = showRejectModal || localShowRejectModal;
+    const effectiveShowSelesaiModal = showSelesaiModal || localShowSelesaiModal;
+    const effectiveRejectReason = rejectReason || localRejectReason;
+    const effectiveSelesaiReason = selesaiReason || localSelesaiReason;
+    
+    // Enhanced setters that try both parent and local state
+    const safeSetShowRejectModal = (value: boolean) => {
+        setShowRejectModal(value);
+        setLocalShowRejectModal(value);
+    };
+    
+    const safeSetShowSelesaiModal = (value: boolean) => {
+        setShowSelesaiModal(value);
+        setLocalShowSelesaiModal(value);
+    };
+    
+    const safeSetRejectReason = (value: string) => {
+        setRejectReason(value);
+        setLocalRejectReason(value);
+    };
+    
+    const safeSetSelesaiReason = (value: string) => {
+        setSelesaiReason(value);
+        setLocalSelesaiReason(value);
+    };
+    
     // Helper untuk tombol modal
     const handleReject = async () => {
-        if (!rejectReason.trim()) {
+        if (!effectiveRejectReason.trim()) {
             alert("Alasan penutupan harus diisi.");
             return;
         }
+        
+        setIsRejecting(true);
         try {
             const updated = {
                 ...formData,
                 status: "Ditutup",
                 updatedAt: new Date().toISOString(),
-                keterangan: rejectReason.trim(),
+                keterangan: effectiveRejectReason.trim(),
             };
-            await fetch(`${API_URL}/tindakan/${formData.report}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updated),
-            });
-            setShowRejectModal(false);
-            router.push("/pengaduan");
+            
+            const response = await axiosInstance.put(`/tindakan/${formData.report}`, updated);
+            
+            if (response.status === 200) {
+                safeSetShowRejectModal(false);
+                safeSetRejectReason("");
+                // Tambahkan delay untuk user experience yang lebih baik
+                setTimeout(() => {
+                    // Force refresh untuk update header dan progress bar secara realtime
+                    window.location.reload();
+                }, 500);
+            } else {
+                throw new Error(`Failed to update status: ${response.status}`);
+            }
         } catch (error) {
             alert("Gagal menolak pengaduan. Silakan coba lagi.");
+        } finally {
+            setIsRejecting(false);
         }
     };
 
     const handleSelesai = async () => {
-        if (!selesaiReason.trim()) {
+        if (!effectiveSelesaiReason.trim()) {
             alert("Alasan penyelesaian harus diisi.");
             return;
         }
+        
+        setIsCompleting(true);
         try {
             const updated = {
                 ...formData,
                 status: "Selesai Penanganan",
                 updatedAt: new Date().toISOString(),
-                keterangan: selesaiReason.trim(),
+                keterangan: effectiveSelesaiReason.trim(),
             };
-            await fetch(`${API_URL}/tindakan/${formData.report}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updated),
-            });
-            setShowSelesaiModal(false);
-            router.push("/pengaduan");
+            
+            const response = await axiosInstance.put(`/tindakan/${formData.report}`, updated);
+            
+            if (response.status === 200) {
+                safeSetShowSelesaiModal(false);
+                safeSetSelesaiReason("");
+                // Tambahkan delay untuk user experience yang lebih baik
+                setTimeout(() => {
+                    // Force refresh untuk update header dan progress bar secara realtime
+                    window.location.reload();
+                }, 500);
+            } else {
+                throw new Error(`Failed to update status: ${response.status}`);
+            }
         } catch (error) {
             alert("Gagal menyelesaikan pengaduan. Silakan coba lagi.");
+        } finally {
+            setIsCompleting(false);
         }
     };
 
@@ -110,44 +184,89 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             {currentStepIndex === 0 && (
                 <>
                     <button
-                        onClick={() => {
-                            setRejectReason("");
-                            setShowRejectModal(true);
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isRejecting) {
+                                safeSetRejectReason("");
+                                safeSetShowRejectModal(true);
+                            }
                         }}
-                        className="bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                        disabled={isRejecting}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <IoMdCloseCircle size={18} />
-                        Tutup Pengaduan
+                        {isRejecting ? "Menutup..." : "Tutup Pengaduan"}
                     </button>
 
                     {/* Modal Tutup Pengaduan */}
-                    {showRejectModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                    {effectiveShowRejectModal && modalContainer && createPortal(
+                        <div 
+                            key="reject-modal"
+                            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+                            style={{ 
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 9999
+                            }}
+                            onClick={(e) => {
+                                // Close modal when clicking outside
+                                if (e.target === e.currentTarget) {
+                                    safeSetShowRejectModal(false);
+                                }
+                            }}
+                        >
                             <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
                                 <h3 className="text-lg font-semibold text-red-700">Alasan Penutupan</h3>
                                 <textarea
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    value={effectiveRejectReason}
+                                    onChange={(e) => safeSetRejectReason(e.target.value)}
                                     placeholder="Masukkan alasan penutupan pengaduan"
                                     className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
                                     rows={4}
                                 />
                                 <div className="flex justify-end gap-2 mt-4">
                                     <button
-                                        onClick={() => setShowRejectModal(false)}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                                        onClick={() => {
+                                            safeSetRejectReason("");
+                                            safeSetShowRejectModal(false);
+                                        }}
+                                        disabled={isRejecting}
+                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm disabled:opacity-50"
                                     >
                                         Batal
                                     </button>
                                     <button
-                                        onClick={handleReject}
-                                        className="px-4 py-2 bg-red-600 text-white rounded-md text-sm"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleReject();
+                                        }}
+                                        disabled={isRejecting || !effectiveRejectReason.trim()}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-md text-sm disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        Tutup
+                                        {isRejecting ? (
+                                            <>
+                                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                                </svg>
+                                                Menutup...
+                                            </>
+                                        ) : (
+                                            "Tutup"
+                                        )}
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div>,
+                        modalContainer
                     )}
                 </>
             )}
@@ -155,21 +274,28 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             {/* Tombol Kembali (jika bukan step pertama) */}
             {currentStepIndex > 0 && (
                 <button
-                    onClick={handlePreviousStep}
+                    onClick={async () => {
+                        await handlePreviousStep();
+                    }}
                     className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 min-h-[40px]"
                 >
-                    <GrLinkPrevious size={18} />
-                    Kembali
+                    <RiArrowGoBackLine size={18} />
+                    Mundur
                 </button>
             )}
 
-            {/* Tombol Lanjutkan (dinamis status dan konfirmasi) */}
-            {currentStepIndex < NEXT_STEP_LABELS.length && (
+            {/* Tombol Lanjutkan (hanya di step 0, 1, 2, 3) */}
+            {currentStepIndex < NEXT_STEP_LABELS.length && currentStepIndex <= 3 && (
                 <div className="relative inline-block"
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}>
                     <button
-                        onClick={handleNextStep}
+                        onClick={async () => {
+                            await handleNextStep();
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 500);
+                        }}
                         disabled={isButtonDisabled}
                         className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 min-h-[40px] ${isButtonDisabled
                             ? "bg-gray-300 cursor-not-allowed"
@@ -203,44 +329,89 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             {currentStepIndex === 0 && (
                 <>
                     <button
-                        onClick={() => {
-                            setSelesaiReason("");
-                            setShowSelesaiModal(true);
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isCompleting) {
+                                safeSetSelesaiReason("");
+                                safeSetShowSelesaiModal(true);
+                            }
                         }}
-                        className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                        disabled={isCompleting}
+                        className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FaCheckDouble size={18} />
-                        Selesai Penanganan
+                        {isCompleting ? "Memproses..." : "Selesai Penanganan"}
                     </button>
 
                     {/* Modal Selesai Penanganan */}
-                    {showSelesaiModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                    {effectiveShowSelesaiModal && modalContainer && createPortal(
+                        <div 
+                            key="selesai-modal"
+                            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+                            style={{ 
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 9999
+                            }}
+                            onClick={(e) => {
+                                // Close modal when clicking outside
+                                if (e.target === e.currentTarget) {
+                                    safeSetShowSelesaiModal(false);
+                                }
+                            }}
+                        >
                             <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md space-y-4">
                                 <h3 className="text-lg font-semibold text-blue-400">Alasan Penyelesaian</h3>
                                 <textarea
-                                    value={selesaiReason}
-                                    onChange={(e) => setSelesaiReason(e.target.value)}
+                                    value={effectiveSelesaiReason}
+                                    onChange={(e) => safeSetSelesaiReason(e.target.value)}
                                     placeholder="Masukkan alasan penyelesaian pengaduan"
                                     className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
                                     rows={4}
                                 />
                                 <div className="flex justify-end gap-2 mt-4">
                                     <button
-                                        onClick={() => setShowSelesaiModal(false)}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm"
+                                        onClick={() => {
+                                            safeSetSelesaiReason("");
+                                            safeSetShowSelesaiModal(false);
+                                        }}
+                                        disabled={isCompleting}
+                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm disabled:opacity-50"
                                     >
                                         Batal
                                     </button>
                                     <button
-                                        onClick={handleSelesai}
-                                        className="px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-md text-sm"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleSelesai();
+                                        }}
+                                        disabled={isCompleting || !effectiveSelesaiReason.trim()}
+                                        className="px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-md text-sm disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        Selesai
+                                        {isCompleting ? (
+                                            <>
+                                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                                </svg>
+                                                Menyelesaikan...
+                                            </>
+                                        ) : (
+                                            "Selesai"
+                                        )}
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div>,
+                        modalContainer
                     )}
                 </>
             )}

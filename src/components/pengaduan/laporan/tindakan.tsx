@@ -269,18 +269,18 @@ const TindakanComponent = function Tindakan({
         <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 text-sm text-gray-800">
             {/* Notif & Modal */}
             {notif && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 px-6 py-3 rounded-lg mb-6 shadow-sm backdrop-blur-sm">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 px-3 sm:px-6 py-3 rounded-lg mb-4 sm:mb-6 mx-2 sm:mx-0 shadow-sm backdrop-blur-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        {notif}
+                        <span className="text-xs sm:text-sm">{notif}</span>
                     </div>
                 </div>
             )}
             {/* KONTEN UTAMA (scrollable) */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-6 h-full">
-                <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 pb-4 sm:pb-6 h-full">
+                <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
                     {/* Detail Admin */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <AdminSection
                             formData={formData}
                             setFormData={setFormData}
@@ -292,74 +292,78 @@ const TindakanComponent = function Tindakan({
                     </div>
                     
                     {/* Detail Pelapor */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    Detail Pelapor
+                                    <span className="truncate">Detail Pelapor</span>
                                 </h2>
                                 <button
                                     onClick={() => setShowProfileState((prev) => !prev)}
-                                    className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                                    className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-blue-200 text-blue-700 rounded-md sm:rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 flex-shrink-0"
                                 >
                                     {showProfileState ? (
                                         <>
-                                            <FaEyeSlash size={12} />
-                                            Sembunyikan
+                                            <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Sembunyikan</span>
+                                            <span className="sm:hidden">Hide</span>
                                         </>
                                     ) : (
                                         <>
-                                            <FaEye size={12} />
-                                            Lihat Detail
+                                            <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Lihat Detail</span>
+                                            <span className="sm:hidden">Show</span>
                                         </>
                                     )}
                                 </button>
                             </div>
                         </div>
                         {showProfileState && (
-                            <div className="p-6">
+                            <div className="p-3 sm:p-6">
                                 <Profile sessionId={sessionId} data={reportData} />
                             </div>
                         )}
                     </div>
                     
                     {/* Detail Keluhan */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                                        <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    Detail Keluhan
+                                    <span className="truncate">Detail Keluhan</span>
                                 </h2>
                                 <button
                                     onClick={() => setShowKeluhanState((prev) => !prev)}
-                                    className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium bg-white border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-all duration-200"
+                                    className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-amber-200 text-amber-700 rounded-md sm:rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 flex-shrink-0"
                                 >
                                     {showKeluhanState ? (
                                         <>
-                                            <FaEyeSlash size={12} />
-                                            Sembunyikan
+                                            <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Sembunyikan</span>
+                                            <span className="sm:hidden">Hide</span>
                                         </>
                                     ) : (
                                         <>
-                                            <FaEye size={12} />
-                                            Lihat Detail
+                                            <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                            <span className="hidden sm:inline">Lihat Detail</span>
+                                            <span className="sm:hidden">Show</span>
                                         </>
                                     )}
                                 </button>
                             </div>
                         </div>
                         {showKeluhanState && memoizedReportData && (
-                            <div className="p-6">
+                            <div className="p-3 sm:p-6">
                                 <Keluhan
                                     key={`keluhan-${sessionId}`}
                                     sessionId={sessionId}
@@ -371,17 +375,17 @@ const TindakanComponent = function Tindakan({
                 </div>
 
                 {/* Previous Steps (show with toggle) */}
-                <div className="max-w-6xl mx-auto mt-6 space-y-4">
+                <div className="max-w-6xl mx-auto mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                     {Array.from({ length: currentStepIndex }).map((_, idx) => (
-                        <div key={`prev-step-${idx}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
+                        <div key={`prev-step-${idx}`} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-400 rounded-full"></div>
                                         </div>
-                                        {STATUS_LIST[idx]}
-                                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                                        <span className="truncate text-sm sm:text-base">{STATUS_LIST[idx]}</span>
+                                        <span className="px-2 py-0.5 sm:py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full flex-shrink-0">
                                             Selesai
                                         </span>
                                     </h2>
@@ -395,24 +399,26 @@ const TindakanComponent = function Tindakan({
                                             }
                                             setOpenedSteps(newOpenedSteps);
                                         }}
-                                        className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                        className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-medium bg-white border border-gray-200 text-gray-700 rounded-md sm:rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex-shrink-0"
                                     >
                                         {openedSteps.has(idx) ? (
                                             <>
-                                                <FaEyeSlash size={12} />
-                                                Sembunyikan
+                                                <FaEyeSlash size={10} className="sm:w-3 sm:h-3" />
+                                                <span className="hidden sm:inline">Sembunyikan</span>
+                                                <span className="sm:hidden">Hide</span>
                                             </>
                                         ) : (
                                             <>
-                                                <FaEye size={12} />
-                                                Lihat Detail
+                                                <FaEye size={10} className="sm:w-3 sm:h-3" />
+                                                <span className="hidden sm:inline">Lihat Detail</span>
+                                                <span className="sm:hidden">Show</span>
                                             </>
                                         )}
                                     </button>
                                 </div>
                             </div>
                             {openedSteps.has(idx) && (
-                                <div className="p-6 bg-gray-50/30">
+                                <div className="p-3 sm:p-6 bg-gray-50/30">
                                     {(() => {
                                         if (idx === 2) { // Verifikasi2
                                             return (
@@ -445,22 +451,22 @@ const TindakanComponent = function Tindakan({
                 </div>
 
                 {/* Current Active Step (always shown) */}
-                <div className="max-w-6xl mx-auto mt-6">
-                    <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
-                        <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
+                <div className="max-w-6xl mx-auto mt-4 sm:mt-6">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-blue-200 overflow-hidden">
+                        <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                                        <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                                <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 sm:gap-3">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
+                                        <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full animate-pulse"></div>
                                     </div>
-                                    {STATUS_LIST[currentStepIndex]}
-                                    <span className="px-3 py-1 text-xs font-medium bg-white/20 text-white rounded-full backdrop-blur-sm">
+                                    <span className="truncate text-base sm:text-xl">{STATUS_LIST[currentStepIndex]}</span>
+                                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-medium bg-white/20 text-white rounded-full backdrop-blur-sm flex-shrink-0">
                                         Aktif
                                     </span>
                                 </h2>
                             </div>
                         </div>
-                        <div className="p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
+                        <div className="p-3 sm:p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
                             {(() => {
                                 const status = STATUS_LIST[currentStepIndex];
                                 if (status === "Verifikasi Situasi") {
@@ -530,13 +536,13 @@ const TindakanComponent = function Tindakan({
             {/* Modal Zoom Foto */}
             <Modal open={showModal && !!formData.photos} onClose={() => setShowModal(false)} maxWidth="max-w-4xl">
                 {formData.photos && formData.photos.length > 0 && (
-                    <div className="relative bg-white rounded-xl overflow-hidden">
-                        <div className="absolute top-4 right-4 z-10">
+                    <div className="relative bg-white rounded-lg sm:rounded-xl overflow-hidden">
+                        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
                             <button 
                                 onClick={() => setShowModal(false)} 
-                                className="w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-colors"
+                                className="w-8 h-8 sm:w-10 sm:h-10 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-colors"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -545,30 +551,32 @@ const TindakanComponent = function Tindakan({
                             <Zoom>
                                 <img
                                     src={`${API_URL}${formData.photos[activePhotoIndex]}`}
-                                    className="w-full h-96 object-contain cursor-zoom-in"
+                                    className="w-full h-64 sm:h-96 object-contain cursor-zoom-in"
                                     alt={`Foto ${activePhotoIndex + 1}`}
                                 />
                             </Zoom>
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-white border-t border-gray-200">
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-white border-t border-gray-200">
                             <button 
                                 onClick={() => setActivePhotoIndex((prev) => prev > 0 ? prev - 1 : (formData.photos.length - 1))} 
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md sm:rounded-lg transition-colors"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                 </svg>
-                                Sebelumnya
+                                <span className="hidden sm:inline">Sebelumnya</span>
+                                <span className="sm:hidden">Prev</span>
                             </button>
-                            <span className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg">
+                            <span className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 bg-gray-100 rounded-md sm:rounded-lg">
                                 Foto {activePhotoIndex + 1} dari {formData.photos.length}
                             </span>
                             <button 
                                 onClick={() => setActivePhotoIndex((prev) => prev < (formData.photos.length - 1) ? prev + 1 : 0)} 
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md sm:rounded-lg transition-colors"
                             >
-                                Selanjutnya
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="hidden sm:inline">Selanjutnya</span>
+                                <span className="sm:hidden">Next</span>
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
@@ -579,24 +587,24 @@ const TindakanComponent = function Tindakan({
             <LoadingModal open={isSaving} />
             {/* Modal Konfirmasi Proses OPD Terkait */}
             <Modal open={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
-                <div className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
                             </svg>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">Konfirmasi Lanjutkan Proses</h3>
-                            <p className="text-sm text-gray-600 mt-1">
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Lanjutkan Proses</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
                                 Lanjutkan proses ke tahap Selesai Penanganan? Data ini tidak dapat dikembalikan dan akan langsung di teruskan ke Warga.
                             </p>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                         <button
                             onClick={() => setShowConfirmModal(false)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
                         >
                             Batal
                         </button>
@@ -618,7 +626,7 @@ const TindakanComponent = function Tindakan({
                                 }
                             }}
                             disabled={isLoading}
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
                                 isLoading 
                                     ? "bg-gray-400 cursor-not-allowed"
                                     : "bg-green-600 hover:bg-green-700"
@@ -631,24 +639,24 @@ const TindakanComponent = function Tindakan({
             </Modal>
             {/* Modal Konfirmasi SP4N Lapor */}
             <Modal open={showLaporModal} onClose={() => setShowLaporModal(false)}>
-                <div className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">Konfirmasi Tindak Lanjut</h3>
-                            <p className="text-sm text-gray-600 mt-1">
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Tindak Lanjut</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
                                 Yakin data sudah di croscheck{formData.situasi === 'Darurat' ? '' : `, lanjutkan ke SP4N Lapor`}?
                             </p>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                         <button
                             onClick={() => setShowLaporModal(false)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
                         >
                             Batal
                         </button>
@@ -673,7 +681,7 @@ const TindakanComponent = function Tindakan({
                                 }
                             }}
                             disabled={isSaving}
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
                                 isSaving 
                                     ? "bg-gray-400 cursor-not-allowed"
                                     : "bg-blue-600 hover:bg-blue-700"
@@ -686,31 +694,31 @@ const TindakanComponent = function Tindakan({
             </Modal>
             {/* Modal Konfirmasi Kembali */}
             <Modal open={showBackModal} onClose={() => setShowBackModal(false)}>
-                <div className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-4 sm:p-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
                             </svg>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">Konfirmasi Kembali</h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Yakin ingin kembali ke step sebelumnya? Data pada step saat ini akan disimpan terlebih dahulu.
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Konfirmasi Mundur</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                Yakin ingin mundur ke tahapan status sebelumnya? Data pada tahapan status saat ini akan disimpan terlebih dahulu.
                             </p>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                         <button
                             onClick={() => setShowBackModal(false)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
                         >
                             Batal
                         </button>
                         <button
                             onClick={confirmPreviousStep}
                             disabled={isLoading}
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
                                 isLoading 
                                     ? "bg-gray-400 cursor-not-allowed" 
                                     : "bg-orange-600 hover:bg-orange-700"

@@ -301,6 +301,7 @@ export function useTindakanState(tindakan: any) {
       const prevStatus = STATUS_LIST[prevIndex];
       await saveData(prevStatus);
       setCurrentStepIndex(prevIndex);
+      window.location.reload(); // Reload to reflect changes
       setShowBackModal(false);
     } catch (error: any) {
       console.error("Error going back to previous step:", error);

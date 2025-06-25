@@ -1,33 +1,30 @@
-// app/page.tsx (client component, bisa taruh di file `HomeClient.tsx`)
 'use client';
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HomeClient() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        setIsLoggedIn(!!token);
-    }, []);
+        
+        if (token) {
+            // Jika sudah login, redirect ke dashboard
+            router.push("/dashboard");
+        } else {
+            // Jika belum login, redirect ke login page
+            router.push("/login");
+        }
+    }, [router]);
 
+    // Tampilkan loading sementara sambil melakukan redirect
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-white text-center p-6">
-            <img
-                src="/LAPOR AA BUPATI.png"
-                alt="Logo LaporAA"
-                style={{ width: "400px", height: "400px" }}
-            />
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">Selamat datang di Dashboard Lapor AA👋</h1>
-            <p className="text-gray-600 mb-6">Silakan masuk untuk melihat data laporan.</p>
-
-            <Link
-                href={isLoggedIn ? "/dashboard" : "/login"}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-                {isLoggedIn ? "Masuk ke Dashboard" : "Login Sekarang"}
-            </Link>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Memuat...</p>
+            </div>
         </div>
     );
 }

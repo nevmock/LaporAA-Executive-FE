@@ -216,17 +216,17 @@ export default function SummaryTable() {
                                 <thead>
                                     <tr className="bg-gray-100">
                                         {STATUS_ORDER.map((status) => (
-                                            <th key={status} className="border px-3 py-2 max-w-[160px] whitespace-normal">
-                                                <div className="flex items-center gap-2">
+                                            <th key={status} className="border px-3 py-2 max-w-[160px] whitespace-normal text-center align-middle">
+                                                <div className="flex items-center justify-center gap-2">
                                                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[status] }} />
-                                                    <div className="break-words leading-tight">{status}</div>
+                                                    <div className="break-words leading-tight text-center">{status}</div>
                                                 </div>
                                             </th>
                                         ))}
-                                        <th className="border px-3 py-2 max-w-[120px] whitespace-normal">
+                                        <th className="border px-3 py-2 max-w-[120px] whitespace-normal text-center align-middle">
                                             Total<br />Laporan Masuk
                                         </th>
-                                        <th className="border px-3 py-2 max-w-[120px] whitespace-normal">
+                                        <th className="border px-3 py-2 max-w-[120px] whitespace-normal text-center align-middle">
                                             Total<br />Tindak Lanjut
                                         </th>
                                     </tr>
