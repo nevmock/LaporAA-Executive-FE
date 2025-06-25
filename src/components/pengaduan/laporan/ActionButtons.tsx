@@ -58,6 +58,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     const [isHovered, setIsHovered] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [isCompleting, setIsCompleting] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     
     // Local fallback states jika parent tidak mengelola state dengan benar
     const [localShowRejectModal, setLocalShowRejectModal] = useState(false);
@@ -179,7 +180,21 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     };
 
     return (
-        <div className="flex justify-center items-center gap-2">
+        <>
+            {/* Loading Overlay saat navigating */}
+            {isNavigating && (
+                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[10000]">
+                    <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
+                        <svg className="animate-spin w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">Memproses tahap selanjutnya...</span>
+                    </div>
+                </div>
+            )}
+            
+            <div className="flex justify-center items-center gap-2">
             {/* Tombol Tutup (hanya di step pertama) */}
             {currentStepIndex === 0 && (
                 <>
@@ -274,10 +289,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             {/* Tombol Kembali (jika bukan step pertama) */}
             {currentStepIndex > 0 && currentStepIndex <= 3 && (
                 <button
-                    onClick={async () => {
-                        await handlePreviousStep();
+                    onClick={() => {
+                        // Hanya trigger modal konfirmasi, tidak langsung reload
+                        handlePreviousStep();
                     }}
-                    className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 min-h-[40px]"
+                    disabled={isNavigating}
+                    className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 min-h-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <RiArrowGoBackLine size={18} />
                     Mundur
@@ -291,24 +308,30 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                     onMouseLeave={() => setIsHovered(false)}>
                     <button
                         onClick={async () => {
-                            await handleNextStep();
-                            setTimeout(() => {
+                            setIsNavigating(true);
+                            try {
+                                await handleNextStep();
+                                // Langsung reload tanpa delay
                                 window.location.reload();
-                            }, 500);
+                            } catch (error) {
+                                setIsNavigating(false);
+                                console.error("Error in next step:", error);
+                            }
                         }}
-                        disabled={isButtonDisabled}
-                        className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 min-h-[40px] ${isButtonDisabled
-                            ? "bg-gray-300 cursor-not-allowed"
-                            : "bg-indigo-500 hover:bg-indigo-600"
-                            }`}
+                        disabled={isButtonDisabled || isNavigating}
+                        className={`px-4 py-2 rounded-md text-white transition flex items-center gap-2 min-h-[40px] ${
+                            isButtonDisabled || isNavigating
+                                ? "bg-gray-300 cursor-not-allowed"
+                                : "bg-indigo-500 hover:bg-indigo-600"
+                        }`}
                     >
-                        {isLoading ? (
+                        {isLoading || isNavigating ? (
                             <span className="flex items-center gap-2">
                                 <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                                 </svg>
-                                Menyimpan Data...
+                                {isNavigating ? "Memproses..." : "Menyimpan Data..."}
                             </span>
                         ) : (
                             <>
@@ -415,7 +438,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                     )}
                 </>
             )}
-        </div>
+            </div>
+        </>
     );
 };
 

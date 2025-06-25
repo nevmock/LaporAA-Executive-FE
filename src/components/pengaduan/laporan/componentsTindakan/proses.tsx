@@ -506,7 +506,10 @@ export default function Proses({
                         </div>
                         <p className="text-gray-700 font-semibold text-center">{saveMessage}</p>
                         <button
-                            onClick={() => setSaveSuccessModalVisible(false)}
+                            onClick={() => {
+                                setSaveSuccessModalVisible(false);
+                                window.location.reload();
+                            }}
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"
                         >
                             Oke

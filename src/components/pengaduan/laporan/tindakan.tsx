@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import axios from "../../../utils/axiosInstance";
@@ -99,6 +99,56 @@ const TindakanComponent = function Tindakan({
     const [showProfileState, setShowProfileState] = useState(currentStepIndex === 0);
     const [showKeluhanState, setShowKeluhanState] = useState(currentStepIndex === 0);
     const [openedSteps, setOpenedSteps] = useState<Set<number>>(new Set());
+    
+    // Ref untuk auto-scroll ke current active step
+    const currentStepRef = useRef<HTMLDivElement>(null);
+    
+    // State untuk auto-scroll control
+    const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+    const [userHasScrolled, setUserHasScrolled] = useState(false);
+    
+    // Detect manual scroll untuk disable auto-scroll
+    useEffect(() => {
+        let scrollTimeout: NodeJS.Timeout;
+        
+        const handleScroll = () => {
+            setUserHasScrolled(true);
+            
+            // Reset auto-scroll setelah user berhenti scroll selama 3 detik
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                setUserHasScrolled(false);
+            }, 3000);
+        };
+        
+        const scrollContainer = document.querySelector('.overflow-y-auto');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+            
+            return () => {
+                scrollContainer.removeEventListener('scroll', handleScroll);
+                clearTimeout(scrollTimeout);
+            };
+        }
+    }, []);
+    
+    // Auto-scroll ke current active step ketika component mount atau step berubah
+    useEffect(() => {
+        const scrollToCurrentStep = () => {
+            if (currentStepRef.current) {
+                // Delay sedikit untuk memastikan rendering selesai
+                setTimeout(() => {
+                    currentStepRef.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start', // Scroll ke bagian atas dari current step
+                        inline: 'nearest'
+                    });
+                }, 500); // Delay 500ms untuk memastikan semua komponen sudah render
+            }
+        };
+        
+        scrollToCurrentStep();
+    }, [currentStepIndex]); // Trigger ketika step berubah
 
     // Set the processed_by data from Laporan.tsx into formData
     useEffect(() => {
@@ -267,6 +317,21 @@ const TindakanComponent = function Tindakan({
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 text-sm text-gray-800">
+            {/* Loading Overlay saat navigating - similar to ActionButtons */}
+            {isLoading && (
+                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[10000]">
+                    <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
+                        <svg className="animate-spin w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">
+                            {showBackModal ? "Menyimpan dan kembali ke tahap sebelumnya..." : "Memproses tahap selanjutnya..."}
+                        </span>
+                    </div>
+                </div>
+            )}
+            
             {/* Notif & Modal */}
             {notif && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 px-3 sm:px-6 py-3 rounded-lg mb-4 sm:mb-6 mx-2 sm:mx-0 shadow-sm backdrop-blur-sm">
@@ -340,7 +405,7 @@ const TindakanComponent = function Tindakan({
                                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    <span className="truncate">Detail Keluhan</span>
+                                    <span className="truncate">Detail Keluhan - ({sessionId})</span>
                                 </h2>
                                 <button
                                     onClick={() => setShowKeluhanState((prev) => !prev)}
@@ -451,7 +516,7 @@ const TindakanComponent = function Tindakan({
                 </div>
 
                 {/* Current Active Step (always shown) */}
-                <div className="max-w-6xl mx-auto mt-4 sm:mt-6">
+                <div ref={currentStepRef} className="max-w-6xl mx-auto mt-4 sm:mt-6">
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-blue-200 overflow-hidden">
                         <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
                             <div className="flex items-center justify-between">
@@ -718,17 +783,47 @@ const TindakanComponent = function Tindakan({
                         <button
                             onClick={confirmPreviousStep}
                             disabled={isLoading}
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 ${
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors order-1 sm:order-2 flex items-center gap-2 ${
                                 isLoading 
                                     ? "bg-gray-400 cursor-not-allowed" 
                                     : "bg-orange-600 hover:bg-orange-700"
                             }`}
                         >
-                            {isLoading ? "Menyimpan..." : "Ya, Kembali"}
+                            {isLoading ? (
+                                <>
+                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                    </svg>
+                                    Menyimpan...
+                                </>
+                            ) : (
+                                "Ya, Kembali"
+                            )}
                         </button>
                     </div>
                 </div>
             </Modal>
+            {/* Floating Scroll to Current Step Button */}
+            <div className="fixed bottom-4 right-4 z-50">
+                <button
+                    onClick={() => {
+                        if (currentStepRef.current) {
+                            currentStepRef.current.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start',
+                                inline: 'nearest'
+                            });
+                        }
+                    }}
+                    className="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+                    title="Scroll ke tahap aktif"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </button>
+            </div>
         </div>
     );
 }
