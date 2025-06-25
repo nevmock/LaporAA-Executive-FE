@@ -246,10 +246,10 @@ export function useTindakanState(tindakan: any) {
   }, [formData, API_URL]);
 
   const handleNextStep = useCallback(async () => {
-    if (!validateCurrentStep()) {
-      alert("Harap lengkapi semua data terlebih dahulu.");
-      return;
-    }
+    // if (!validateCurrentStep()) {
+    //   alert("Harap lengkapi semua data terlebih dahulu.");
+    //   return;
+    // }
     
     const nextIndex = currentStepIndex + 1;
     const nextStatus = STATUS_LIST[nextIndex];
@@ -276,16 +276,17 @@ export function useTindakanState(tindakan: any) {
       console.log(`Saving data with next status: ${nextStatus}`);
       await saveData(nextStatus);
       
-      setCurrentStepIndex(nextIndex);
-      router.refresh();
-      console.log(`Successfully moved to step ${nextIndex}`);
+      // Jangan update state local, langsung reload halaman
+      console.log(`Successfully saved step ${nextIndex}, reloading page...`);
+      // window.location.reload(); // Ini akan dipanggil dari ActionButtons
     } catch (err) {
       console.error("Error in handleNextStep:", err);
       setNotif(`❌ Gagal memproses: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err; // Re-throw error agar ActionButtons bisa handle loading state
     } finally {
       setIsLoading(false);
     }
-  }, [currentStepIndex, saveData, validateCurrentStep, router, updateProcessedBy, setNotif]);
+  }, [currentStepIndex, saveData, validateCurrentStep, updateProcessedBy, setNotif]);
 
   const handlePreviousStep = useCallback(async () => {
     // Show confirmation modal instead of directly going back
@@ -300,15 +301,17 @@ export function useTindakanState(tindakan: any) {
       setIsLoading(true);
       const prevStatus = STATUS_LIST[prevIndex];
       await saveData(prevStatus);
-      setCurrentStepIndex(prevIndex);
+      
+      // Jangan update state local, langsung reload halaman
+      console.log(`Successfully saved previous step ${prevIndex}, reloading page...`);
       window.location.reload(); // Reload to reflect changes
       setShowBackModal(false);
     } catch (error: any) {
       console.error("Error going back to previous step:", error);
       alert(`Gagal kembali ke step sebelumnya: ${error?.message || "Terjadi kesalahan"}`);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Reset loading state on error
     }
+    // Jangan set loading false jika sukses karena halaman akan reload
   }, [currentStepIndex, saveData]);
 
   return {

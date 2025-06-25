@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "../../../utils/axiosInstance";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
 
-const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
-const socket = io(`${API_URL}`, { autoConnect: false });
+const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL || "http://localhost:3001";
 
 interface MessageItem {
     _id?: string;
@@ -33,6 +32,8 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [modeChanging, setModeChanging] = useState(false);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
     const limit = 20;
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -102,20 +103,82 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     };
 
     useEffect(() => {
-        if (!from) return;
-        fetchMessages(true);
+        if (!from || !API_URL) {
+            console.warn("Missing required data:", { from, API_URL });
+            return;
+        }
+        
+        console.log("Initializing socket with API_URL:", API_URL);
+        
+        // Initialize socket connection
+        const socketInstance = io(`${API_URL}`, {
+            autoConnect: true,
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5,
+            timeout: 20000,
+        });
+
+        setSocket(socketInstance);
+
+        // Socket event handlers
+        socketInstance.on("connect", () => {
+            console.log("Socket connected:", socketInstance.id);
+            setIsConnected(true);
+        });
+
+        socketInstance.on("disconnect", (reason) => {
+            console.log("Socket disconnected:", reason);
+            setIsConnected(false);
+        });
+
+        socketInstance.on("connect_error", (error) => {
+            console.error("Socket connection error:", error);
+            setIsConnected(false);
+        });
+
+        socketInstance.on("reconnect", (attemptNumber) => {
+            console.log("Socket reconnected after", attemptNumber, "attempts");
+            setIsConnected(true);
+        });
+
+        socketInstance.on("reconnect_attempt", (attemptNumber) => {
+            console.log("Socket reconnect attempt", attemptNumber);
+        });
+
+        socketInstance.on("reconnect_error", (error) => {
+            console.error("Socket reconnect error:", error);
+        });
+
+        socketInstance.on("reconnect_failed", () => {
+            console.error("Socket reconnection failed after maximum attempts");
+            setIsConnected(false);
+        });
 
         const handleNewMessage = (msg: MessageItem) => {
             if (msg.from !== from) return;
+            console.log("New message received:", msg);
             setMessages(prev => [...prev, msg]);
             scrollToBottom();
         };
 
-        socket.on("newMessage", handleNewMessage);
+        socketInstance.on("newMessage", handleNewMessage);
+
+        // Fetch initial messages
+        fetchMessages(true);
 
         return () => {
-            socket.off("newMessage", handleNewMessage);
-            socket.disconnect();
+            socketInstance.off("newMessage", handleNewMessage);
+            socketInstance.off("connect");
+            socketInstance.off("disconnect");
+            socketInstance.off("connect_error");
+            socketInstance.off("reconnect");
+            socketInstance.off("reconnect_attempt");
+            socketInstance.off("reconnect_error");
+            socketInstance.off("reconnect_failed");
+            socketInstance.disconnect();
+            setSocket(null);
+            setIsConnected(false);
         };
     }, [from]);
 
@@ -188,6 +251,14 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         })}, ${time}`;
     };
 
+    const handleManualReconnect = () => {
+        if (socket) {
+            console.log("Manual reconnect triggered");
+            socket.disconnect();
+            socket.connect();
+        }
+    };
+
     const [imageLoaded, setImageLoaded] = useState(false);
 
     const handleImageLoad = () => {
@@ -196,6 +267,26 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
 
     return (
         <div className="flex flex-col h-full relative">
+            {/* Connection Status Indicator */}
+            {/* <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    isConnected 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-red-100 text-red-800 border border-red-200'
+                }`}>
+                    {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                </div>
+                {!isConnected && (
+                    <button
+                        onClick={handleManualReconnect}
+                        className="px-2 py-1 bg-blue-100 text-blue-800 border border-blue-200 rounded text-xs hover:bg-blue-200"
+                        title="Reconnect"
+                    >
+                        🔄
+                    </button>
+                )}
+            </div> */}
+
             {/* Chat Area */}
             <div
                 className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#EFEAE2]"

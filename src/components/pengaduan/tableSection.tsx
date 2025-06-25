@@ -164,7 +164,7 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
                                 { key: 'controls', icon: <FaStar />, label: 'Controls' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
-                                { key: 'sessionId', icon: <FaEye />, label: 'Detail' },
+                                { key: 'admin', icon: <FaEye />, label: 'Detail' },
                                 { key: 'date', icon: <FaClock />, label: 'Waktu' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
                                 { key: 'lokasi_kejadian', icon: <IoIosPin />, label: 'Lokasi' },

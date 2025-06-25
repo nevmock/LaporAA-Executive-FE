@@ -435,87 +435,88 @@ export default function Verifikasi1({
             </div>
 
             <div className="mt-2 flex justify-center">
-                <button
-                    onClick={() => {
-                        if (!saveData) {
-                            console.error("saveData function is not available");
-                            alert("Tidak dapat menyimpan perubahan: Fungsi penyimpanan tidak tersedia");
-                            return;
-                        }
-                        setIsSaving(true);
-                        
-                        // Track start time to detect slow operations
-                        const startTime = Date.now();
-                        console.log("Starting form save operation at", new Date().toISOString());
-                        
-                        // Set a failsafe timeout to prevent permanent loading state
-                        const timeoutId = setTimeout(() => {
-                            console.warn("Form save operation timed out after 15 seconds");
-                            setIsSaving(false);
-                            alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
-                        }, 15000);
-                        
-                        try {
-                            saveData()
-                                .then(() => {
-                                    console.log("Form save succeeded in", Date.now() - startTime, "ms");
-                                    setSaveMessage("Perubahan berhasil disimpan");
-                                    setSaveSuccessModalVisible(true);
-                                    setInitialData({...data});
-                                    setHasFormChanges(false);
-                                })                            
-                                .catch((error: any) => {
-                                    console.error("Error saving data:", error);
-                                    alert(`Gagal menyimpan data: ${error?.message || "Terjadi kesalahan"}`);
-                                })
-                                .finally(() => {
-                                    console.log("Form save operation completed in", Date.now() - startTime, "ms");
-                                    setIsSaving(false);
-                                    clearTimeout(timeoutId);
-                                });
-                        } catch (error: any) {
-                            console.error("Unexpected error in save button handler:", error);
-                            setIsSaving(false);
-                            clearTimeout(timeoutId);
-                            alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
-                        }
-                    }}
-                    disabled={isSaving || !hasFormChanges}
-                    className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
-                        isSaving || !hasFormChanges ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-                    }`}
-                >
-                    {isSaving ? (
-                        <div className="flex items-center justify-center gap-2">
-                            <svg
-                                className="animate-spin h-5 w-5 text-white"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                ></circle>
-                                <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8H4z"
-                                ></path>
-                            </svg>
-                            <span>Sedang menyimpan...</span>
-                        </div>
-                    ) : (
-                        <>
-                            <RiSave3Fill size={16} />
-                            <span>{!hasFormChanges ? "Tidak Ada Perubahan" : "Simpan Perubahan"}</span>
-                        </>
-                    )}
-                </button>
+                {saveData ? (
+                    <button
+                        onClick={() => {
+                            setIsSaving(true);
+                            // Track start time to detect slow operations
+                            const startTime = Date.now();
+                            console.log("Starting form save operation at", new Date().toISOString());
+                            
+                            // Set a failsafe timeout to prevent permanent loading state
+                            const timeoutId = setTimeout(() => {
+                                console.warn("Form save operation timed out after 15 seconds");
+                                setIsSaving(false);
+                                alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
+                            }, 15000);
+                            
+                            try {
+                                saveData()
+                                    .then((result) => {
+                                        console.log("Form save succeeded in", Date.now() - startTime, "ms");
+                                        setSaveMessage("Perubahan berhasil disimpan");
+                                        setSaveSuccessModalVisible(true);
+                                        // Update tracked data after successful save
+                                        setInitialData({...data});
+                                        setHasFormChanges(false);
+                                    })
+                                    .catch((error: any) => {
+                                        console.error("Error in form save operation:", error);
+                                        alert(`Gagal menyimpan perubahan: ${error?.message || 'Terjadi kesalahan'}`);
+                                    })
+                                    .finally(() => {
+                                        console.log("Form save operation completed in", Date.now() - startTime, "ms");
+                                        setIsSaving(false);
+                                        clearTimeout(timeoutId);
+                                    });
+                            } catch (error: any) {
+                                console.error("Unexpected error in save button handler:", error);
+                                setIsSaving(false);
+                                clearTimeout(timeoutId);
+                                alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
+                            }
+                        }}
+                        disabled={isSaving || !hasFormChanges}
+                        className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
+                            isSaving || !hasFormChanges ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                        }`}
+                    >
+                        {isSaving ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <svg
+                                    className="animate-spin h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v8H4z"
+                                    ></path>
+                                </svg>
+                            </div>
+                        ) : (
+                            <>
+                                <RiSave3Fill size={16} />
+                                <span>{!hasFormChanges ? "Tidak Ada Perubahan" : "Simpan Perubahan"}</span>
+                            </>
+                        )}
+                    </button>
+                ) : (
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-2">Fitur simpan tidak tersedia pada tahap ini atau Anda berada dalam mode baca saja.</p>
+                        <p className="text-xs text-yellow-600">Untuk melanjutkan, silahkan isi data yang diperlukan atau gunakan tombol navigasi di bawah.</p>
+                    </div>
+                )}
             </div>
 
             {/* Modal Simpan Loading */}
@@ -548,7 +549,10 @@ export default function Verifikasi1({
                         </div>
                         <p className="text-gray-700 font-semibold text-center">{saveMessage}</p>
                         <button
-                            onClick={() => setSaveSuccessModalVisible(false)}
+                            onClick={() => {
+                                setSaveSuccessModalVisible(false);
+                                window.location.reload();
+                            }}
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"
                         >
                             Oke

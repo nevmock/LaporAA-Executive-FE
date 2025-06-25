@@ -1,0 +1,15 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/pengaduan/laporan/ActionButtons.tsx, src/components/pengaduan/laporan/componentsTindakan/proses.tsx, src/components/pengaduan/laporan/componentsTindakan/verifikasi1.tsx
+📅 2025-06-25_2212
+
+📂 Perubahan file:
+src/components/pengaduan/laporan/ActionButtons.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi1.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi2.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/laporan/useTindakanState.ts
+src/components/pengaduan/tableSection.tsx
+
+🚀 Meluncur

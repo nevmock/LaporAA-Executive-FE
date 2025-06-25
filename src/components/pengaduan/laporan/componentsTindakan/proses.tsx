@@ -33,21 +33,21 @@ export default function Proses({
     const [saveMessage, setSaveMessage] = useState("Data berhasil disimpan. Dan dikirimkan kepada Warga");
     const [initialData, setInitialData] = useState<Partial<TindakanClientState>>({});
     const [hasFormChanges, setHasFormChanges] = useState(false);
-    
+
     // Track initial form data for change detection
     useEffect(() => {
         if (data && Object.keys(data).length > 0 && Object.keys(initialData).length === 0) {
-            setInitialData({...data});
+            setInitialData({ ...data });
         }
     }, [data, initialData]);
-    
+
     // Check for form changes whenever data changes
     useEffect(() => {
         if (Object.keys(initialData).length > 0) {
             const opdChanged = JSON.stringify(initialData.opd) !== JSON.stringify(data.opd);
             const statusChanged = initialData.status_laporan !== data.status_laporan;
             const photosChanged = JSON.stringify(initialData.photos) !== JSON.stringify(data.photos);
-            
+
             setHasFormChanges(opdChanged || statusChanged || photosChanged);
             console.log("Form has changes:", opdChanged || statusChanged || photosChanged);
         }
@@ -65,7 +65,7 @@ export default function Proses({
                 alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
             }, 30000);
         }
-        
+
         return () => {
             if (timeoutId) clearTimeout(timeoutId);
         };
@@ -164,14 +164,13 @@ export default function Proses({
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                    <Tooltip text="Klik disini untuk langsung membuka laporan">
-                        <button
-                            onClick={() => window.open(`${data.url}`, "_blank")}
-                            className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
-                        >
-                            Buka Laporan #{data.trackingId}
-                        </button>
-                    </Tooltip>
+                    <button
+                        onClick={() => window.open(`${data.url}`, "_blank")}
+                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                        title="Buka Laporan SP4N Lapor"
+                    >
+                        Buka Laporan #{data.trackingId}
+                    </button>
                     <button
                         onClick={() => {
                             setIsConfirmed(true);
@@ -196,17 +195,17 @@ export default function Proses({
                 <h3 className="text-lg font-medium mb-2">Tindak Lanjut</h3>
                 <div className="mt-3 mb-3">
                     <button
-                            onClick={() => window.open(`${data.url}`, "_blank")}
-                            className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
-                            title="Buka Laporan SP4N Lapor"
-                        >
-                            <img
-                                src="/Spanlapor-icon.png"
-                                alt="Icon"
-                                className="w-5 h-5 mr-2"
-                            />
-                            Buka Laporan #{data.trackingId}
-                        </button>
+                        onClick={() => window.open(`${data.url}`, "_blank")}
+                        className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                        title="Buka Laporan SP4N Lapor"
+                    >
+                        <img
+                            src="/Spanlapor-icon.png"
+                            alt="Icon"
+                            className="w-5 h-5 mr-2"
+                        />
+                        Buka Laporan #{data.trackingId}
+                    </button>
                 </div>
 
                 <ul className="space-y-2">
@@ -246,18 +245,18 @@ export default function Proses({
                                 onClick={() => {
                                     // Enhanced version with reliable error handling and timeouts for Simpan Perubahan button
                                     setIsFormSaving(true);
-                                    
+
                                     // Track start time to detect slow operations or hangs
                                     const startTime = Date.now();
                                     console.log("Starting form save operation at", new Date().toISOString());
-                                    
+
                                     // Set a failsafe timeout to prevent permanent loading state
                                     const timeoutId = setTimeout(() => {
                                         console.warn("Form save operation timed out after 15 seconds");
                                         setIsFormSaving(false);
                                         alert("Operasi menyimpan memakan waktu terlalu lama. Silakan coba lagi.");
                                     }, 15000);
-                                    
+
                                     try {
                                         // Direct saveData call with proper error handling
                                         console.log("Calling saveData function to save form data");
@@ -267,7 +266,7 @@ export default function Proses({
                                                 setSaveMessage("Perubahan berhasil disimpan");
                                                 setSaveSuccessModalVisible(true);
                                                 // Update tracked data after successful save
-                                                setInitialData({...data});
+                                                setInitialData({ ...data });
                                                 setHasFormChanges(false);
                                             })
                                             .catch((error: any) => {
@@ -287,9 +286,8 @@ export default function Proses({
                                     }
                                 }}
                                 disabled={isFormSaving || !hasFormChanges}
-                                className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${
-                                    isFormSaving || !hasFormChanges ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
-                                }`}
+                                className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-2 transition ${isFormSaving || !hasFormChanges ? "bg-gray-300 cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-600"
+                                    }`}
                             >
                                 {isFormSaving ? (
                                     <div className="flex items-center justify-center gap-2">
@@ -317,7 +315,7 @@ export default function Proses({
                                     </div>
                                 ) : (
                                     <>                                <RiSave3Fill size={16} />
-                                    <span>{!hasFormChanges ? "Tidak Ada Perubahan" : "Simpan Perubahan"}</span>
+                                        <span>{!hasFormChanges ? "Tidak Ada Perubahan" : "Simpan Perubahan"}</span>
                                     </>
                                 )}
                             </button>
@@ -390,11 +388,10 @@ export default function Proses({
                         <button
                             onClick={handleAddKesimpulan}
                             disabled={isSaving || !newKesimpulan.trim()}
-                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${
-                                isSaving ? "bg-gray-300 cursor-not-allowed" : 
-                                !newKesimpulan.trim() ? "bg-gray-300 cursor-not-allowed" : 
-                                "bg-emerald-500 hover:bg-emerald-600"
-                            }`}
+                            className={`px-4 py-2 rounded-md text-white text-sm flex items-center gap-1 transition ${isSaving ? "bg-gray-300 cursor-not-allowed" :
+                                    !newKesimpulan.trim() ? "bg-gray-300 cursor-not-allowed" :
+                                        "bg-emerald-500 hover:bg-emerald-600"
+                                }`}
                         >
                             {isSaving ? (
                                 <div className="flex items-center justify-center gap-2">
@@ -465,7 +462,7 @@ export default function Proses({
                 </div>
                 <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
             </div>
-            
+
             {/* Modal Simpan Loading for Kirimkan Tindak Lanjut */}
             {isSaving && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
@@ -509,7 +506,10 @@ export default function Proses({
                         </div>
                         <p className="text-gray-700 font-semibold text-center">{saveMessage}</p>
                         <button
-                            onClick={() => setSaveSuccessModalVisible(false)}
+                            onClick={() => {
+                                setSaveSuccessModalVisible(false);
+                                window.location.reload();
+                            }}
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md"
                         >
                             Oke
