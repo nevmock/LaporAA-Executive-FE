@@ -66,74 +66,6 @@ export default function Laporan() {
   const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
 
   // ----------------------- API FUNCTIONS -----------------------
-  // const getDashboardSummary = async () => {
-  //   try {
-  //     const controller = new AbortController();
-  //     const timeoutId = setTimeout(() => {
-  //       console.warn("Dashboard Summary API call timeout after 20 seconds");
-  //       controller.abort();
-  //     }, 20000);
-
-  //     const params: any = {};
-  //     if (search && search.trim()) params.search = search.trim();
-  //     if (selectedOpd !== "Semua OPD") params.opd = selectedOpd;
-  //     if (selectedSituasi !== "Semua Situasi") params.situasi = selectedSituasi;
-  //     if (isPinnedOnly) params.is_pinned = "true";
-
-  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/dashboard-summary`, {
-  //       params,
-  //       signal: controller.signal
-  //     });
-      
-  //     clearTimeout(timeoutId);
-      
-  //     // Update total reports count
-  //     setTotalReports(res.data?.summary?.totalReports || 0);
-      
-  //     // Update status counts (format sudah sama)
-  //     setStatusCounts(res.data?.summary?.status || {});
-      
-  //     // Convert OPD object to array format untuk dropdown
-  //     const opdBreakdown = res.data?.summary?.opd || {};
-  //     const opdListArray = Object.entries(opdBreakdown).map(([opd, count]) => ({
-  //       opd,
-  //       count: count as number
-  //     }));
-  //     setOpdList(opdListArray);
-  //     setOpdTotal(opdListArray.length);
-      
-  //     // Convert Situasi object to array format untuk dropdown
-  //     const situasiBreakdown = res.data?.summary?.situasi || {};
-  //     const situasiListArray = Object.entries(situasiBreakdown).map(([situasi, count]) => ({
-  //       situasi,
-  //       count: count as number
-  //     }));
-  //     setSituasiList(situasiListArray);
-  //     setSituasiTotal(situasiListArray.length);
-      
-  //     console.log('📊 Dashboard Summary Data:', {
-  //       totalReports: res.data?.summary?.totalReports,
-  //       statusCount: Object.keys(res.data?.summary?.status || {}).length,
-  //       opdCount: opdListArray.length,
-  //       situasiCount: situasiListArray.length
-  //     });
-      
-  //   } catch (err: any) {
-  //     if (err.name === 'AbortError') {
-  //       console.error("❌ Dashboard Summary fetch aborted due to timeout");
-  //     } else {
-  //       console.error("❌ Failed to fetch dashboard summary:", err);
-  //     }
-  //     setTotalReports(0);
-  //     setStatusCounts({});
-  //     setOpdList([]);
-  //     setOpdTotal(0);
-  //     setSituasiList([]);
-  //     setSituasiTotal(0);
-  //   }
-  // };
-
-  // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
     setLoading(true);
     try {
@@ -196,37 +128,6 @@ export default function Laporan() {
       setLoading(false);
     }
   };
-
-  // const getSummary = async () => {
-  //   try {
-  //     const params: any = {};
-  //     if (search && search.trim()) params.search = search.trim();
-
-  //     const controller = new AbortController();
-  //     const timeoutId = setTimeout(() => {
-  //       console.warn("Summary API call timeout after 20 seconds");
-  //       controller.abort();
-  //     }, 20000);
-
-  //     const res = await axios.get(
-  //       `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary-laporan`,
-  //       { 
-  //         params,
-  //         signal: controller.signal 
-  //       }
-  //     );
-      
-  //     clearTimeout(timeoutId);
-  //     setStatusCounts(res.data || {});
-  //   } catch (err: any) {
-  //     if (err.name === 'AbortError') {
-  //       console.error("❌ Summary fetch aborted due to timeout");
-  //     } else {
-  //       console.error("❌ Failed to fetch summary:", err);
-  //     }
-  //     setStatusCounts({});
-  //   }
-  // };
 
   // ----------------------- EFFECTS: HYDRATE FILTER (ATOMIC) -----------------------
   useEffect(() => {
