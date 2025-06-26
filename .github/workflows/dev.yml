@@ -48,7 +48,6 @@ jobs:
             echo "🚀 Running new container..."
             docker run -d \
               --name laporaa-fe-dev \
-              --network host \
               --restart unless-stopped \
               -p "${{ secrets.PORT }}":3000 \
               nevmock/laporaa-fe-dev:latest
