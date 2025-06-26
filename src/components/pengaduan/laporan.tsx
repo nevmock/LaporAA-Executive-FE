@@ -57,7 +57,6 @@ export default function Laporan() {
   // State untuk force mode bot
   const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
   const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
-
   const [isPinnedOnly, setIsPinnedOnly] = useState(false);
   const [isByMeOnly, setIsByMeOnly] = useState(false);
 
