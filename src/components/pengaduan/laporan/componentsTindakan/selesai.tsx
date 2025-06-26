@@ -5,7 +5,7 @@ import { TindakanData } from "../../../../lib/types";
 export default function Selesai({
     data,
     // reportData,
-    saveData
+    saveData // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
     data: Partial<TindakanData> & { sessionId: string };
     reportData?: any;

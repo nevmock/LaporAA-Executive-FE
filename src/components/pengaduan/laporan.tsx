@@ -8,7 +8,6 @@ import HeaderSection from "./headerSection";
 import TableSection from "./tableSection";
 import Pagination from "./pagination";
 import PhotoModal from "./PhotoModal";
-import { LaporanListSkeleton } from "./PengaduanSkeleton";
 
 const MapModal = dynamic(() => import("./MapModal"), { ssr: false });
 
@@ -39,6 +38,7 @@ export default function Laporan() {
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lon: number; desa: string } | null>(null);
   const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+  const [photoModalInfo, setPhotoModalInfo] = useState<{ sessionId: string; userName: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
@@ -51,10 +51,12 @@ export default function Laporan() {
   const [situasiList, setSituasiList] = useState<{ situasi: string; count: number }[]>([]);  
   const [situasiTotal, setSituasiTotal] = useState<number>(0);  
 
+  // State untuk total reports
+  const [totalReports, setTotalReports] = useState<number>(0);
+
   // State untuk force mode bot
   const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
   const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
-
   const [isPinnedOnly, setIsPinnedOnly] = useState(false);
   const [isByMeOnly, setIsByMeOnly] = useState(false);
 
@@ -62,31 +64,6 @@ export default function Laporan() {
   const username = typeof window !== "undefined" ? localStorage.getItem("username") || "guest" : "guest";
   const namaAdmin = typeof window !== "undefined" ? localStorage.getItem("nama_admin") || "" : "";
   const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
-
-  // ----------------------- API FUNCTIONS -----------------------
-  const getOpdList = async () => {
-    try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`);
-      setOpdList(res.data?.data || []);
-      setOpdTotal(res.data?.total || 0);
-    } catch (err) {
-      console.error("❌ Failed to fetch OPD list:", err);
-      setOpdList([]);
-      setOpdTotal(0);
-    }
-  };
-
-  const getSituasiList = async () => {
-    try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/situasi-list`);
-      setSituasiList(res.data?.data || []);
-      setSituasiTotal(res.data?.total || 0);
-    } catch (err) {
-      console.error("❌ Failed to fetch Situasi list:", err);
-      setSituasiList([]);
-      setSituasiTotal(0);
-    }
-  };
 
   // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
@@ -100,39 +77,55 @@ export default function Laporan() {
         sorts: JSON.stringify(sorts),
         situasi: selectedSituasi !== "Semua Situasi" ? selectedSituasi : undefined,
         opd: selectedOpd !== "Semua OPD" ? selectedOpd : undefined,
-        is_pinned: isPinnedOnly || undefined,
-        admin_filter: isByMeOnly && namaAdmin ? namaAdmin : undefined,
+        is_pinned: isPinnedOnly ? true : undefined,
+        byMeOnly: isByMeOnly ? true : undefined,
       };
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { params });
-      const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
-      const processedData: Chat[] = responseData.map((item: any) => ({
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("Reports API call timeout after 25 seconds");
+        controller.abort();
+      }, 25000);
+      
+      // Use /reports/new endpoint for all data
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/new`, { 
+        params,
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Set data for table (flatten user, processed_by, etc. for rendering)
+      setData((res.data.data || []).map((item: any) => ({
         ...item,
-        user: typeof item.user === "object" ? item.user.name : item.user,
-        address: typeof item.user === "object" ? item.user.address : item.address,
-      }));
-      setData(processedData);
+        user: typeof item.user === "object" && item.user !== null ? item.user.name : item.user,
+        address: typeof item.user === "object" && item.user !== null ? item.user.address : item.address,
+        processed_by: typeof item.processed_by === "object" && item.processed_by !== null ? item.processed_by.nama_admin : item.processed_by,
+        // tindakan is kept as object for status, situasi, etc.
+      })));
       setTotalPages(res.data.totalPages || 1);
-    } catch (err) {
-      console.error("❌ Fetch error:", err);
+      setTotalReports(res.data.totalReports || 0);
+      // Set dropdown counts/lists from summary
+      setStatusCounts(res.data.summary?.status || {});
+      setOpdList(Object.entries(res.data.summary?.opd || {}).map(([opd, count]) => ({ opd, count: Number(count) })));
+      setOpdTotal(res.data.totalReports || 0);
+      setSituasiList(Object.entries(res.data.summary?.situasi || {}).map(([situasi, count]) => ({ situasi, count: Number(count) })));
+      setSituasiTotal(res.data.totalReports || 0);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error("❌ Reports fetch aborted due to timeout");
+      } else {
+        console.error("❌ Fetch error:", err);
+      }
       setData([]);
+      setStatusCounts({});
+      setOpdList([]);
+      setOpdTotal(0);
+      setSituasiList([]);
+      setSituasiTotal(0);
+      setTotalReports(0);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getSummary = async () => {
-    try {
-      const params: any = {};
-      if (search && search.trim()) params.search = search.trim();
-
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary-laporan`,
-        { params }
-      );
-      setStatusCounts(res.data || {});
-    } catch (err) {
-      console.error("❌ Failed to fetch summary:", err);
-      setStatusCounts({});
     }
   };
 
@@ -200,18 +193,19 @@ export default function Laporan() {
   // ----------------------- EFFECTS: FETCH DATA (AFTER HYDRATED) -----------------------
   useEffect(() => {
     if (!hydrated) return;
-    getSummary();
-    getReports();
+    
+    // Staggered API calls to prevent overload
+    const fetchData = async () => {
+      try {
+        await getReports();
+      } catch (error) {
+        console.error('Error in staggered data fetch:', error);
+      }
+    };
+    
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly, isByMeOnly]);
-
-  // Fetch OPD list only once after hydration (tidak perlu re-fetch setiap filter berubah)
-  useEffect(() => {
-    if (!hydrated) return;
-    getOpdList();
-    getSituasiList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
 
   // Load force mode states setelah data diambil
   useEffect(() => {
@@ -266,6 +260,24 @@ export default function Laporan() {
       setSearch("");
     }
     setIsByMeOnly(newValue);
+  };
+
+  // Handler untuk status change
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setPage(1); // Reset ke halaman pertama saat status berubah
+  };
+
+  // Handler untuk situasi change
+  const handleSituasiChange = (newSituasi: string) => {
+    setSelectedSituasi(newSituasi);
+    setPage(1); // Reset ke halaman pertama saat situasi berubah
+  };
+
+  // Handler untuk OPD change
+  const handleOpdChange = (newOpd: string) => {
+    setSelectedOpd(newOpd);
+    setPage(1); // Reset ke halaman pertama saat OPD berubah
   };
 
   // ----------------------- SORTING, TOGGLE, HANDLERS -----------------------
@@ -337,7 +349,7 @@ export default function Laporan() {
       });
       setSelectedIds([]);
       await getReports();
-      await getSummary();
+      // await getDashboardSummary();
     } catch (err) {
       console.error("❌ Gagal menghapus:", err);
       alert("Terjadi kesalahan saat menghapus laporan.");
@@ -354,6 +366,12 @@ export default function Laporan() {
     } catch (err) {
       console.error("Gagal ubah mode:", err);
     }
+  };
+
+  // Wrapper function untuk setPhotoModal dengan info tambahan
+  const handleSetPhotoModal = (photos: string[], reportInfo?: { sessionId: string; userName: string }) => {
+    setPhotoModal(photos);
+    setPhotoModalInfo(reportInfo || null);
   };
 
   // Toggle force mode untuk bot WhatsApp - GUNAKAN botModeService
@@ -452,6 +470,8 @@ export default function Laporan() {
     }
   };
 
+  // Ismail Anugrah Saputra
+
   // ----------------------- RENDER -----------------------
   return (
     <div className="flex flex-col h-full">
@@ -465,24 +485,25 @@ export default function Laporan() {
             setSearch={setSearch}
             statusCounts={statusCounts}
             selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
+            setSelectedStatus={handleStatusChange}
             isMobile={isMobile}
             limit={limit}
             setLimit={setLimit}
             page={page}
             setPage={setPage}
             selectedSituasi={selectedSituasi}
-            setSelectedSituasi={setSelectedSituasi}
+            setSelectedSituasi={handleSituasiChange}
             situasiList={situasiList}
             situasiTotal={situasiTotal}
             opdList={opdList}
             opdTotal={opdTotal}
             selectedOpd={selectedOpd}
-            setSelectedOpd={setSelectedOpd}
+            setSelectedOpd={handleOpdChange}
             isPinnedOnly={isPinnedOnly}
             setIsPinnedOnly={setIsPinnedOnly}
             isByMeOnly={isByMeOnly}
             setIsByMeOnly={handleToggleByMeOnly}
+            totalReports={totalReports}
           />
         </div>
       </div>
@@ -491,7 +512,7 @@ export default function Laporan() {
       <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 h-full overflow-y-auto">
           {loading ? (
-            <LaporanListSkeleton />
+            <div>Loading...</div>
           ) : (
             <TableSection
               filteredData={filteredData}
@@ -508,7 +529,7 @@ export default function Laporan() {
               forceModeStates={forceModeStates}
               loadingForceMode={loadingForceMode}
               setSelectedLoc={setSelectedLoc}
-              setPhotoModal={setPhotoModal}
+              setPhotoModal={handleSetPhotoModal}
               loading={loading}
               setSorts={setSorts}
               setSearch={setSearch}
@@ -522,7 +543,16 @@ export default function Laporan() {
       </div>
       {/* Modal */}
       {selectedLoc && <MapModal selectedLoc={selectedLoc} onClose={() => setSelectedLoc(null)} />}
-      {photoModal && <PhotoModal photoModal={photoModal} onClose={() => setPhotoModal(null)} />}
+      {photoModal && (
+        <PhotoModal 
+          photoModal={photoModal} 
+          onClose={() => {
+            setPhotoModal(null);
+            setPhotoModalInfo(null);
+          }} 
+          reportInfo={photoModalInfo || undefined}
+        />
+      )}
     </div>
   );
 }

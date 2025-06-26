@@ -17,7 +17,6 @@ type FullScreenChildProps = {
 
 // Komponen FullScreen menampilkan children dalam mode biasa dan bisa diperluas ke fullscreen (modal)
 export default function FullScreen({
-  title,
   children,
 }: {
   title: string;
