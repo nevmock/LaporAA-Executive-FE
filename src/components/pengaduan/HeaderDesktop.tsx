@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
@@ -30,6 +30,7 @@ interface HeaderDesktopProps {
     setIsPinnedOnly: (val: boolean) => void;
     isByMeOnly: boolean;
     setIsByMeOnly: (val: boolean) => void;
+    totalReports: number; // Tambahan
 }
 
 const statusColors: Record<string, string> = {
@@ -41,17 +42,6 @@ const statusColors: Record<string, string> = {
     "Selesai Pengaduan": "rgb(74 222 128)",
     "Ditutup": "black",
 };
-
-const statusTabs = [
-    "Semua Status",
-    "Perlu Verifikasi",
-    "Verifikasi Situasi",
-    "Verifikasi Kelengkapan Berkas",
-    "Proses OPD Terkait",
-    "Selesai Penanganan",
-    "Selesai Pengaduan",
-    "Ditutup",
-];
 
 const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     search,
@@ -75,6 +65,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     setIsPinnedOnly,
     isByMeOnly,
     setIsByMeOnly,
+    totalReports, // Tambahan
 }) => {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [isHydrated, setIsHydrated] = useState(false);
@@ -86,15 +77,22 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
 
     // Prepare OPD options with counts
     const opdOptions = [
-        { opd: "Semua OPD", count: opdTotal },
+        { opd: "Semua OPD", count: totalReports }, // Ganti ke totalReports
         ...opdList
     ];
 
     // Prepare Situasi options with counts
     const situasiOptions = [
-        { situasi: "Semua Situasi", count: situasiTotal },
+        { situasi: "Semua Situasi", count: totalReports }, // Ganti ke totalReports
         ...situasiList
     ];
+
+    // Dinamis: statusTabs diambil dari statusCounts
+    const statusTabs = useMemo(() => {
+        const base = ["Semua Status"];
+        const dynamic = Object.keys(statusCounts).filter(s => s && s !== "Tanpa Status");
+        return base.concat(dynamic);
+    }, [statusCounts]);
 
     return (
         <>

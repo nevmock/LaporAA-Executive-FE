@@ -51,6 +51,9 @@ export default function Laporan() {
   const [situasiList, setSituasiList] = useState<{ situasi: string; count: number }[]>([]);  
   const [situasiTotal, setSituasiTotal] = useState<number>(0);  
 
+  // State untuk total reports
+  const [totalReports, setTotalReports] = useState<number>(0);
+
   // State untuk force mode bot
   const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
   const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
@@ -64,57 +67,72 @@ export default function Laporan() {
   const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
 
   // ----------------------- API FUNCTIONS -----------------------
-  const getOpdList = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.warn("OPD List API call timeout after 15 seconds");
-        controller.abort();
-      }, 15000);
+  // const getDashboardSummary = async () => {
+  //   try {
+  //     const controller = new AbortController();
+  //     const timeoutId = setTimeout(() => {
+  //       console.warn("Dashboard Summary API call timeout after 20 seconds");
+  //       controller.abort();
+  //     }, 20000);
 
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`, {
-        signal: controller.signal
-      });
+  //     const params: any = {};
+  //     if (search && search.trim()) params.search = search.trim();
+  //     if (selectedOpd !== "Semua OPD") params.opd = selectedOpd;
+  //     if (selectedSituasi !== "Semua Situasi") params.situasi = selectedSituasi;
+  //     if (isPinnedOnly) params.is_pinned = "true";
+
+  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/dashboard-summary`, {
+  //       params,
+  //       signal: controller.signal
+  //     });
       
-      clearTimeout(timeoutId);
-      setOpdList(res.data?.data || []);
-      setOpdTotal(res.data?.total || 0);
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.error("❌ OPD List fetch aborted due to timeout");
-      } else {
-        console.error("❌ Failed to fetch OPD list:", err);
-      }
-      setOpdList([]);
-      setOpdTotal(0);
-    }
-  };
-
-  const getSituasiList = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.warn("Situasi List API call timeout after 15 seconds");
-        controller.abort();
-      }, 15000);
-
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/situasi-list`, {
-        signal: controller.signal
-      });
+  //     clearTimeout(timeoutId);
       
-      clearTimeout(timeoutId);
-      setSituasiList(res.data?.data || []);
-      setSituasiTotal(res.data?.total || 0);
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.error("❌ Situasi List fetch aborted due to timeout");
-      } else {
-        console.error("❌ Failed to fetch Situasi list:", err);
-      }
-      setSituasiList([]);
-      setSituasiTotal(0);
-    }
-  };
+  //     // Update total reports count
+  //     setTotalReports(res.data?.summary?.totalReports || 0);
+      
+  //     // Update status counts (format sudah sama)
+  //     setStatusCounts(res.data?.summary?.status || {});
+      
+  //     // Convert OPD object to array format untuk dropdown
+  //     const opdBreakdown = res.data?.summary?.opd || {};
+  //     const opdListArray = Object.entries(opdBreakdown).map(([opd, count]) => ({
+  //       opd,
+  //       count: count as number
+  //     }));
+  //     setOpdList(opdListArray);
+  //     setOpdTotal(opdListArray.length);
+      
+  //     // Convert Situasi object to array format untuk dropdown
+  //     const situasiBreakdown = res.data?.summary?.situasi || {};
+  //     const situasiListArray = Object.entries(situasiBreakdown).map(([situasi, count]) => ({
+  //       situasi,
+  //       count: count as number
+  //     }));
+  //     setSituasiList(situasiListArray);
+  //     setSituasiTotal(situasiListArray.length);
+      
+  //     console.log('📊 Dashboard Summary Data:', {
+  //       totalReports: res.data?.summary?.totalReports,
+  //       statusCount: Object.keys(res.data?.summary?.status || {}).length,
+  //       opdCount: opdListArray.length,
+  //       situasiCount: situasiListArray.length
+  //     });
+      
+  //   } catch (err: any) {
+  //     if (err.name === 'AbortError') {
+  //       console.error("❌ Dashboard Summary fetch aborted due to timeout");
+  //     } else {
+  //       console.error("❌ Failed to fetch dashboard summary:", err);
+  //     }
+  //     setTotalReports(0);
+  //     setStatusCounts({});
+  //     setOpdList([]);
+  //     setOpdTotal(0);
+  //     setSituasiList([]);
+  //     setSituasiTotal(0);
+  //   }
+  // };
 
   // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
@@ -128,8 +146,8 @@ export default function Laporan() {
         sorts: JSON.stringify(sorts),
         situasi: selectedSituasi !== "Semua Situasi" ? selectedSituasi : undefined,
         opd: selectedOpd !== "Semua OPD" ? selectedOpd : undefined,
-        is_pinned: isPinnedOnly || undefined,
-        admin_filter: isByMeOnly && namaAdmin ? namaAdmin : undefined,
+        is_pinned: isPinnedOnly ? true : undefined,
+        byMeOnly: isByMeOnly ? true : undefined,
       };
       
       const controller = new AbortController();
@@ -138,21 +156,30 @@ export default function Laporan() {
         controller.abort();
       }, 25000);
       
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { 
+      // Use /reports/new endpoint for all data
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/new`, { 
         params,
         signal: controller.signal 
       });
       
       clearTimeout(timeoutId);
       
-      const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
-      const processedData: Chat[] = responseData.map((item: any) => ({
+      // Set data for table (flatten user, processed_by, etc. for rendering)
+      setData((res.data.data || []).map((item: any) => ({
         ...item,
-        user: typeof item.user === "object" ? item.user.name : item.user,
-        address: typeof item.user === "object" ? item.user.address : item.address,
-      }));
-      setData(processedData);
+        user: typeof item.user === "object" && item.user !== null ? item.user.name : item.user,
+        address: typeof item.user === "object" && item.user !== null ? item.user.address : item.address,
+        processed_by: typeof item.processed_by === "object" && item.processed_by !== null ? item.processed_by.nama_admin : item.processed_by,
+        // tindakan is kept as object for status, situasi, etc.
+      })));
       setTotalPages(res.data.totalPages || 1);
+      setTotalReports(res.data.totalReports || 0);
+      // Set dropdown counts/lists from summary
+      setStatusCounts(res.data.summary?.status || {});
+      setOpdList(Object.entries(res.data.summary?.opd || {}).map(([opd, count]) => ({ opd, count: Number(count) })));
+      setOpdTotal(res.data.totalReports || 0);
+      setSituasiList(Object.entries(res.data.summary?.situasi || {}).map(([situasi, count]) => ({ situasi, count: Number(count) })));
+      setSituasiTotal(res.data.totalReports || 0);
     } catch (err: any) {
       if (err.name === 'AbortError') {
         console.error("❌ Reports fetch aborted due to timeout");
@@ -160,41 +187,47 @@ export default function Laporan() {
         console.error("❌ Fetch error:", err);
       }
       setData([]);
+      setStatusCounts({});
+      setOpdList([]);
+      setOpdTotal(0);
+      setSituasiList([]);
+      setSituasiTotal(0);
+      setTotalReports(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const getSummary = async () => {
-    try {
-      const params: any = {};
-      if (search && search.trim()) params.search = search.trim();
+  // const getSummary = async () => {
+  //   try {
+  //     const params: any = {};
+  //     if (search && search.trim()) params.search = search.trim();
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.warn("Summary API call timeout after 20 seconds");
-        controller.abort();
-      }, 20000);
+  //     const controller = new AbortController();
+  //     const timeoutId = setTimeout(() => {
+  //       console.warn("Summary API call timeout after 20 seconds");
+  //       controller.abort();
+  //     }, 20000);
 
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary-laporan`,
-        { 
-          params,
-          signal: controller.signal 
-        }
-      );
+  //     const res = await axios.get(
+  //       `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary-laporan`,
+  //       { 
+  //         params,
+  //         signal: controller.signal 
+  //       }
+  //     );
       
-      clearTimeout(timeoutId);
-      setStatusCounts(res.data || {});
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.error("❌ Summary fetch aborted due to timeout");
-      } else {
-        console.error("❌ Failed to fetch summary:", err);
-      }
-      setStatusCounts({});
-    }
-  };
+  //     clearTimeout(timeoutId);
+  //     setStatusCounts(res.data || {});
+  //   } catch (err: any) {
+  //     if (err.name === 'AbortError') {
+  //       console.error("❌ Summary fetch aborted due to timeout");
+  //     } else {
+  //       console.error("❌ Failed to fetch summary:", err);
+  //     }
+  //     setStatusCounts({});
+  //   }
+  // };
 
   // ----------------------- EFFECTS: HYDRATE FILTER (ATOMIC) -----------------------
   useEffect(() => {
@@ -264,17 +297,12 @@ export default function Laporan() {
     // Staggered API calls to prevent overload
     const fetchData = async () => {
       try {
-        // Call APIs with delays between them
-        await getSummary();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Call dashboard summary API to get all dropdown data
+        // await getDashboardSummary();
+        // await new Promise(resolve => setTimeout(resolve, 500));
         
+        // Call reports API for table data
         await getReports();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        await getOpdList();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        await getSituasiList();
       } catch (error) {
         console.error('Error in staggered data fetch:', error);
       }
@@ -337,6 +365,24 @@ export default function Laporan() {
       setSearch("");
     }
     setIsByMeOnly(newValue);
+  };
+
+  // Handler untuk status change
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setPage(1); // Reset ke halaman pertama saat status berubah
+  };
+
+  // Handler untuk situasi change
+  const handleSituasiChange = (newSituasi: string) => {
+    setSelectedSituasi(newSituasi);
+    setPage(1); // Reset ke halaman pertama saat situasi berubah
+  };
+
+  // Handler untuk OPD change
+  const handleOpdChange = (newOpd: string) => {
+    setSelectedOpd(newOpd);
+    setPage(1); // Reset ke halaman pertama saat OPD berubah
   };
 
   // ----------------------- SORTING, TOGGLE, HANDLERS -----------------------
@@ -408,7 +454,7 @@ export default function Laporan() {
       });
       setSelectedIds([]);
       await getReports();
-      await getSummary();
+      // await getDashboardSummary();
     } catch (err) {
       console.error("❌ Gagal menghapus:", err);
       alert("Terjadi kesalahan saat menghapus laporan.");
@@ -542,24 +588,25 @@ export default function Laporan() {
             setSearch={setSearch}
             statusCounts={statusCounts}
             selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
+            setSelectedStatus={handleStatusChange}
             isMobile={isMobile}
             limit={limit}
             setLimit={setLimit}
             page={page}
             setPage={setPage}
             selectedSituasi={selectedSituasi}
-            setSelectedSituasi={setSelectedSituasi}
+            setSelectedSituasi={handleSituasiChange}
             situasiList={situasiList}
             situasiTotal={situasiTotal}
             opdList={opdList}
             opdTotal={opdTotal}
             selectedOpd={selectedOpd}
-            setSelectedOpd={setSelectedOpd}
+            setSelectedOpd={handleOpdChange}
             isPinnedOnly={isPinnedOnly}
             setIsPinnedOnly={setIsPinnedOnly}
             isByMeOnly={isByMeOnly}
             setIsByMeOnly={handleToggleByMeOnly}
+            totalReports={totalReports}
           />
         </div>
       </div>

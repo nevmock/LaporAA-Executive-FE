@@ -220,12 +220,12 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontol' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
                                 { key: 'admin', icon: <FaEye />, label: 'Detail' },
-                                { key: 'tracking_id', icon: <FaEye />, label: 'Tracking' },
+                                { key: 'tracking_id', icon: <PiChatsBold />, label: 'Tracking' },
                                 { key: 'date', icon: <FaClock />, label: 'Waktu' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
                                 { key: 'lokasi_kejadian', icon: <IoIosPin />, label: 'Lokasi' },
-                                { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
+                                { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD' },
                                 { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
                             ].map(({ key, icon, label }) => (
@@ -564,7 +564,7 @@ const TableSection: React.FC<Props> = ({
                                         </td>
 
                                         {/* Situasi, Status, OPD */}
-                                        <td className="px-6 py-1.5">{chat.tindakan?.situasi || '-'}</td>
+                                        
                                         <td className="px-6 py-1.5">
                                             {chat.tindakan?.status ? (
                                                 <div className="flex items-center">
@@ -584,6 +584,8 @@ const TableSection: React.FC<Props> = ({
                                                 </div>
                                             ) : <span className="text-sm text-gray-500">-</span>}
                                         </td>
+
+                                        <td className="px-6 py-1.5">{chat.tindakan?.situasi || '-'}</td>
 
                                         <td className="px-6 py-1.5">
                                             {chat.tindakan?.opd ? (
@@ -696,14 +698,8 @@ const TableSection: React.FC<Props> = ({
                                                             onError={(e) => {
                                                                 console.error('Error loading image:', photoUrl);
                                                                 console.error('Photo data:', chat.photos);
-                                                                const target = e.target as HTMLImageElement;
-                                                                target.style.display = 'none';
-                                                                if (target.parentElement) {
-                                                                    target.parentElement.innerHTML = '<span class="text-xs text-red-500 cursor-pointer" title="Klik untuk debug">❌</span>';
-                                                                    target.parentElement.onclick = () => {
-                                                                        alert(`URL: ${photoUrl}\nBase URL: ${baseUrl}\nPhoto Path: ${firstPhoto}\nFull Photos: ${JSON.stringify(chat.photos)}`);
-                                                                    };
-                                                                }
+                                                                // Instead of manipulating DOM, show alert directly
+                                                                alert(`Gagal memuat gambar.\nURL: ${photoUrl}\nBase URL: ${baseUrl}\nPhoto Path: ${firstPhoto}\nFull Photos: ${JSON.stringify(chat.photos)}`);
                                                             }}
                                                             onLoad={() => {
                                                                 console.log('✅ Image loaded successfully:', photoUrl);

@@ -29,6 +29,7 @@ interface HeaderMobileProps {
     setIsPinnedOnly: (val: boolean) => void;
     isByMeOnly: boolean; // Optional prop for filtering by user
     setIsByMeOnly: (val: boolean) => void; // Optional setter for filtering by user
+    totalReports: number; // Tambahan
 }
 
 const statusColors: Record<string, string> = {
@@ -200,19 +201,20 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     setIsPinnedOnly,
     isByMeOnly,
     setIsByMeOnly,
+    totalReports, // Tambahan
 }) => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
     // Prepare OPD options with counts
     const opdOptions = [
-        { opd: "Semua OPD", count: opdTotal },
+        { opd: "Semua OPD", count: totalReports }, // Ganti ke totalReports
         ...opdList
     ];
 
     // Prepare Situasi options with counts
     const situasiOptions = [
-        { situasi: "Semua Situasi", count: situasiTotal },
+        { situasi: "Semua Situasi", count: totalReports }, // Ganti ke totalReports
         ...situasiList
     ];
 

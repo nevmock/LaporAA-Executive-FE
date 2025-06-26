@@ -157,7 +157,7 @@ export default function SummaryPieChart() {
                     data,
                     label: {
                         show: true,
-                        formatter: '{b}',
+                        formatter: '{b}: {d}%',
                         position: 'outside',
                     },
                     labelLine: { show: true },
