@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 import axios from '../../utils/axiosInstance';
-import { SummaryPieChartSkeleton } from './DashboardSkeleton';
 
 // Filter waktu yang tersedia
 const FILTERS = [
@@ -175,9 +174,9 @@ export default function SummaryPieChart() {
         chart.setOption(chartOptions);
 
         // Navigasi ke halaman '/pengaduan' saat klik pie slice
-        chart.on('click', (params: any) => {
+        chart.on('click', (params: { name?: string }) => {
             const status = params?.name;
-            if (!STATUS_ORDER.includes(status)) return;
+            if (!status || !STATUS_ORDER.includes(status)) return;
             sessionStorage.setItem('statusClicked', status);
             window.location.href = '/pengaduan';
         });
@@ -233,7 +232,7 @@ export default function SummaryPieChart() {
 
             {/* Chart container */}
             {loading ? (
-                <SummaryPieChartSkeleton />
+                <div>Loading...</div>
             ) : (
                 <div ref={chartRef} className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]" />
             )}

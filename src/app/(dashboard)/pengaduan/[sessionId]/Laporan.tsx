@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FaWhatsapp, FaCheck, FaExclamationCircle, FaFileAlt, FaCog, FaClipboardCheck, FaCheckCircle, FaTimesCircle, FaRobot } from "react-icons/fa";
@@ -9,17 +9,16 @@ import axios from "../../../../utils/axiosInstance";
 import { TindakanActionProps } from "../../../../components/pengaduan/laporan/tindakan";
 import ActionButtons from "../../../../components/pengaduan/laporan/ActionButtons";
 import { Tooltip } from "../../../../components/Tooltip";
-import { useBotModeWithTab } from "../../../../hooks/useBotMode";
-import { LaporanDetailSkeleton, MessageSkeleton, TindakanSkeleton } from "../../../../components/pengaduan/PengaduanSkeleton";
+// import { useBotModeWithTab } from "../../../../hooks/useBotMode"; // DISABLED for now
 
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
 const MemoTindakan = dynamic(() => import("../../../../components/pengaduan/laporan/tindakan"), { 
-  loading: () => <TindakanSkeleton />, 
+  loading: () => <div>Loading...</div>, 
   ssr: false 
 });
 const MemoMessage = dynamic(() => import("../../../../components/pengaduan/laporan/message"), { 
-  loading: () => <MessageSkeleton />, 
+  loading: () => <div>Loading...</div>, 
   ssr: false 
 });
 
@@ -36,20 +35,33 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"pesan" | "tindakan">("tindakan");
   const [tindakanActionProps, setTindakanActionProps] = useState<TindakanActionProps | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   
   // Force mode state - menggunakan pattern yang sama seperti di tableSection
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
   const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
   
-  // Bot Mode Management with auto-switching and force mode protection
-  const botMode = useBotModeWithTab({
-    userId: data?.from || '',
-    activeTab,
-    messageTabKey: 'pesan',
-    debug: process.env.NODE_ENV === 'development'
-  });
+  // Bot Mode Management - TEMPORARILY DISABLED to prevent timeout loops
+  // const botMode = useBotModeWithTab({
+  //   userId: data?.from || '',
+  //   activeTab,
+  //   messageTabKey: 'pesan',
+  //   debug: false
+  // });
+  
+  // Mock botMode for compatibility
+  const botMode = {
+    mode: 'bot' as const,
+    isReady: true,
+    isChanging: false,
+    error: null,
+    forceMode: false,
+    setForceMode: async (_force: boolean) => {}, // Accept parameter but do nothing
+    isCheckingForceMode: false,
+  };
   
   // Manual mode change handler for Message component
   const handleModeChange = (newMode: "bot" | "manual") => {
@@ -144,7 +156,7 @@ export default function ChatPage() {
     setError(null);
     axios.get(`${API_URL}/reports/${sessionId}`)
       .then(res => setData(res.data))
-      .catch(err => {
+      .catch(() => {
         setData(null);
         setError("Gagal mengambil data laporan.");
       })
@@ -275,7 +287,7 @@ export default function ChatPage() {
   };
 
   if (!sessionId) return null;
-  if (loading) return <LaporanDetailSkeleton />;
+  if (loading) return <div>Loading...</div>;
   if (error) return (
     <div className="flex flex-col items-center justify-center h-full text-red-600">
       <p className="mb-2">{error}</p>

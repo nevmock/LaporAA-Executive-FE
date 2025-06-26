@@ -186,7 +186,7 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     setSelectedStatus,
     limit,
     setLimit,
-    page,
+    page, // eslint-disable-line @typescript-eslint/no-unused-vars
     setPage,
     selectedSituasi,
     setSelectedSituasi,
@@ -252,7 +252,7 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                             <button
                                 className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition ${isPinnedOnly ? 'border-yellow-600 bg-yellow-500 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
                                 onClick={() => setIsPinnedOnly(!isPinnedOnly)}
-                                title="Tampilkan hanya yang di-love"
+                                title="Tampilkan hanya yang di-favoritkan"
                             >
                                 <FaStar />
                             </button>

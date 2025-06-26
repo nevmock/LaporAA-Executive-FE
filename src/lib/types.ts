@@ -129,4 +129,4 @@ export interface Report {
     createdAt?: string;
 }
 
-export type SortKey = "sessionId" | "user" | "pinned" | "admin" | "bot_switch" | "tag" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
+export type SortKey = "sessionId" | "user" | "pinned" | "admin" | "detail" | "tracking_id" | "bot_switch" | "tag" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";

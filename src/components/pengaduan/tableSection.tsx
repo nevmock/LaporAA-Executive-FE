@@ -1,20 +1,21 @@
 "use client";
 
 import React, { useEffect } from "react";
+import Image from "next/image";
 import {
-    FaStar, FaIdCard, FaUser, FaPhone, FaMap,
+    FaStar, FaUser,
     FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
     FaHashtag, FaEye, FaRegStar, FaRobot, FaWhatsapp
 } from "react-icons/fa";
-import { ImSwitch } from "react-icons/im";
-import { IoTrashBin, IoWarning } from "react-icons/io5";
-import { BsPersonFillCheck } from "react-icons/bs";
+import { IoTrashBin, IoWarning, IoSettingsSharp } from "react-icons/io5";
 import { IoIosPin } from "react-icons/io";
+import { PiChatsBold } from "react-icons/pi"; 
 import axios from "../../utils/axiosInstance";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
 import { Chat, SortKey } from "../../lib/types";
+import { usePhotoDownloader } from "./PhotoDownloader";
 
 // Props interface untuk komponen TableSection
 interface Props {
@@ -32,7 +33,7 @@ interface Props {
     forceModeStates: Record<string, boolean>; // Status force mode untuk setiap user
     loadingForceMode: Record<string, boolean>; // Loading state untuk force mode
     setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void; // Pilih lokasi di peta
-    setPhotoModal: (photos: string[]) => void; // Tampilkan modal galeri foto
+    setPhotoModal: (photos: string[], reportInfo?: { sessionId: string; userName: string }) => void; // Tampilkan modal galeri foto
     loading: boolean; // Status loading
     setSorts: (sorts: { key: SortKey; order: "asc" | "desc" }[]) => void; // Setter sorting (tidak dipakai langsung)
     setSearch: (search: string) => void; // Fungsi untuk set search box
@@ -78,6 +79,60 @@ const TableSection: React.FC<Props> = ({
     const [modalTitle, setModalTitle] = React.useState("");
     const [pinnedReports, setPinnedReports] = React.useState<Record<string, boolean>>({});
     const [loadingPin, setLoadingPin] = React.useState<Record<string, boolean>>({});
+    
+    // State untuk menyimpan informasi laporan untuk modal foto
+    const [photoModalInfo, setPhotoModalInfo] = React.useState<{
+        sessionId: string;
+        userName: string;
+    } | null>(null);
+
+    // Fungsi untuk download foto tunggal dengan nama yang benar
+    const downloadSinglePhoto = async (photoUrl: string, sessionId: string, userName: string, photoPath: string) => {
+        try {
+            // Fetch gambar sebagai blob
+            const response = await fetch(photoUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const blob = await response.blob();
+            
+            // Buat URL object untuk blob
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            // Generate nama file sesuai format DDMMYY_Nama_(nomor)_sessionId
+            const fileExtension = photoPath.match(/\.([^.?]+)(\?|$)/)?.[1] || 'jpg';
+            
+            // Buat format tanggal DDMMYY dari hari ini
+            const today = new Date();
+            const day = today.getDate().toString().padStart(2, '0');
+            const month = (today.getMonth() + 1).toString().padStart(2, '0');
+            const year = today.getFullYear().toString().slice(-2); // Ambil 2 digit terakhir
+            const dateString = `${day}${month}${year}`;
+            
+            // Bersihkan nama user dari karakter yang tidak valid untuk nama file
+            const cleanUserName = userName.replace(/[<>:"/\\|?*]/g, '_');
+            
+            const fileName = `${dateString}_${cleanUserName}_(1)_${sessionId}.${fileExtension}`;
+            
+            // Buat elemen anchor untuk download
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            
+            // Cleanup
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Error downloading single photo:', error);
+            // Fallback ke window.open jika download gagal
+            window.open(photoUrl, '_blank');
+        }
+    };
 
     // Fungsi untuk toggle pin/unpin laporan
     const togglePin = async (sessionId: string) => {
@@ -132,7 +187,7 @@ const TableSection: React.FC<Props> = ({
                             [chat.sessionId]: true
                         }));
                     }
-                } catch (error) {
+                } catch {
                     // Jika laporan memang tidak di-pin, API akan memberikan status 404
                     // Jadi tidak perlu menangani error dengan khusus
                     console.log(`Report ${chat.sessionId} is not pinned`);
@@ -162,9 +217,10 @@ const TableSection: React.FC<Props> = ({
                             {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
-                                { key: 'controls', icon: <FaStar />, label: 'Controls' },
+                                { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontol' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
                                 { key: 'admin', icon: <FaEye />, label: 'Detail' },
+                                { key: 'tracking_id', icon: <FaEye />, label: 'Tracking' },
                                 { key: 'date', icon: <FaClock />, label: 'Waktu' },
                                 { key: 'user', icon: <FaUser />, label: 'Nama' },
                                 { key: 'lokasi_kejadian', icon: <IoIosPin />, label: 'Lokasi' },
@@ -409,6 +465,45 @@ const TableSection: React.FC<Props> = ({
                                             </div>
                                         </td>
 
+                                        {/* ID */}
+                                        <td className="px-6 py-1.5">
+                                            {chat?.tindakan?.url ? (
+                                                <button
+                                                    className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-800 hover:text-blue-900 text-sm font-medium rounded-lg border border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap max-w-[140px] cursor-pointer"
+                                                    onClick={() => {
+                                                        if (chat?.tindakan?.url) {
+                                                            window.open(chat.tindakan.url, '_blank', 'noopener,noreferrer');
+                                                        }
+                                                    }}
+                                                    title={`Klik untuk membuka link: ${chat.tindakan.url}`}
+                                                >
+                                                    <Image 
+                                                        src="/Spanlapor-icon.png" 
+                                                        alt="Spanlapor Icon" 
+                                                        width={12} 
+                                                        height={12} 
+                                                        className="w-3 h-3 flex-shrink-0 object-contain" 
+                                                    />
+                                                    <span className="truncate">
+                                                        {chat?.tindakan?.trackingId || '-'}
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <div className="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-500 text-sm font-medium rounded-lg border border-gray-200 whitespace-nowrap max-w-[140px]">
+                                                    <Image 
+                                                        src="/Spanlapor-icon.png" 
+                                                        alt="Spanlapor Icon" 
+                                                        width={12} 
+                                                        height={12} 
+                                                        className="w-3 h-3 flex-shrink-0 object-contain opacity-50" 
+                                                    />
+                                                    <span className="truncate">
+                                                        {chat?.tindakan?.trackingId || '-'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </td>
+
                                         {/* Tanggal laporan dengan timer */}
                                         <td className="px-1 py-1.5">
                                             <div className="flex flex-col items-center justify-center leading-tight">
@@ -438,7 +533,17 @@ const TableSection: React.FC<Props> = ({
                                         </td>
 
                                         {/* Nama Pelapor */}
-                                        <td className="px-6 py-1.5 font-medium">{chat.user || '-'}</td>
+                                        <td className="px-6 py-1.5">
+                                            <button
+                                                className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-800 hover:text-blue-900 text-sm font-medium rounded-lg border border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap max-w-[140px]"
+                                                onClick={() => setSearch(`${chat.from || ''}`)}
+                                                title={`Klik untuk mencari laporan dari: ${chat.user || 'Unknown'}`}
+                                            >
+                                                <span className="truncate">
+                                                    {chat.user || '-'}
+                                                </span>
+                                            </button>
+                                        </td>
 
                                         {/* Lokasi kejadian */}
                                         <td className="px-6 py-1.5">
@@ -540,18 +645,72 @@ const TableSection: React.FC<Props> = ({
                                         {/* Foto */}
                                         <td className="px-2 py-1.5">
                                             <div className="flex justify-center items-center">
-                                                {Array.isArray(chat.photos) && chat.photos.length > 0 ? (
-                                                    <img
-                                                        src={`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`}
-                                                        alt="Foto pengaduan"
-                                                        className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
-                                                        onClick={() =>
-                                                            chat.photos.length > 1
-                                                                ? setPhotoModal(chat.photos)
-                                                                : window.open(`${process.env.NEXT_PUBLIC_BE_BASE_URL}${chat.photos[0]}`, '_blank')
-                                                        }
-                                                    />
-                                                ) : '-'}
+                                                {(() => {
+                                                    // Validasi data foto
+                                                    if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
+                                                        return <span className="text-gray-400 text-xs">No Photo</span>;
+                                                    }
+
+                                                    const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
+                                                    if (!baseUrl) {
+                                                        console.error('NEXT_PUBLIC_BE_BASE_URL tidak ditemukan');
+                                                        return <span className="text-red-500 text-xs">Config Error</span>;
+                                                    }
+
+                                                    const firstPhoto = chat.photos[0];
+                                                    if (!firstPhoto) {
+                                                        return <span className="text-gray-400 text-xs">No Photo</span>;
+                                                    }
+
+                                                    // Buat URL yang benar
+                                                    let photoUrl: string;
+                                                    if (firstPhoto.startsWith('http')) {
+                                                        // Jika sudah URL lengkap
+                                                        photoUrl = firstPhoto;
+                                                    } else {
+                                                        // Jika path relatif, gabung dengan base URL
+                                                        const cleanPath = firstPhoto.startsWith('/') ? firstPhoto : `/${firstPhoto}`;
+                                                        photoUrl = `${baseUrl}${cleanPath}`;
+                                                    }
+
+                                                    console.log('Photo URL:', photoUrl);
+
+                                                    return (
+                                                        <Image
+                                                            src={photoUrl}
+                                                            alt="Foto pengaduan"
+                                                            className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
+                                                            width={40}
+                                                            height={40}
+                                                            onClick={() => {
+                                                                if (chat.photos.length > 1) {
+                                                                    setPhotoModal(chat.photos, {
+                                                                        sessionId: chat.sessionId,
+                                                                        userName: chat.user || 'Unknown'
+                                                                    });
+                                                                } else {
+                                                                    // Untuk foto tunggal, langsung download dengan nama yang benar
+                                                                    downloadSinglePhoto(photoUrl, chat.sessionId, chat.user || 'Unknown', firstPhoto);
+                                                                }
+                                                            }}
+                                                            onError={(e) => {
+                                                                console.error('Error loading image:', photoUrl);
+                                                                console.error('Photo data:', chat.photos);
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                                if (target.parentElement) {
+                                                                    target.parentElement.innerHTML = '<span class="text-xs text-red-500 cursor-pointer" title="Klik untuk debug">❌</span>';
+                                                                    target.parentElement.onclick = () => {
+                                                                        alert(`URL: ${photoUrl}\nBase URL: ${baseUrl}\nPhoto Path: ${firstPhoto}\nFull Photos: ${JSON.stringify(chat.photos)}`);
+                                                                    };
+                                                                }
+                                                            }}
+                                                            onLoad={() => {
+                                                                console.log('✅ Image loaded successfully:', photoUrl);
+                                                            }}
+                                                        />
+                                                    );
+                                                })()}
                                             </div>
                                         </td>
 

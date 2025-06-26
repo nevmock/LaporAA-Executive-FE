@@ -8,7 +8,6 @@ import HeaderSection from "./headerSection";
 import TableSection from "./tableSection";
 import Pagination from "./pagination";
 import PhotoModal from "./PhotoModal";
-import { LaporanListSkeleton } from "./PengaduanSkeleton";
 
 const MapModal = dynamic(() => import("./MapModal"), { ssr: false });
 
@@ -39,6 +38,7 @@ export default function Laporan() {
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lon: number; desa: string } | null>(null);
   const [photoModal, setPhotoModal] = useState<string[] | null>(null);
+  const [photoModalInfo, setPhotoModalInfo] = useState<{ sessionId: string; userName: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
@@ -66,11 +66,25 @@ export default function Laporan() {
   // ----------------------- API FUNCTIONS -----------------------
   const getOpdList = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("OPD List API call timeout after 15 seconds");
+        controller.abort();
+      }, 15000);
+
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/opd-list`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       setOpdList(res.data?.data || []);
       setOpdTotal(res.data?.total || 0);
-    } catch (err) {
-      console.error("❌ Failed to fetch OPD list:", err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error("❌ OPD List fetch aborted due to timeout");
+      } else {
+        console.error("❌ Failed to fetch OPD list:", err);
+      }
       setOpdList([]);
       setOpdTotal(0);
     }
@@ -78,11 +92,25 @@ export default function Laporan() {
 
   const getSituasiList = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/situasi-list`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("Situasi List API call timeout after 15 seconds");
+        controller.abort();
+      }, 15000);
+
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/situasi-list`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       setSituasiList(res.data?.data || []);
       setSituasiTotal(res.data?.total || 0);
-    } catch (err) {
-      console.error("❌ Failed to fetch Situasi list:", err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error("❌ Situasi List fetch aborted due to timeout");
+      } else {
+        console.error("❌ Failed to fetch Situasi list:", err);
+      }
       setSituasiList([]);
       setSituasiTotal(0);
     }
@@ -103,7 +131,20 @@ export default function Laporan() {
         is_pinned: isPinnedOnly || undefined,
         admin_filter: isByMeOnly && namaAdmin ? namaAdmin : undefined,
       };
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { params });
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("Reports API call timeout after 25 seconds");
+        controller.abort();
+      }, 25000);
+      
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports`, { 
+        params,
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      
       const responseData = Array.isArray(res.data?.data) ? res.data.data : [];
       const processedData: Chat[] = responseData.map((item: any) => ({
         ...item,
@@ -112,8 +153,12 @@ export default function Laporan() {
       }));
       setData(processedData);
       setTotalPages(res.data.totalPages || 1);
-    } catch (err) {
-      console.error("❌ Fetch error:", err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error("❌ Reports fetch aborted due to timeout");
+      } else {
+        console.error("❌ Fetch error:", err);
+      }
       setData([]);
     } finally {
       setLoading(false);
@@ -125,13 +170,28 @@ export default function Laporan() {
       const params: any = {};
       if (search && search.trim()) params.search = search.trim();
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("Summary API call timeout after 20 seconds");
+        controller.abort();
+      }, 20000);
+
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BE_BASE_URL}/reports/summary-laporan`,
-        { params }
+        { 
+          params,
+          signal: controller.signal 
+        }
       );
+      
+      clearTimeout(timeoutId);
       setStatusCounts(res.data || {});
-    } catch (err) {
-      console.error("❌ Failed to fetch summary:", err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error("❌ Summary fetch aborted due to timeout");
+      } else {
+        console.error("❌ Failed to fetch summary:", err);
+      }
       setStatusCounts({});
     }
   };
@@ -200,18 +260,29 @@ export default function Laporan() {
   // ----------------------- EFFECTS: FETCH DATA (AFTER HYDRATED) -----------------------
   useEffect(() => {
     if (!hydrated) return;
-    getSummary();
-    getReports();
+    
+    // Staggered API calls to prevent overload
+    const fetchData = async () => {
+      try {
+        // Call APIs with delays between them
+        await getSummary();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await getReports();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await getOpdList();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await getSituasiList();
+      } catch (error) {
+        console.error('Error in staggered data fetch:', error);
+      }
+    };
+    
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, selectedStatus, search, page, limit, sorts, selectedSituasi, selectedOpd, isPinnedOnly, isByMeOnly]);
-
-  // Fetch OPD list only once after hydration (tidak perlu re-fetch setiap filter berubah)
-  useEffect(() => {
-    if (!hydrated) return;
-    getOpdList();
-    getSituasiList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
 
   // Load force mode states setelah data diambil
   useEffect(() => {
@@ -356,6 +427,12 @@ export default function Laporan() {
     }
   };
 
+  // Wrapper function untuk setPhotoModal dengan info tambahan
+  const handleSetPhotoModal = (photos: string[], reportInfo?: { sessionId: string; userName: string }) => {
+    setPhotoModal(photos);
+    setPhotoModalInfo(reportInfo || null);
+  };
+
   // Toggle force mode untuk bot WhatsApp - GUNAKAN botModeService
   const toggleForceMode = async (from: string, currentForceMode: boolean) => {
     if (loadingForceMode[from]) return; // Hindari multiple calls
@@ -491,7 +568,7 @@ export default function Laporan() {
       <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 h-full overflow-y-auto">
           {loading ? (
-            <LaporanListSkeleton />
+            <div>Loading...</div>
           ) : (
             <TableSection
               filteredData={filteredData}
@@ -508,7 +585,7 @@ export default function Laporan() {
               forceModeStates={forceModeStates}
               loadingForceMode={loadingForceMode}
               setSelectedLoc={setSelectedLoc}
-              setPhotoModal={setPhotoModal}
+              setPhotoModal={handleSetPhotoModal}
               loading={loading}
               setSorts={setSorts}
               setSearch={setSearch}
@@ -522,7 +599,16 @@ export default function Laporan() {
       </div>
       {/* Modal */}
       {selectedLoc && <MapModal selectedLoc={selectedLoc} onClose={() => setSelectedLoc(null)} />}
-      {photoModal && <PhotoModal photoModal={photoModal} onClose={() => setPhotoModal(null)} />}
+      {photoModal && (
+        <PhotoModal 
+          photoModal={photoModal} 
+          onClose={() => {
+            setPhotoModal(null);
+            setPhotoModalInfo(null);
+          }} 
+          reportInfo={photoModalInfo || undefined}
+        />
+      )}
     </div>
   );
 }

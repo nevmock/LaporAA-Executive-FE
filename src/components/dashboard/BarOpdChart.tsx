@@ -130,7 +130,11 @@ export default function HorizontalBarPerangkatDaerahChart() {
             toolbar: { show: false },
             events: {
                 // Saat OPD di-klik, redirect ke halaman pengaduan dan simpan ke sessionStorage
-                dataPointSelection: (_e: any, _ctx: any, config: any) => {
+                dataPointSelection: (
+                    _e: unknown, 
+                    _ctx: unknown, 
+                    config: { dataPointIndex: number }
+                ) => {
                     const clickedOPD = data.categories[config.dataPointIndex];
                     if (clickedOPD) {
                         // Gunakan key unik untuk dashboard agar tidak konflik dengan halaman pengaduan
@@ -158,7 +162,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
         tooltip: {
             enabled: true,
             y: {
-                formatter: (val: number, opts: any) =>
+                formatter: (val: number, opts: { dataPointIndex: number }) =>
                     `${data.fullLabels[opts.dataPointIndex] || ''}: ${val}`
             }
         },

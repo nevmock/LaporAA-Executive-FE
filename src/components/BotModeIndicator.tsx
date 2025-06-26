@@ -86,7 +86,14 @@ export interface BotModeDebugPanelProps {
   isReady: boolean;
   isChanging: boolean;
   error: string | null;
-  cacheStats: any;
+  cacheStats: {
+    size: number;
+    entries?: Array<{
+      from: string;
+      mode: string;
+      age: number;
+    }>;
+  } | null;
   onRefresh: () => void;
   onClearCache: () => void;
   onChangeMode: (mode: BotMode) => void;
@@ -149,7 +156,7 @@ export function BotModeDebugPanel({
               <span>Cache entries:</span>
               <span>{cacheStats.size}</span>
             </div>
-            {cacheStats.entries?.map((entry: any, idx: number) => (
+            {cacheStats.entries?.map((entry, idx: number) => (
               <div key={idx} className="text-xs text-gray-600">
                 {entry.from}: {entry.mode} ({Math.round(entry.age/1000)}s)
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { FiLogOut, FiUser, FiHome, FiInbox } from "react-icons/fi";
+import { FiLogOut, FiHome, FiInbox, FiUsers } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -115,7 +115,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
 
                     {/* Dropdown Menu */}
                     {isDropdownOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden">
+                        <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden">
                             {/* User Info in Dropdown */}
                             <div className="p-4 border-b border-gray-100">
                                 <div className="flex items-center gap-3">
@@ -136,9 +136,21 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
 
                             {/* Menu Items */}
                             <div className="p-2">
+                                {/* User Management - SuperAdmin only */}
+                                {role === 'SuperAdmin' && (
+                                    <Link
+                                        href="/user-management"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md flex items-center gap-3 transition-all duration-200 mb-1"
+                                    >
+                                        <FiUsers size={16} className="text-blue-500" />
+                                        <span>User Management</span>
+                                    </Link>
+                                )}
+                                
                                 <button
                                     onClick={handleLogoutClick}
-                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md flex justify-center items-center gap-3 transition-all duration-200"
+                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md flex items-center gap-3 transition-all duration-200"
                                 >
                                     <FiLogOut size={16} className="text-red-500" />
                                     <span>Sign out</span>

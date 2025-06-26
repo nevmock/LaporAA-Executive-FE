@@ -1,12 +1,10 @@
 "use client";
 
 import Sidebar from "../components/sidebar";
-import SidebarHorizontal from "../components/sidebarHorizontal";
 import TopNavbar from "../components/TopNavbar";
 import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
-import { AppShellSkeleton } from "../components/LayoutSkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
@@ -60,7 +58,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 640);
+            setIsMobile(window.innerWidth < 1080);
         };
 
         handleResize();
@@ -74,7 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
 
     if (isLoading) {
-        return <AppShellSkeleton />;
+        return <div>Loading...</div>;
     }
 
     return (

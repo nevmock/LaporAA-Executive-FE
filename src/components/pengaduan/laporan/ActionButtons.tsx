@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { IoMdCloseCircle } from "react-icons/io";
-import { GrLinkNext, GrLinkPrevious } from "react-icons/gr";
+import { GrLinkNext } from "react-icons/gr";
 import { FaCheckDouble } from "react-icons/fa";
 import { RiArrowGoBackLine } from "react-icons/ri";
 import axios from "../../../utils/axiosInstance";
@@ -37,6 +37,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     isButtonDisabled,
     tooltipMessage,
     isLoading,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isSaving,
     showRejectModal,
     showSelesaiModal,
@@ -48,11 +49,16 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     setSelesaiReason,
     handlePreviousStep,
     handleNextStep,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     saveData,
     formData,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     API_URL,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     router,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setIsSaving,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     confirmedVerifikasi2,
 }) => {
     const [isHovered, setIsHovered] = useState(false);
@@ -137,7 +143,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             } else {
                 throw new Error(`Failed to update status: ${response.status}`);
             }
-        } catch (error) {
+        } catch {
             alert("Gagal menolak pengaduan. Silakan coba lagi.");
         } finally {
             setIsRejecting(false);
@@ -172,7 +178,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             } else {
                 throw new Error(`Failed to update status: ${response.status}`);
             }
-        } catch (error) {
+        } catch {
             alert("Gagal menyelesaikan pengaduan. Silakan coba lagi.");
         } finally {
             setIsCompleting(false);

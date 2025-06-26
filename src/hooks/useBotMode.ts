@@ -296,20 +296,28 @@ export function useBotModeWithTab({
     const checkForceMode = async () => {
       setIsCheckingForceMode(true);
       try {
-        const isForceActive = await botMode.getForceMode();
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise<boolean>((_, reject) => {
+          setTimeout(() => reject(new Error('Force mode check timeout')), 8000);
+        });
+        
+        const forcePromise = botMode.getForceMode();
+        const isForceActive = await Promise.race([forcePromise, timeoutPromise]);
+        
         setForceModeState(isForceActive);
         console.log(`Initial force mode check for ${userId}:`, isForceActive);
       } catch (error) {
-        console.error('Failed to check force mode:', error);
-        setForceModeState(false);
+        console.warn('Failed to check force mode, using default:', error);
+        setForceModeState(false); // Default to false on error
       } finally {
         setIsCheckingForceMode(false);
       }
     };
 
-    // Only check once when ready and not already checking
-    checkForceMode();
-  }, [userId, botMode.isReady]); // ONLY depend on userId and botMode.isReady
+    // Add delay to prevent immediate execution on mount
+    const timeoutId = setTimeout(checkForceMode, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [userId, botMode.isReady]); // Removed isCheckingForceMode from deps
 
   // Handle tab changes with force mode logic - OPTIMIZED
   useEffect(() => {

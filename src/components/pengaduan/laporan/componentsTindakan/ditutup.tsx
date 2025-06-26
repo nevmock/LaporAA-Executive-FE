@@ -4,6 +4,7 @@ import { TindakanData } from "../../../../lib/types";
 
 export default function Ditutup({
     data,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     saveData
 }: {
     data: Partial<TindakanData> & { sessionId: string };

@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import Image from "next/image";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import axios from "../../../utils/axiosInstance";
 import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../lib/types";
 import Profile from "./profile";
@@ -61,7 +61,7 @@ const TindakanComponent = function Tindakan({
     processed_by: rawProcessedBy,
     actionProps,
     reportData,
-    role,
+    role, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
     tindakan: TindakanClientState | null;
     sessionId: string;
@@ -77,7 +77,10 @@ const TindakanComponent = function Tindakan({
         formData, setFormData,
         currentStepIndex, setCurrentStepIndex,
         notif, setNotif,
-        saveSuccessModalVisible, setSaveSuccessModalVisible,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        saveSuccessModalVisible,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        setSaveSuccessModalVisible,
         showModal, setShowModal,
         activePhotoIndex, setActivePhotoIndex,
         showConfirmModal, setShowConfirmModal,
@@ -104,7 +107,9 @@ const TindakanComponent = function Tindakan({
     const currentStepRef = useRef<HTMLDivElement>(null);
     
     // State untuk auto-scroll control
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [userHasScrolled, setUserHasScrolled] = useState(false);
     
     // Detect manual scroll untuk disable auto-scroll
@@ -192,11 +197,6 @@ const TindakanComponent = function Tindakan({
                     : currentStepIndex === 3 && formData.status_laporan !== "Telah Diproses OPD Terkait"
                         ? "Pastikan Status laporan SP4N Lapor sudah 'Selesai'"
                         : "";
-
-    // Guard: only render if sessionId and (tindakan or reportData) exist
-    if (!sessionId || (!tindakan && !reportData)) {
-        return <div className="flex items-center justify-center h-full text-gray-500">Data tidak tersedia.</div>;
-    }
 
     // Create a stable subset of formData that contains only what's needed by actionProps
     const formDataForAction = useMemo(() => ({
@@ -293,7 +293,7 @@ const TindakanComponent = function Tindakan({
             const timeoutId = setTimeout(() => {
                 try {
                     actionProps(actionPropsParams as TindakanActionProps);
-                } catch (error) {
+                } catch {
                     // Continue normal operation despite error - don't block UI
                 }
             }, 200); // Delay to ensure stable render cycle
@@ -301,7 +301,7 @@ const TindakanComponent = function Tindakan({
             return () => {
                 clearTimeout(timeoutId);
             };
-        } catch (err) {
+        } catch {
             // Fall back gracefully without blocking the UI
         }
     }, [
@@ -314,6 +314,11 @@ const TindakanComponent = function Tindakan({
         actionPropsParams?.formData?.trackingId,
         actionPropsParams?.formData?.status_laporan
     ]);
+
+    // Guard: only render if sessionId and (tindakan or reportData) exist
+    if (!sessionId || (!tindakan && !reportData)) {
+        return <div className="flex items-center justify-center h-full text-gray-500">Data tidak tersedia.</div>;
+    }
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 text-sm text-gray-800">
@@ -614,10 +619,12 @@ const TindakanComponent = function Tindakan({
                         </div>
                         <div className="bg-gray-50">
                             <Zoom>
-                                <img
+                                <Image
                                     src={`${API_URL}${formData.photos[activePhotoIndex]}`}
                                     className="w-full h-64 sm:h-96 object-contain cursor-zoom-in"
                                     alt={`Foto ${activePhotoIndex + 1}`}
+                                    width={800}
+                                    height={384}
                                 />
                             </Zoom>
                         </div>
