@@ -197,11 +197,6 @@ export default function Laporan() {
     // Staggered API calls to prevent overload
     const fetchData = async () => {
       try {
-        // Call dashboard summary API to get all dropdown data
-        // await getDashboardSummary();
-        // await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Call reports API for table data
         await getReports();
       } catch (error) {
         console.error('Error in staggered data fetch:', error);
