@@ -1,0 +1,14 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/dashboard/SummaryPieChart.tsx, src/components/pengaduan/HeaderDesktop.tsx, src/components/pengaduan/HeaderMobile.tsx
+📅 2025-06-27_0142
+
+📂 Perubahan file:
+src/components/dashboard/SummaryPieChart.tsx
+src/components/pengaduan/HeaderDesktop.tsx
+src/components/pengaduan/HeaderMobile.tsx
+src/components/pengaduan/headerSection.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/tableSection.tsx
+
+🚀 Meluncur

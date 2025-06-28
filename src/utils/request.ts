@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 const request = axios.create({
 	baseURL: `${process.env.NEXT_PUBLIC_BE_BASE_URL}/api`,
-	timeout: 60000 * 5, // 5 menit
+	timeout: 30000, // 30 seconds timeout
 	headers: {
 		'Content-Type': 'application/json',
 		'Access-Control-Allow-Origin': '*',

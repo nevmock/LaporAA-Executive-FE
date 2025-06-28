@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
@@ -30,6 +30,7 @@ interface HeaderDesktopProps {
     setIsPinnedOnly: (val: boolean) => void;
     isByMeOnly: boolean;
     setIsByMeOnly: (val: boolean) => void;
+    totalReports: number; // Tambahan
 }
 
 const statusColors: Record<string, string> = {
@@ -42,17 +43,6 @@ const statusColors: Record<string, string> = {
     "Ditutup": "black",
 };
 
-const statusTabs = [
-    "Semua Status",
-    "Perlu Verifikasi",
-    "Verifikasi Situasi",
-    "Verifikasi Kelengkapan Berkas",
-    "Proses OPD Terkait",
-    "Selesai Penanganan",
-    "Selesai Pengaduan",
-    "Ditutup",
-];
-
 const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     search,
     setSearch,
@@ -61,7 +51,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     setSelectedStatus,
     limit,
     setLimit,
-    page,
+    page, // eslint-disable-line @typescript-eslint/no-unused-vars
     setPage,
     selectedSituasi,
     setSelectedSituasi,
@@ -75,6 +65,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     setIsPinnedOnly,
     isByMeOnly,
     setIsByMeOnly,
+    totalReports, // Tambahan
 }) => {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [isHydrated, setIsHydrated] = useState(false);
@@ -86,15 +77,22 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
 
     // Prepare OPD options with counts
     const opdOptions = [
-        { opd: "Semua OPD", count: opdTotal },
+        { opd: "Semua OPD", count: totalReports }, // Ganti ke totalReports
         ...opdList
     ];
 
     // Prepare Situasi options with counts
     const situasiOptions = [
-        { situasi: "Semua Situasi", count: situasiTotal },
+        { situasi: "Semua Situasi", count: totalReports }, // Ganti ke totalReports
         ...situasiList
     ];
+
+    // Dinamis: statusTabs diambil dari statusCounts
+    const statusTabs = useMemo(() => {
+        const base = ["Semua Status"];
+        const dynamic = Object.keys(statusCounts).filter(s => s && s !== "Tanpa Status");
+        return base.concat(dynamic);
+    }, [statusCounts]);
 
     return (
         <>
@@ -125,11 +123,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             {/* Status Filter */}
                             <div className="min-w-[300px] max-w-[350px] relative z-[10]">
                                 {!isHydrated ? (
-                                    <FilterSkeleton 
-                                        selected={selectedStatus}
-                                        counts={statusCounts}
-                                        colorMap={statusColors}
-                                    />
+                                    <div>Loading...</div>
                                 ) : (
                                     <ListBoxFilter
                                         options={statusTabs}
@@ -148,13 +142,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             {/* Situasi Filter */}
                             <div className="min-w-[200px] max-w-[250px] relative z-[9]">
                                 {!isHydrated ? (
-                                    <FilterSkeleton 
-                                        selected={selectedSituasi}
-                                        counts={situasiOptions.reduce((acc, item) => {
-                                            acc[item.situasi] = item.count;
-                                            return acc;
-                                        }, {} as Record<string, number>)}
-                                    />
+                                    <div>Loading...</div>
                                 ) : (
                                     <ListBoxFilter
                                         options={situasiOptions.map(item => item.situasi)}
@@ -176,13 +164,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             {/* OPD Filter */}
                             <div className="min-w-[250px] max-w-[400px] relative z-[8]">
                                 {!isHydrated ? (
-                                    <FilterSkeleton 
-                                        selected={selectedOpd}
-                                        counts={opdOptions.reduce((acc, item) => {
-                                            acc[item.opd] = item.count;
-                                            return acc;
-                                        }, {} as Record<string, number>)}
-                                    />
+                                    <div>Loading...</div>
                                 ) : (
                                     <ListBoxFilter
                                         options={opdOptions.map(item => item.opd)}
@@ -204,9 +186,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             {/* Items per Page Filter */}
                             <div className="min-w-[80px] max-w-[80px] relative z-[7]">
                                 {!isHydrated ? (
-                                    <FilterSkeleton 
-                                        selected={`${limit}`}
-                                    />
+                                    <div>Loading...</div>
                                 ) : (
                                     <ListBoxFilter
                                         options={[100, 200, 300, 500].map(num => `${num}`)}
@@ -242,7 +222,7 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
                             <button
                                 className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition flex-shrink-0 ${isPinnedOnly ? 'border-yellow-600 bg-yellow-500 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
                                 onClick={() => setIsPinnedOnly(!isPinnedOnly)}
-                                title="Tampilkan hanya yang di-love"
+                                title="Tampilkan hanya yang di-favoritkan"
                             >
                                 <FaStar className="w-4 h-4" />
                             </button>
@@ -275,49 +255,6 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
         </>
     );
 };
-
-// Skeleton component that matches the exact appearance of ListBoxFilter
-function FilterSkeleton({
-    selected,
-    counts,
-    colorMap,
-}: {
-    selected: string;
-    counts?: Record<string, number>;
-    colorMap?: Record<string, string>;
-}) {
-    // Determine which "Semua" option to check based on selected value
-    const isAllOption = selected.startsWith("Semua");
-    
-    return (
-        <div className="relative w-full">
-            <button
-                className="w-full border rounded-full h-10 text-sm bg-white text-left shadow-sm flex items-center justify-between text-gray-700 px-4 cursor-default"
-                disabled
-            >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {colorMap && !isAllOption && (
-                        <span 
-                            className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" 
-                            style={{ backgroundColor: colorMap[selected] }} 
-                        />
-                    )}
-                    <span className="truncate">
-                        {selected}
-                        {counts && (
-                            <span className="ml-1 font-semibold text-blue-600 text-xs">
-                                ({isAllOption
-                                    ? Object.values(counts).reduce((a, b) => a + b, 0)
-                                    : counts[selected] || 0})
-                            </span>
-                        )}
-                    </span>
-                </div>
-                <span className="text-gray-400 text-xs ml-2 flex-shrink-0">▼</span>
-            </button>
-        </div>
-    );
-}
 
 // Helper Listbox for desktop filters
 function ListBoxFilter({

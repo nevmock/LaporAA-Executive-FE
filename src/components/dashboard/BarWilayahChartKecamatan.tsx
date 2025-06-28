@@ -82,11 +82,12 @@ export default function HorizontalBarWilayahChart() {
                 const kecValueMap: Record<string, number> = {};
 
                 // Loop semua kecamatan dan akumulasi nilai laporan
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 Object.entries(source).forEach(([_, kecs]) => {
-                    Object.entries(kecs as any).forEach(([kec, desas]) => {
+                    Object.entries(kecs as Record<string, unknown>).forEach(([kec, desas]) => {
                         kecSet.add(kec);
                         let total = 0;
-                        Object.values(desas as any).forEach((val) => {
+                        Object.values(desas as Record<string, unknown>).forEach((val) => {
                             total += Number(val);
                         });
                         kecValueMap[kec] = (kecValueMap[kec] || 0) + total;
@@ -96,10 +97,11 @@ export default function HorizontalBarWilayahChart() {
                 // Jika ada kecamatan terpilih, tampilkan per desa
                 if (selectedKecamatan) {
                     const desaMap: Record<string, number> = {};
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     Object.entries(source).forEach(([_, kecs]) => {
-                        const desas = (kecs as any)[selectedKecamatan];
+                        const desas = (kecs as Record<string, unknown>)[selectedKecamatan];
                         if (desas) {
-                            Object.entries(desas).forEach(([desa, val]) => {
+                            Object.entries(desas as Record<string, unknown>).forEach(([desa, val]) => {
                                 desaMap[desa] = (desaMap[desa] || 0) + Number(val);
                             });
                         }
@@ -110,6 +112,7 @@ export default function HorizontalBarWilayahChart() {
                     setData({
                         allKecamatan: Array.from(kecSet).sort(),
                         categories: desaEntries.map(([desa]) => desa),
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         totals: desaEntries.map(([_, val]) => val),
                     });
                 } else {
@@ -119,6 +122,7 @@ export default function HorizontalBarWilayahChart() {
                     setData({
                         allKecamatan: Array.from(kecSet).sort(),
                         categories: entries.map(([kec]) => kec),
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         totals: entries.map(([_, val]) => val),
                     });
                 }
@@ -159,7 +163,11 @@ export default function HorizontalBarWilayahChart() {
             toolbar: { show: false },
             events: {
                 // Saat klik bar, simpan ke sessionStorage dan redirect ke halaman pengaduan
-                dataPointSelection: (_e: any, _ctx: any, config: any) => {
+                dataPointSelection: (
+                    _e: unknown, 
+                    _ctx: unknown, 
+                    config: { dataPointIndex: number }
+                ) => {
                     const clicked = data.categories[config.dataPointIndex];
                     if (!clicked) return;
 
@@ -191,7 +199,7 @@ export default function HorizontalBarWilayahChart() {
         tooltip: {
             enabled: true,
             y: {
-                formatter: (val: number, opts: any) => `${data.categories[opts.dataPointIndex]}: ${val}`
+                formatter: (val: number, opts: { dataPointIndex: number }) => `${data.categories[opts.dataPointIndex]}: ${val}`
             }
         },
         responsive: [{ breakpoint: 480, options: { chart: { height: chartHeight } } }],

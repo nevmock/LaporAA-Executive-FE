@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import axios from "../../../utils/axiosInstance";
 import { io, Socket } from "socket.io-client";
-import { FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL || "http://localhost:3001";
 
@@ -28,11 +29,13 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isScrolledUp, setIsScrolledUp] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [modeChanging, setModeChanging] = useState(false);
     const [socket, setSocket] = useState<Socket | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isConnected, setIsConnected] = useState(false);
     const limit = 20;
 
@@ -40,6 +43,7 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Manual mode toggle function
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const toggleMode = async () => {
         if (modeChanging || !onModeChange) return;
         
@@ -251,6 +255,7 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         })}, ${time}`;
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleManualReconnect = () => {
         if (socket) {
             console.log("Manual reconnect triggered");
@@ -305,10 +310,12 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                             <div className={`max-w-xs md:max-w-sm p-3 rounded-lg ${msg.senderName === "Bot" ? "bg-[#128C7E] text-white" : "bg-white text-gray-800"}`}>
                                 {msg.type === "image" && msg.mediaUrl ? (
                                     <>
-                                        {!imageLoaded && <div className="skeleton-loader w-full h-48 bg-gray-200 rounded-md mb-2"></div>} {/* Skeleton Loader */}
-                                        <img
+                                        {!imageLoaded && <div className="w-full h-48 bg-gray-200 rounded-md mb-2"></div>}
+                                        <Image
                                             src={`${API_URL}${msg.mediaUrl}`}
                                             alt="Gambar"
+                                            width={300}
+                                            height={200}
                                             className={`rounded mb-2 max-w-full ${imageLoaded ? "" : "opacity-0"}`}
                                             onLoad={handleImageLoad}
                                             onError={(e) => {

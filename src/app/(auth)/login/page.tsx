@@ -3,6 +3,7 @@
 import "../../globals.css";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import axios from '../../../utils/axiosInstance';
 import { Eye } from "lucide-react"; // Gunakan satu icon saja (tidak toggle)
 
@@ -28,8 +29,11 @@ export default function LoginPage() {
             localStorage.setItem('nama_admin', res.data.nama_admin);
 
             router.push('/dashboard');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Login gagal');
+        } catch (err: unknown) {
+            const errorMessage = err && typeof err === 'object' && 'response' in err
+                ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Login gagal'
+                : 'Login gagal';
+            setError(errorMessage);
         }
     };
 
@@ -39,9 +43,11 @@ export default function LoginPage() {
                 {/* Logo Section - Positioned outside and overlapping the container */}
                 <div className="flex justify-center items-center mb-4 relative z-10">
                     <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border-4 border-white">
-                        <img 
+                        <Image 
                             src="/LAPOR AA BUPATI.png" 
                             alt="LAPOR AA BUPATI" 
+                            width={144}
+                            height={144}
                             className="w-full h-full object-contain"
                         />
                     </div>

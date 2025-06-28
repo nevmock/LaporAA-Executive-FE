@@ -70,10 +70,10 @@ export default function HorizontalBarWilayahChart() {
                 const kecDesaMap: Record<string, Set<string>> = {};
 
                 Object.entries(data).forEach(([kab, kecs]) => {
-                    Object.entries(kecs as any).forEach(([kec, desas]) => {
+                    Object.entries(kecs as Record<string, unknown>).forEach(([kec, desas]) => {
                         kecSet.add(kec);
                         if (!kecDesaMap[kec]) kecDesaMap[kec] = new Set();
-                        Object.entries(desas as any).forEach(([desa, count]) => {
+                        Object.entries(desas as Record<string, unknown>).forEach(([desa, count]) => {
                             desaSet.add(desa);
                             kecDesaMap[kec].add(desa);
                             flat.push({
@@ -186,7 +186,7 @@ export default function HorizontalBarWilayahChart() {
         tooltip: {
             enabled: true,
             y: {
-                formatter: function (val: number, opts: any) {
+                formatter: function (val: number, opts: { dataPointIndex: number }) {
                     const idx = opts.dataPointIndex;
                     return `${fullLabels[idx] || ''}: ${val}`;
                 }

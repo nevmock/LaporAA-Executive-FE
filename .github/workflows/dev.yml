@@ -1,0 +1,59 @@
+name: 🚀 CI/CD Development
+
+on:
+  push:
+    branches:
+      - DEV
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: Development
+
+    steps:
+      - name: 📦 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📥 Install Dependencies
+        run: npm install
+
+      - name: 🔐 Docker Login
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: 🛠 Build Docker Image
+        run: docker build --build-arg NEXT_PUBLIC_BE_BASE_URL=${{ secrets.NEXT_PUBLIC_BE_BASE_URL }} -t nevmock/laporaa-fe-dev:latest .
+
+      - name: 📤 Push Docker Image
+        run: docker push nevmock/laporaa-fe-dev:latest
+
+      - name: 🚢 Deploy to VPS Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🔁 Pulling latest Docker image..."
+            docker pull nevmock/laporaa-fe-dev:latest
+
+            echo "🛑 Stopping and removing old container (if exists)..."
+            docker stop laporaa-fe-dev || true
+            docker rm laporaa-fe-dev || true
+
+            echo "🚀 Running new container..."
+            docker run -d \
+              --name laporaa-fe-dev \
+              --restart unless-stopped \
+              --network laporaa-dev-network \
+              -p "${{ secrets.PORT }}":3000 \
+              nevmock/laporaa-fe-dev:latest
+
+            echo "🧹 Cleaning up unused Docker resources..."
+            docker system prune -f
+
+            echo "✅ Deployment to Development environment completed successfully!"

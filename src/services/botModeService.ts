@@ -21,8 +21,16 @@ export class BotModeService {
     private config: BotModeServiceConfig;
     private modeCache = new Map<string, { mode: BotMode; timestamp: number }>();
     private forceModeCache = new Map<string, { force: boolean; timestamp: number }>();
-    private readonly CACHE_TTL = 10000; // Increased to 10 seconds to reduce API calls
+    private readonly CACHE_TTL = 30000; // Increased to 30 seconds to reduce API calls
     private pendingRequests = new Map<string, Promise<any>>(); // Debounce pending requests
+    private requestTimeouts = new Map<string, NodeJS.Timeout>(); // Track request timeouts
+    private readonly REQUEST_TIMEOUT = 10000; // 10 second timeout for all requests
+    
+    // Circuit breaker pattern
+    private failureCount = new Map<string, number>();
+    private lastFailureTime = new Map<string, number>();
+    private readonly MAX_FAILURES = 3;
+    private readonly FAILURE_TIMEOUT = 60000; // 1 minute circuit breaker timeout
 
     constructor(config: BotModeServiceConfig) {
         this.config = config;
@@ -74,21 +82,71 @@ export class BotModeService {
     async getCurrentMode(from: string): Promise<BotMode> {
         if (!from) throw new Error('User ID (from) is required');
 
-        // Check cache first
+        // Check cache first - more aggressive caching
         const cachedMode = this.getCachedMode(from);
         if (cachedMode) return cachedMode;
 
+        // Debounce requests
+        const requestKey = `mode-${from}`;
+        if (this.pendingRequests.has(requestKey)) {
+            this.log(`Reusing pending mode request for ${from}`);
+            return this.pendingRequests.get(requestKey);
+        }
+
+        // Create request with timeout
+        const requestPromise = this.executeGetCurrentMode(from);
+        this.pendingRequests.set(requestKey, requestPromise);
+
+        try {
+            const mode = await requestPromise;
+            return mode;
+        } finally {
+            this.pendingRequests.delete(requestKey);
+        }
+    }
+
+    private async executeGetCurrentMode(from: string): Promise<BotMode> {
+        const endpoint = `mode-${from}`;
+        
+        // Check circuit breaker
+        if (this.isCircuitBreakerOpen(endpoint)) {
+            const cached = this.modeCache.get(from);
+            return cached?.mode || 'bot';
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            this.log(`Get mode request timeout for ${from}`);
+            controller.abort();
+        }, this.REQUEST_TIMEOUT);
+
         try {
             this.log(`Fetching current mode for ${from}`);
-            const response = await axios.get(`${this.config.apiBaseUrl}/mode/${from}`);
+            const response = await axios.get(`${this.config.apiBaseUrl}/mode/${from}`, {
+                signal: controller.signal,
+                timeout: this.REQUEST_TIMEOUT
+            });
+            
+            clearTimeout(timeoutId);
             const mode: BotMode = response.data?.mode || 'bot';
 
             this.setCachedMode(from, mode);
+            this.recordSuccess(endpoint); // Record success
             this.log(`Current mode for ${from}:`, mode);
             return mode;
         } catch (error: any) {
-            this.logError(`Failed to get current mode for ${from}`, error);
-            throw new Error(`Failed to get current mode: ${error.message}`);
+            clearTimeout(timeoutId);
+            this.recordFailure(endpoint); // Record failure
+            
+            if (error.name === 'AbortError') {
+                this.log(`Get mode request aborted for ${from}`);
+            } else {
+                this.logError(`Failed to get current mode for ${from}`, error);
+            }
+            
+            // Return cached mode or default
+            const cached = this.modeCache.get(from);
+            return cached?.mode || 'bot';
         }
     }
 
@@ -98,42 +156,55 @@ export class BotModeService {
     async changeMode(from: string, targetMode: BotMode): Promise<BotMode> {
         if (!from) throw new Error('User ID (from) is required');
 
-        // Check if force mode is active first
+        // More aggressive caching - don't change if already set
+        const currentMode = this.getCachedMode(from);
+        if (currentMode === targetMode) {
+            this.log(`Mode already set to ${targetMode} for ${from} (cached)`);
+            return currentMode;
+        }
+
+        // Debounce mode change requests
+        const requestKey = `change-${from}-${targetMode}`;
+        if (this.pendingRequests.has(requestKey)) {
+            this.log(`Reusing pending change mode request for ${from} to ${targetMode}`);
+            return this.pendingRequests.get(requestKey);
+        }
+
+        const requestPromise = this.executeChangeMode(from, targetMode);
+        this.pendingRequests.set(requestKey, requestPromise);
+
         try {
-            const isForceActive = await this.getForceMode(from);
-            if (isForceActive) {
-                this.log(`Force mode active for ${from}, cannot change mode to ${targetMode}`);
-                // Return current mode without changing
-                return await this.getCurrentMode(from);
-            }
-        } catch (error) {
-            this.log(`Could not check force mode for ${from}, proceeding with mode change`);
+            const mode = await requestPromise;
+            return mode;
+        } finally {
+            this.pendingRequests.delete(requestKey);
         }
+    }
 
-        // Cancel previous request if still running
-        if (this.currentRequest) {
-            this.currentRequest.abort();
-            this.log('Cancelled previous mode change request');
-        }
+    private async executeChangeMode(from: string, targetMode: BotMode): Promise<BotMode> {
+        // Skip force mode check to avoid recursive calls
+        // Let the UI handle force mode logic
 
-        this.currentRequest = new AbortController();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            this.log(`Change mode request timeout for ${from}`);
+            controller.abort();
+        }, this.REQUEST_TIMEOUT);
 
         try {
             this.log(`Changing mode for ${from} to ${targetMode}`);
-
-            // Check current mode first
-            const currentMode = await this.getCurrentMode(from);
-            if (currentMode === targetMode) {
-                this.log(`Mode already set to ${targetMode} for ${from}`);
-                return currentMode;
-            }
 
             // Make the mode change request using new API
             await axios.put(
                 `${this.config.apiBaseUrl}/mode/${from}`,
                 { mode: targetMode },
-                { signal: this.currentRequest.signal }
+                { 
+                    signal: controller.signal,
+                    timeout: this.REQUEST_TIMEOUT
+                }
             );
+
+            clearTimeout(timeoutId);
 
             // Update cache
             this.setCachedMode(from, targetMode);
@@ -141,22 +212,26 @@ export class BotModeService {
 
             return targetMode;
         } catch (error: any) {
+            clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
                 this.log('Mode change request was cancelled');
-                throw new Error('Request cancelled');
+                // Return current cached mode
+                const cached = this.getCachedMode(from);
+                return cached || 'bot';
             }
 
             this.logError(`Failed to change mode for ${from} to ${targetMode}`, error);
-            throw new Error(`Failed to change mode: ${error.message}`);
-        } finally {
-            this.currentRequest = null;
+            // Return current cached mode instead of throwing
+            const cached = this.getCachedMode(from);
+            return cached || 'bot';
         }
     }
 
     /**
      * Ensure mode is set correctly with retry logic
      */
-    async ensureMode(from: string, targetMode: BotMode, maxRetries = 2): Promise<BotMode> {
+    async ensureMode(from: string, targetMode: BotMode, maxRetries = 1): Promise<BotMode> {
+        // Reduced retry attempts to prevent loops
         let lastError: Error | null = null;
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -165,6 +240,8 @@ export class BotModeService {
                     this.log(`Retry attempt ${attempt} for ${from} -> ${targetMode}`);
                     // Clear cache on retry
                     this.modeCache.delete(from);
+                    // Add longer delay between retries
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
 
                 return await this.changeMode(from, targetMode);
@@ -172,14 +249,23 @@ export class BotModeService {
                 lastError = error as Error;
 
                 if (attempt < maxRetries) {
-                    const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                    const delay = Math.pow(2, attempt) * 2000; // Increased delay
                     this.log(`Waiting ${delay}ms before retry...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    // On final failure, return cached mode
+                    const cached = this.getCachedMode(from);
+                    if (cached) {
+                        this.log(`Returning cached mode ${cached} after ensure failure`);
+                        return cached;
+                    }
                 }
             }
         }
 
-        throw lastError || new Error('Max retries exceeded');
+        // Return default mode instead of throwing
+        this.log(`Max retries exceeded for ${from}, returning default mode`);
+        return 'bot';
     }
 
     /**
@@ -272,9 +358,20 @@ export class BotModeService {
     }
 
     private async executeForceMode(from: string): Promise<boolean> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            this.log(`Force mode request timeout for ${from}`);
+            controller.abort();
+        }, this.REQUEST_TIMEOUT);
+
         try {
             this.log(`Getting force mode status for ${from}`);
-            const response = await axios.get(`${this.config.apiBaseUrl}/mode/${from}`);
+            const response = await axios.get(`${this.config.apiBaseUrl}/mode/${from}`, {
+                signal: controller.signal,
+                timeout: this.REQUEST_TIMEOUT
+            });
+            
+            clearTimeout(timeoutId);
             // Update field sesuai API response terbaru
             const forceMode = response.data?.forceModeManual || response.data?.forceMode || response.data?.force || false;
 
@@ -284,9 +381,17 @@ export class BotModeService {
             this.log(`Force mode for ${from}:`, forceMode);
             return forceMode;
         } catch (error: any) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                this.log(`Force mode request aborted for ${from}`);
+                // Return cached value or default
+                const cached = this.forceModeCache.get(from);
+                return cached?.force || false;
+            }
             this.logError(`Failed to get force mode for ${from}`, error);
-            // Return false as default if API call fails
-            return false;
+            // Return cached value or default instead of throwing
+            const cached = this.forceModeCache.get(from);
+            return cached?.force || false;
         }
     }
 
@@ -407,6 +512,38 @@ export class BotModeService {
         this.cleanupFunctions = [];
 
         this.log('BotModeService destroyed');
+    }
+
+    // Circuit breaker methods
+    private isCircuitBreakerOpen(endpoint: string): boolean {
+        const failures = this.failureCount.get(endpoint) || 0;
+        const lastFailure = this.lastFailureTime.get(endpoint) || 0;
+        
+        if (failures >= this.MAX_FAILURES) {
+            const timeSinceLastFailure = Date.now() - lastFailure;
+            if (timeSinceLastFailure < this.FAILURE_TIMEOUT) {
+                this.log(`Circuit breaker open for ${endpoint}. Time remaining: ${Math.ceil((this.FAILURE_TIMEOUT - timeSinceLastFailure) / 1000)}s`);
+                return true;
+            } else {
+                // Reset circuit breaker
+                this.failureCount.set(endpoint, 0);
+                this.lastFailureTime.delete(endpoint);
+            }
+        }
+        
+        return false;
+    }
+    
+    private recordFailure(endpoint: string) {
+        const failures = (this.failureCount.get(endpoint) || 0) + 1;
+        this.failureCount.set(endpoint, failures);
+        this.lastFailureTime.set(endpoint, Date.now());
+        this.log(`Recorded failure ${failures}/${this.MAX_FAILURES} for ${endpoint}`);
+    }
+    
+    private recordSuccess(endpoint: string) {
+        this.failureCount.delete(endpoint);
+        this.lastFailureTime.delete(endpoint);
     }
 }
 

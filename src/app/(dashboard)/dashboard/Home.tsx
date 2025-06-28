@@ -2,32 +2,31 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
-import { DashboardHomeSkeleton, SummaryTableSkeleton, SummaryPieChartSkeleton, LineChartSkeleton, BarOpdChartSkeleton, BarWilayahChartKecamatanSkeleton, MapPersebaranSkeleton } from '../../../components/dashboard/DashboardSkeleton';
 
 const BarOpdChart = dynamic(() => import('../../../components/dashboard/BarOpdChart'), { 
   ssr: false,
-  loading: () => <BarOpdChartSkeleton />
+  loading: () => <div>Loading...</div>
 });
 const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/BarWilayahChartKecamatan'), { 
   ssr: false,
-  loading: () => <BarWilayahChartKecamatanSkeleton />
+  loading: () => <div>Loading...</div>
 });
 const FullScreen = dynamic(() => import('../../../components/dashboard/FullScreen'), { ssr: false });
 const LineChart = dynamic(() => import('../../../components/dashboard/LineChart'), { 
   ssr: false,
-  loading: () => <LineChartSkeleton />
+  loading: () => <div>Loading...</div>
 });
 const MapPersebaran = dynamic(() => import('../../../components/dashboard/MapPersebaran'), { 
   ssr: false,
-  loading: () => <MapPersebaranSkeleton />
+  loading: () => <div>Loading...</div>
 });
 const SummaryPieChart = dynamic(() => import('../../../components/dashboard/SummaryPieChart'), { 
   ssr: false,
-  loading: () => <SummaryPieChartSkeleton />
+  loading: () => <div>Loading...</div>
 });
 const SummaryTable = dynamic(() => import('../../../components/dashboard/SummaryTable'), { 
   ssr: false,
-  loading: () => <SummaryTableSkeleton />
+  loading: () => <div>Loading...</div>
 });
 
 export default function Home() {
@@ -44,7 +43,7 @@ export default function Home() {
     }
   }, [router]);
 
-  if (isCheckingAuth) return <DashboardHomeSkeleton />;
+  if (isCheckingAuth) return <div>Loading...</div>;
 
   return (
     <div className="pt-3">

@@ -1,0 +1,9 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/pengaduan/laporan.tsx
+📅 2025-06-27_0200
+
+📂 Perubahan file:
+src/components/pengaduan/laporan.tsx
+
+🚀 Meluncur

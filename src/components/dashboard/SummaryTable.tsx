@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from '../../utils/axiosInstance';
 import dayjs from "dayjs";
-import { SummaryTableSkeleton } from './DashboardSkeleton';
 
 const STATUS_ORDER = [
     "Perlu Verifikasi",
@@ -64,9 +63,9 @@ export default function SummaryTable() {
     // Fetch data dari API (axiosInstance)
     const fetchData = React.useCallback(() => {
         setLoading(true);
-        let url = `${API_URL}/dashboard/summary-dashboard`;
+        const url = `${API_URL}/dashboard/summary-dashboard`;
         // Query param pakai object (lebih aman & readable)
-        const params: Record<string, any> = {};
+        const params: Record<string, string | number> = {};
         if (filter !== "all") {
             params.mode = filter;
             params.year = year;
@@ -115,7 +114,7 @@ export default function SummaryTable() {
         else if (filter === "weekly") filterInfo = `,Minggu ke-${week},${months[month - 1]},${year}`;
         let csv = `Status,Total,Persen${filterInfo ? ',Filter' : ''}\n`;
         STATUS_ORDER.forEach((status) => {
-            let percent =
+            const percent =
                 status === "Selesai Pengaduan"
                     ? percentSelesai
                     : status === "Ditutup"
@@ -207,7 +206,7 @@ export default function SummaryTable() {
             {/* Tabel dan mobile */}
             <div className="bg-white shadow-md text-gray-800 rounded-lg p-4 overflow-y-auto max-h-[500px]">
                 {loading ? (
-                    <SummaryTableSkeleton />
+                    <div>Loading...</div>
                 ) : (
                     <>
                         {/* Desktop */}

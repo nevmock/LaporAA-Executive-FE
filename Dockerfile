@@ -10,6 +10,10 @@ COPY package.json package-lock.json* ./
 # Install dependencies
 RUN npm ci
 
+# Dockerfile (frontend / Next.js)
+ARG NEXT_PUBLIC_BE_BASE_URL
+ENV NEXT_PUBLIC_BE_BASE_URL=$NEXT_PUBLIC_BE_BASE_URL
+
 # Salin semua source code
 COPY . .
 
@@ -29,6 +33,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
+
+EXPOSE 3000
 
 # Jalankan aplikasi
 CMD ["npm", "start"]

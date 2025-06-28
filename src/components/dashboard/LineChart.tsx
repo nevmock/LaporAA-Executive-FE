@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
 import axios from '../../utils/axiosInstance';
 import dayjs from 'dayjs';
-import { LineChartSkeleton } from './DashboardSkeleton';
 
 // Dynamic import untuk komponen Chart dari ApexCharts (agar tidak dirender di server)
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -57,7 +56,7 @@ export default function LineChart() {
     };
 
     // Mapping data API ke kategori & total berdasarkan mode (weekly, monthly, yearly)
-    const getChartDataByMode = (data: any[]) => {
+    const getChartDataByMode = (data: Array<{ date: string; total: number }>) => {
         if (filter === 'weekly') {
             const first = dayjs(`${year}-${month}-01`);
             const start = first.startOf('week').add(1, 'day').add(week - 1, 'week');
@@ -205,7 +204,7 @@ export default function LineChart() {
 
             {/* Tampilan chart */}
             {loading ? (
-                <LineChartSkeleton />
+                <div>Loading...</div>
             ) : (
                 <div className="w-full flex-1 min-h-[350px] md:min-h-[400px] lg:min-h-[500px]">
                     {isAllZero ? (
