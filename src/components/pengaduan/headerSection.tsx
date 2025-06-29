@@ -28,6 +28,7 @@ interface Props {
     setIsPinnedOnly: (val: boolean) => void;
     isByMeOnly: boolean;
     setIsByMeOnly: (val: boolean) => void;
+    totalReports: number; // Tambahan
 }
 
 const HeaderSection: React.FC<Props> = ({
@@ -53,6 +54,7 @@ const HeaderSection: React.FC<Props> = ({
     setIsPinnedOnly,
     isByMeOnly,
     setIsByMeOnly,
+    totalReports, // Tambahan
 }) => {
     const headerProps = {
         search,
@@ -76,6 +78,7 @@ const HeaderSection: React.FC<Props> = ({
         setIsPinnedOnly,
         isByMeOnly,
         setIsByMeOnly,
+        totalReports, // Tambahan
     };
 
     return !isMobile ? <HeaderDesktop {...headerProps} /> : <HeaderMobile {...headerProps} />;

@@ -11,8 +11,8 @@ dayjs.extend(timezone);
 
 export default function Selesai2({
     data,
-    reportData,
-    saveData
+    reportData, // eslint-disable-line @typescript-eslint/no-unused-vars
+    saveData // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
     data: Partial<TindakanData> & { sessionId: string };
     reportData?: any;

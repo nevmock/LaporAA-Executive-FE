@@ -1,12 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { TindakanClientState } from "../../../../lib/types";
 import axios from "../../../../utils/axiosInstance";
 import { Plus } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import OPDSelect from "./opdSelect"
-import { Tooltip } from "../../Tooltip";
 import { RiSave3Fill } from "react-icons/ri";
 
 const MAX_PHOTOS = 5;
@@ -199,10 +199,12 @@ export default function Proses({
                         className="flex items-center px-4 py-2 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
                         title="Buka Laporan SP4N Lapor"
                     >
-                        <img
+                        <Image
                             src="/Spanlapor-icon.png"
                             alt="Icon"
                             className="w-5 h-5 mr-2"
+                            width={20}
+                            height={20}
                         />
                         Buka Laporan #{data.trackingId}
                     </button>
@@ -261,7 +263,7 @@ export default function Proses({
                                         // Direct saveData call with proper error handling
                                         console.log("Calling saveData function to save form data");
                                         saveData()
-                                            .then((result) => {
+                                            .then(() => {
                                                 console.log("Form save succeeded in", Date.now() - startTime, "ms");
                                                 setSaveMessage("Perubahan berhasil disimpan");
                                                 setSaveSuccessModalVisible(true);
@@ -421,9 +423,12 @@ export default function Proses({
                 <div className="flex gap-2 flex-wrap">
                     {(data.photos || []).map((photo, idx) => (
                         <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300">
-                            <img
+                            <Image
                                 src={`${API_URL}${photo}`}
+                                alt={`Photo ${idx + 1}`}
                                 className="w-full h-full object-cover"
+                                width={96}
+                                height={96}
                             />
                             <button
                                 onClick={() => handleRemovePhoto(idx)}

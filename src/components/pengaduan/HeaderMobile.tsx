@@ -29,6 +29,7 @@ interface HeaderMobileProps {
     setIsPinnedOnly: (val: boolean) => void;
     isByMeOnly: boolean; // Optional prop for filtering by user
     setIsByMeOnly: (val: boolean) => void; // Optional setter for filtering by user
+    totalReports: number; // Tambahan
 }
 
 const statusColors: Record<string, string> = {
@@ -186,7 +187,7 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     setSelectedStatus,
     limit,
     setLimit,
-    page,
+    page, // eslint-disable-line @typescript-eslint/no-unused-vars
     setPage,
     selectedSituasi,
     setSelectedSituasi,
@@ -200,19 +201,20 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     setIsPinnedOnly,
     isByMeOnly,
     setIsByMeOnly,
+    totalReports, // Tambahan
 }) => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
     // Prepare OPD options with counts
     const opdOptions = [
-        { opd: "Semua OPD", count: opdTotal },
+        { opd: "Semua OPD", count: totalReports }, // Ganti ke totalReports
         ...opdList
     ];
 
     // Prepare Situasi options with counts
     const situasiOptions = [
-        { situasi: "Semua Situasi", count: situasiTotal },
+        { situasi: "Semua Situasi", count: totalReports }, // Ganti ke totalReports
         ...situasiList
     ];
 
@@ -252,7 +254,7 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                             <button
                                 className={`h-10 w-10 rounded-full border text-sm flex items-center justify-center transition ${isPinnedOnly ? 'border-yellow-600 bg-yellow-500 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
                                 onClick={() => setIsPinnedOnly(!isPinnedOnly)}
-                                title="Tampilkan hanya yang di-love"
+                                title="Tampilkan hanya yang di-favoritkan"
                             >
                                 <FaStar />
                             </button>

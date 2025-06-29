@@ -1,0 +1,10 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/utils/axiosInstance.ts, src/utils/rateLimiter.ts
+📅 2025-06-27_1627
+
+📂 Perubahan file:
+src/utils/axiosInstance.ts
+src/utils/rateLimiter.ts
+
+🚀 Meluncur

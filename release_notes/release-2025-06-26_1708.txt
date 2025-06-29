@@ -1,0 +1,52 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update .env.example, next.config.ts, src/app/(auth)/login/page.tsx
+📅 2025-06-26_1708
+
+📂 Perubahan file:
+.env.example
+next.config.ts
+src/app/(auth)/login/page.tsx
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/(dashboard)/pengaduan/Pengaduan.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/AppShell.tsx
+src/components/AuthSkeleton.tsx
+src/components/BotModeIndicator.tsx
+src/components/LayoutSkeleton.tsx
+src/components/LoadingPage.tsx
+src/components/Skeleton.tsx
+src/components/SkeletonExamples.tsx
+src/components/TopNavbar.tsx
+src/components/dashboard/BarOpdChart.tsx
+src/components/dashboard/BarWilayahChart.backup.tsx
+src/components/dashboard/BarWilayahChartKecamatan.tsx
+src/components/dashboard/DashboardSkeleton.tsx
+src/components/dashboard/FullScreen.tsx
+src/components/dashboard/LineChart.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/SummaryPieChart.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/pengaduan/HeaderDesktop.tsx
+src/components/pengaduan/HeaderMobile.tsx
+src/components/pengaduan/PengaduanSkeleton.tsx
+src/components/pengaduan/PhotoModal.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/laporan/ActionButtons.tsx
+src/components/pengaduan/laporan/AdminSelector.tsx
+src/components/pengaduan/laporan/componentsTindakan/ditutup.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/componentsTindakan/selesai.tsx
+src/components/pengaduan/laporan/componentsTindakan/selesai2.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/tableSection.tsx
+src/components/skeletons/index.ts
+src/hooks/useBotMode.ts
+src/lib/types.ts
+src/services/botModeService.ts
+src/utils/axiosInstance.ts
+src/utils/request.ts
+
+🚀 Meluncur

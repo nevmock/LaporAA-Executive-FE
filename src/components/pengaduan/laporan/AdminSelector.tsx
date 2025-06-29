@@ -66,7 +66,7 @@ const AdminSelector = ({ currentAdmin, onSave, API_URL }: AdminSelectorProps) =>
                     setError('Format data admin tidak valid');
                 }
             })
-            .catch(err => {
+            .catch(() => {
                 setError('Gagal memuat daftar admin');
             })
             .finally(() => {

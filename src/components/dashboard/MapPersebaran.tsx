@@ -79,8 +79,8 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     try {
       const res = await axios.get(url);
       setReports(res.data.data || []);
-    } catch (err) {
-      console.error('❌ Gagal ambil data:', err);
+    } catch {
+      console.error('❌ Gagal ambil data:');
       setReports([]); // Kosongkan data biar ga freeze
     } finally {
       setMapReady(true);
@@ -161,7 +161,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
       link.href = imgData;
       link.download = `screenshot-peta-${filter}-${year}${filter !== 'yearly' ? `-${month}` : ''}${filter === 'weekly' ? `-minggu${week}` : ''}.jpg`;
       link.click();
-    } catch (err) {
+    } catch (err) { // eslint-disable-line @typescript-eslint/no-unused-vars
       alert('Gagal mengambil screenshot. Silakan coba lagi!');
     } finally {
       setIsScreenshotLoading(false); // <-- reset loading
