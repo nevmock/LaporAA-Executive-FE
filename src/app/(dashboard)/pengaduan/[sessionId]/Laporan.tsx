@@ -525,10 +525,12 @@ export default function ChatPage() {
           onRefresh={botMode.refreshMode}
           onClearCache={() => {
             // Clear cache using the service
-            const service = require('../../../../services/botModeService').getBotModeService();
-            if (service) {
-              service.clearCache(data?.from);
-            }
+            import('../../../../services/botModeService').then(({ getBotModeService }) => {
+              const service = getBotModeService();
+              if (service) {
+                service.clearCache(data?.from);
+              }
+            });
           }}
           onChangeMode={handleModeChange}
         />
