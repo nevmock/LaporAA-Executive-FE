@@ -2,12 +2,21 @@
   "name": "laporaa-executive-fe",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build"
+  },
+  "resolutions": {
+    "@jridgewell/gen-mapping": "^0.3.2",
+    "sucrase": "^3.35.0"
+  },
+  "overrides": {
+    "@jridgewell/gen-mapping": "^0.3.2",
+    "sucrase": "^3.35.0"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",
