@@ -1,5 +1,5 @@
 # Tahap 1: Build
-FROM node:20-alpine AS builder
+FROM node:20.15.0-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Tahap 2: Production image
-FROM node:20-alpine AS runner
+FROM node:20.15.0-alpine AS runner
 
 # Atur direktori kerja
 WORKDIR /app
