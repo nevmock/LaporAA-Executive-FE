@@ -4,7 +4,7 @@ import Image from "next/image";
 import axios from "../../../utils/axiosInstance";
 import dynamic from "next/dynamic";
 import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
+// import "react-medium-image-zoom/dist/styles.css"; // Moved to globals.css
 import { useSwipeable } from "react-swipeable";
 import Profile from "./profile";
 import dayjs from "dayjs";

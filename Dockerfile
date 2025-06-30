@@ -4,11 +4,11 @@ FROM node:20.15.0-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Salin package.json dan package-lock.json
-COPY package.json package-lock.json* ./
+# Salin package.json dan .npmrc untuk konfigurasi npm
+COPY package.json .npmrc ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Dockerfile (frontend / Next.js)
 ARG NEXT_PUBLIC_BE_BASE_URL

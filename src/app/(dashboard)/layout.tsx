@@ -1,7 +1,7 @@
 'use client';
 
 import "../globals.css";
-import "leaflet/dist/leaflet.css";
+// import "leaflet/dist/leaflet.css"; // Moved to globals.css
 import AppShell from "../AppShell";
 import { useAuth } from "../../hooks/useAuth";
 

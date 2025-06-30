@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
+// CSS import moved to global to avoid webpack issues
+// import "react-medium-image-zoom/dist/styles.css";
 import Keluhan from "./keluhan";
 import { TindakanClientState } from "../../../lib/types";
 import Profile from "./profile";

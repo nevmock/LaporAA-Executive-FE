@@ -1,0 +1,16 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update next.config.ts, package.json, src/app/(dashboard)/layout.tsx
+📅 2025-06-30_1036
+
+📂 Perubahan file:
+next.config.ts
+package.json
+src/app/(dashboard)/layout.tsx
+src/app/globals.css
+src/components/pengaduan/laporan/MapViews.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/mapPopup.tsx
+
+🚀 Meluncur

@@ -1,0 +1,9 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 chore: update Dockerfile
+📅 2025-06-30_1116
+
+📂 Perubahan file:
+Dockerfile
+
+🚀 Meluncur

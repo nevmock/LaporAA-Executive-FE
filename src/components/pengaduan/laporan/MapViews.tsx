@@ -3,7 +3,7 @@
 import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+// import "leaflet/dist/leaflet.css"; // Moved to globals.css
 
 // Fix icon leaflet (tanpa ini marker invisible)
 L.Icon.Default.prototype.options.iconUrl = "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png";
