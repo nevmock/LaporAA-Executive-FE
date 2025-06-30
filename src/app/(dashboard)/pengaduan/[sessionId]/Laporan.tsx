@@ -9,7 +9,8 @@ import axios from "../../../../utils/axiosInstance";
 import { TindakanActionProps } from "../../../../components/pengaduan/laporan/tindakan";
 import ActionButtons from "../../../../components/pengaduan/laporan/ActionButtons";
 import { Tooltip } from "../../../../components/Tooltip";
-// import { useBotModeWithTab } from "../../../../hooks/useBotMode"; // DISABLED for now
+import { useBotModeWithTab } from "../../../../hooks/useBotMode";
+import { BotModeDebugPanel } from "../../../../components/BotModeIndicator";
 
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
@@ -44,29 +45,37 @@ export default function ChatPage() {
   const [forceModeStates, setForceModeStates] = useState<Record<string, boolean>>({});
   const [loadingForceMode, setLoadingForceMode] = useState<Record<string, boolean>>({});
   
-  // Bot Mode Management - TEMPORARILY DISABLED to prevent timeout loops
-  // const botMode = useBotModeWithTab({
-  //   userId: data?.from || '',
-  //   activeTab,
-  //   messageTabKey: 'pesan',
-  //   debug: false
-  // });
+  // Bot Mode Management - Re-enabled with proper error handling
+  const botMode = useBotModeWithTab({
+    userId: data?.from || '',
+    activeTab,
+    messageTabKey: 'pesan',
+    debug: process.env.NODE_ENV === 'development'
+  });
   
-  // Mock botMode for compatibility
-  const botMode = {
-    mode: 'bot' as const,
-    isReady: true,
-    isChanging: false,
-    error: null,
-    forceMode: false,
-    setForceMode: async (_force: boolean) => {}, // Accept parameter but do nothing
-    isCheckingForceMode: false,
-  };
+  // Add error handling for bot mode
+  useEffect(() => {
+    if (botMode.error) {
+      console.error('Bot mode error:', botMode.error);
+      // Don't show alert to avoid user disruption, just log the error
+    }
+  }, [botMode.error]);
   
   // Manual mode change handler for Message component
-  const handleModeChange = (newMode: "bot" | "manual") => {
-    console.log(`Mode manually changed to: ${newMode}`);
-    // The mode will be automatically updated by the hook
+  const handleModeChange = async (newMode: "bot" | "manual") => {
+    console.log(`Mode change requested: ${newMode}`);
+    
+    try {
+      if (newMode === 'manual') {
+        await botMode.setManualMode(30); // 30 minutes timeout
+      } else {
+        await botMode.changeMode('bot');
+      }
+      console.log(`Mode successfully changed to: ${newMode}`);
+    } catch (error) {
+      console.error('Failed to change mode:', error);
+      alert('Failed to change mode. Please try again.');
+    }
   };
   
   // Toggle force mode - menggunakan hook botMode untuk konsistensi
@@ -97,7 +106,8 @@ export default function ChatPage() {
       console.log(`Force mode ${newForceMode ? 'enabled' : 'disabled'} for ${from}`);
     } catch (err) {
       console.error("Gagal ubah force mode:", err);
-      alert("Terjadi kesalahan saat mengubah mode bot.");
+      // Show user-friendly error message
+      alert("Terjadi kesalahan saat mengubah mode bot. Silakan coba lagi.");
     } finally {
       setLoadingForceMode(prev => ({ ...prev, [from]: false }));
     }
@@ -413,19 +423,66 @@ export default function ChatPage() {
                   onModeChange={handleModeChange}
                   forceMode={botMode.forceMode}
                 />
-                {/* Smart Mode Indicator with Force Mode display */}
-                {/* <div className="absolute top-2 right-4 z-20">
-                  <div className={`px-2 py-1 rounded text-xs font-medium ${
+                {/* Smart Mode Indicator with Force Mode display and Manual Toggle */}
+                <div className="absolute top-2 right-4 z-20 flex items-center gap-2">
+                  {/* Mode Indicator */}
+                  <div className={`px-3 py-2 rounded-lg text-sm font-medium shadow-sm ${
                     botMode.mode === 'manual' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-green-100 text-green-700 border border-green-200' 
+                      : 'bg-gray-100 text-gray-700 border border-gray-200'
                   }`}>
-                    {botMode.mode === 'manual' ? 'Manual' : 'Bot'}
-                    {botMode.forceMode && (
-                      <span className="ml-1 px-1 bg-red-500 text-white rounded-sm text-xs">F</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <FaRobot className={botMode.mode === 'manual' ? 'text-green-600' : 'text-gray-600'} />
+                      <span>{botMode.mode === 'manual' ? 'Manual' : 'Bot'}</span>
+                      {botMode.forceMode && (
+                        <span className="px-1.5 py-0.5 bg-red-500 text-white rounded text-xs font-bold">
+                          FORCE
+                        </span>
+                      )}
+                      {botMode.isChanging && (
+                        <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                    </div>
                   </div>
-                </div> */}
+                  
+                  {/* Manual Mode Toggle Button */}
+                  {!botMode.forceMode && !botMode.isChanging && (
+                    <button
+                      onClick={() => {
+                        const newMode = botMode.mode === 'manual' ? 'bot' : 'manual';
+                        handleModeChange(newMode);
+                      }}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
+                        botMode.mode === 'manual'
+                          ? 'bg-gray-500 hover:bg-gray-600 text-white'
+                          : 'bg-green-500 hover:bg-green-600 text-white'
+                      }`}
+                      title={botMode.mode === 'manual' ? 'Switch to Bot Mode' : 'Switch to Manual Mode (30 min)'}
+                    >
+                      {botMode.mode === 'manual' ? 'Switch to Bot' : 'Manual Mode'}
+                    </button>
+                  )}
+                  
+                  {/* Force Mode Toggle Button (for admin) */}
+                  {role === 'admin' && (
+                    <button
+                      onClick={() => toggleForceMode(data?.from || '', botMode.forceMode)}
+                      disabled={loadingForceMode[data?.from || '']}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
+                        botMode.forceMode
+                          ? 'bg-red-500 hover:bg-red-600 text-white'
+                          : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      } ${loadingForceMode[data?.from || ''] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={botMode.forceMode ? 'Disable Force Mode' : 'Enable Force Mode (Override all auto-switching)'}
+                    >
+                      {loadingForceMode[data?.from || ''] ? (
+                        <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        botMode.forceMode ? 'Disable Force' : 'Force Mode'
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               data && sessionId ? (
@@ -457,8 +514,25 @@ export default function ChatPage() {
         </footer>
       )}
 
-      {/* Debug Panel - DISABLED untuk prevent loops */}
-      {/* Debug panel disabled until bot mode service is stabilized */}
+      {/* Debug Panel - Re-enabled for development */}
+      {showDebugPanel && process.env.NODE_ENV === 'development' && (
+        <BotModeDebugPanel
+          mode={botMode.mode}
+          isReady={botMode.isReady}
+          isChanging={botMode.isChanging}
+          error={botMode.error}
+          cacheStats={botMode.cacheStats}
+          onRefresh={botMode.refreshMode}
+          onClearCache={() => {
+            // Clear cache using the service
+            const service = require('../../../../services/botModeService').getBotModeService();
+            if (service) {
+              service.clearCache(data?.from);
+            }
+          }}
+          onChangeMode={handleModeChange}
+        />
+      )}
     </div>
   );
 }
