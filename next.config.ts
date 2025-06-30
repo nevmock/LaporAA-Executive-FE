@@ -7,6 +7,8 @@ const withAnalyzer = withBundleAnalyzer({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Transpile packages that have ES module issues
+  transpilePackages: ['react-medium-image-zoom'],
   images: {
     // Disable image optimization for external URLs to prevent 500 errors
     unoptimized: true,
@@ -35,18 +37,31 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Remove webpack config when using Turbopack in development
-  // Only apply webpack config for production builds
-  webpack: process.env.NODE_ENV === 'production' 
-    ? (config, { isServer }) => {
-        // Resolve paths with spaces correctly for Next.js build
-        config.watchOptions = {
-          ...config.watchOptions,
-          followSymlinks: false,
-        };
-        return config;
-      }
-    : undefined,
+  // Enhanced webpack config to handle ES modules
+  webpack: (config, { isServer, dev }) => {
+    // Resolve paths with spaces correctly for Next.js build
+    config.watchOptions = {
+      ...config.watchOptions,
+      followSymlinks: false,
+    };
+
+    // Handle ES module imports properly
+    config.resolve = config.resolve || {};
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+      '.cjs': ['.cts', '.cjs'],
+    };
+
+    // Handle ES modules properly
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+    };
+
+    return config;
+  },
 };
 
 export default withAnalyzer(nextConfig);
