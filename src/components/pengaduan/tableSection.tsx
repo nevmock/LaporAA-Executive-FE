@@ -190,6 +190,7 @@ const TableSection: React.FC<Props> = ({
                 } catch {
                     // Jika laporan memang tidak di-pin, API akan memberikan status 404
                     // Jadi tidak perlu menangani error dengan khusus
+                    // cukup log saja
                     console.log(`Report ${chat.sessionId} is not pinned`);
                 }
             }
