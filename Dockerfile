@@ -1,5 +1,5 @@
 # Tahap 1: Build
-FROM node:20-alpine AS builder
+FROM node:20.15.0-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -10,6 +10,10 @@ COPY package.json .npmrc ./
 # Install dependencies
 RUN npm install
 
+# Dockerfile (frontend / Next.js)
+ARG NEXT_PUBLIC_BE_BASE_URL
+ENV NEXT_PUBLIC_BE_BASE_URL=$NEXT_PUBLIC_BE_BASE_URL
+
 # Salin semua source code
 COPY . .
 
@@ -17,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Tahap 2: Production image
-FROM node:20-alpine AS runner
+FROM node:20.15.0-alpine AS runner
 
 # Atur direktori kerja
 WORKDIR /app
@@ -29,6 +33,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
+
+EXPOSE 3000
 
 # Jalankan aplikasi
 CMD ["npm", "start"]
