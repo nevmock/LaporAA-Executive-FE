@@ -265,7 +265,8 @@ const TindakanComponent = function Tindakan({
             user: reportData.user,
             location: reportData.location,
             photos: reportData.photos,
-            createdAt: reportData.createdAt
+            createdAt: reportData.createdAt,
+            tindakan: reportData.tindakan
         };
     }, [
         reportData?._id,
@@ -276,7 +277,8 @@ const TindakanComponent = function Tindakan({
         reportData?.location?.latitude,
         reportData?.location?.longitude,
         reportData?.photos?.length,
-        reportData?.createdAt
+        reportData?.createdAt,
+        reportData?.tindakan
     ]);
 
     // Call actionProps once when the component mounts or when critical dependencies change

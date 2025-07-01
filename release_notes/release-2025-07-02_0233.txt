@@ -1,0 +1,15 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update package.json, src/components/dashboard/MapPersebaran.tsx, src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+📅 2025-07-02_0233
+
+📂 Perubahan file:
+package.json
+src/components/dashboard/MapPersebaran.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/componentsTindakan/verifikasi1.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/lib/types.ts
+
+🚀 Meluncur

@@ -1,47 +1,31 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, KeyboardEvent } from "react";
 import Image from "next/image";
 import axios from "../../../utils/axiosInstance";
 import dynamic from "next/dynamic";
 import Zoom from "react-medium-image-zoom";
-// import "react-medium-image-zoom/dist/styles.css"; // Moved to globals.css
 import { useSwipeable } from "react-swipeable";
 import Profile from "./profile";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
 import PhotoDownloader, { usePhotoDownloader } from "../PhotoDownloader";
+import { RiCloseLine } from "react-icons/ri";
+import { Data } from "../../../lib/types";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-interface Data {
-    _id: string;
-    sessionId: string;
-    message: string;
-    from: string;
-    user: {
-        _id: string;
-        name: string;
-        nik: string;
-        address: string;
-        email: string;
-        jenis_kelamin: string;
-        reportHistory: string[];
-    };
-    location: {
-        latitude: number;
-        longitude: number;
-        description: string;
-        desa: string;
-        kecamatan: string;
-        kabupaten: string;
-    };
-    photos: string[];
-    createdAt: string;
-}
-
 export default function Keluhan({ sessionId, data: propData }: { sessionId: string; data?: any }) {
+    // Debug logging untuk props
+    console.info("🔍 [Keluhan] Component rendered with props:", {
+        sessionId,
+        propData,
+        propDataKeys: propData ? Object.keys(propData) : 'null',
+        tindakan: propData?.tindakan,
+        tindakanKeys: propData?.tindakan ? Object.keys(propData.tindakan) : 'null'
+    });
+
     const [data, setData] = useState<Data | null>(propData || null);
     const [showModal, setShowModal] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
@@ -53,88 +37,67 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     const [isEditingMessage, setIsEditingMessage] = useState(false);
     const [isEditingLocation, setIsEditingLocation] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [isEditingName, setIsEditingName] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [isEditingSex, setIsEditingSex] = useState(false);
 
     const [editedMessage, setEditedMessage] = useState("");
     const [editedLocation, setEditedLocation] = useState("");
-    const [editedName, setEditedName] = useState("");
-    const [editedSex, setEditedSex] = useState("");
 
     const [isSavingMessage, setIsSavingMessage] = useState(false);
     const [isSavingLocation, setIsSavingLocation] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [isSavingName, setIsSavingName] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [isSavingSex, setIsSavingSex] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [saveMessageSuccess, setSaveMessageSuccess] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [saveLocationSuccess, setSaveLocationSuccess] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [saveNameSuccess, setSaveNameSuccess] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [saveSexSuccess, setSaveSexSuccess] = useState(false);
 
     const [saveError, setSaveError] = useState<string | null>(null);
 
+    // State untuk menangani tag/hashtag dengan type safety
+    const [tagInput, setTagInput] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
+    const [isTagLoading, setIsTagLoading] = useState(false);
+    const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+    const [isSearchingTags, setIsSearchingTags] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    // Helper function to ensure tag is always a string
+    const normalizeTag = (tag: any): string => {
+        if (typeof tag === 'string') return tag;
+        if (typeof tag === 'object' && tag !== null && 'hash_tag' in tag) return String(tag.hash_tag);
+        return String(tag);
+    };
+
+    // Helper function to normalize tags array
+    const normalizeTags = (tagsArray: any[]): string[] => {
+        if (!Array.isArray(tagsArray)) return [];
+        return tagsArray.map(normalizeTag).filter(tag => tag && tag.trim() !== '');
+    };
+
     // Sync state jika propData berubah
     useEffect(() => {
+        // Console log untuk debugging propData
+        console.info("🔍 [Keluhan] PropData received:", propData);
+        console.info("🔍 [Keluhan] PropData tindakan:", propData?.tindakan);
+        console.info("🔍 [Keluhan] PropData tindakan._id:", propData?.tindakan?._id);
+        console.info("🔍 [Keluhan] PropData tindakan.tag:", propData?.tindakan?.tag);
+        
         if (propData) {
             setData(propData);
             setEditedMessage(propData.message || "");
             setEditedLocation(propData.location?.description || "");
-            setEditedName(propData.user?.name || "");
-            setEditedSex(propData.user?.jenis_kelamin || "");
+            
+            // Initialize tags dari propData.tindakan.tag dengan safety check
+            if (propData.tindakan?.tag && Array.isArray(propData.tindakan.tag)) {
+                const extractedTags = normalizeTags(propData.tindakan.tag);
+                console.info("🔍 [Keluhan] Extracted tags:", extractedTags);
+                setTags(extractedTags);
+            } else {
+                console.info("🔍 [Keluhan] No tags found or not in array format");
+                setTags([]);
+            }
         }
     }, [propData]);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const saveName = async () => {
-        if (!data) return;
-        setIsSavingName(true);
-        setSaveError(null);
-        try {
-            await axios.put(`${API_URL}/reports/${sessionId}`, {
-                name: editedName, // ✅ langsung
-            });
-            setData((prev) =>
-                prev ? { ...prev, user: { ...prev.user, name: editedName } } : prev
-            );
-            setSaveNameSuccess(true);
-            setIsEditingName(false);
-            setTimeout(() => setSaveNameSuccess(false), 2000);
-            window.location.reload();
-        } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
-            setSaveError("Gagal menyimpan Nama.");
-        } finally {
-            setIsSavingName(false);
-        }
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const saveSex = async () => {
-        if (!data) return;
-        setIsSavingSex(true);
-        setSaveError(null);
-        try {
-            await axios.put(`${API_URL}/reports/${sessionId}`, {
-                jenis_kelamin: editedSex, // ✅ langsung
-            });
-            setData((prev) =>
-                prev ? { ...prev, user: { ...prev.user, jenis_kelamin: editedSex } } : prev
-            );
-            setSaveSexSuccess(true);
-            setIsEditingSex(false);
-            setTimeout(() => setSaveSexSuccess(false), 2000);
-        } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
-            setSaveError("Gagal menyimpan Jenis Kelamin.");
-        } finally {
-            setIsSavingSex(false);
-        }
-    };
 
     // Save message update
     const saveMessage = async () => {
@@ -221,6 +184,214 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
         }
     };
 
+    // Load existing tags when data changes - gunakan propData langsung
+    useEffect(() => {
+        console.info("🔍 [Keluhan] useEffect propData.tindakan.tag triggered:", propData?.tindakan?.tag);
+        
+        if (propData?.tindakan?.tag && Array.isArray(propData.tindakan.tag)) {
+            // Extract tags dari propData.tindakan.tag dengan safety check
+            const extractedTags = normalizeTags(propData.tindakan.tag);
+            console.info("🔍 [Keluhan] Setting tags from useEffect:", extractedTags);
+            setTags(extractedTags);
+        } else {
+            console.info("🔍 [Keluhan] Setting empty tags from useEffect");
+            setTags([]);
+        }
+    }, [propData?.tindakan?.tag]);
+
+    // Fungsi untuk menambahkan tag - gunakan tindakan._id dari propData
+    const addTag = async (tag: string) => {
+        if (!tag.trim()) return;
+        
+        const trimmedTag = tag.trim();
+        if (tags.includes(trimmedTag)) return; // Hindari duplikat
+        
+        // Gunakan propData untuk mendapatkan tindakan._id
+        console.info("🔍 [Keluhan] addTag - propData.tindakan:", propData?.tindakan);
+        console.info("🔍 [Keluhan] addTag - tindakan._id:", propData?.tindakan?._id);
+        
+        if (!propData?.tindakan?._id) {
+            console.error("❌ [Keluhan] Data atau Tindakan ID tidak tersedia dari propData, tidak dapat menambahkan tag");
+            return;
+        }
+        
+        try {
+            setIsTagLoading(true);
+            
+            // Kirim tag ke API menggunakan endpoint tindakan dari propData
+            console.info("🔍 [Keluhan] Sending POST to:", `${API_URL}/tindakan/${propData.tindakan._id}/tag`);
+            const response = await axios.post(`${API_URL}/tindakan/${propData.tindakan._id}/tag`, {
+                hash_tag: trimmedTag
+            });
+            
+            console.info("✅ [Keluhan] Add tag response:", response.data);
+            
+            // Update state lokal - pastikan tag selalu string
+            const newTags = [...tags, trimmedTag];
+            setTags(newTags);
+            setTagInput("");
+            
+            // Update data state
+            setData(prev => {
+                if (!prev || !prev.tindakan || !prev.tindakan._id) return prev;
+                return {
+                    ...prev,
+                    tindakan: {
+                        ...prev.tindakan,
+                        _id: prev.tindakan._id, // ensure _id is always present
+                        tag: [
+                            ...(Array.isArray(prev.tindakan.tag) ? prev.tindakan.tag : []),
+                            { hash_tag: trimmedTag, _id: response?.data?.tindakan._id || prev.tindakan._id }
+                        ]
+                    }
+                };
+            });
+            
+            console.log("✅ [Keluhan] Tag berhasil ditambahkan:", trimmedTag);
+        } catch (error) {
+            console.error("❌ [Keluhan] Error adding tag:", error);
+            alert("Gagal menambahkan tag. Silakan coba lagi.");
+        } finally {
+            setIsTagLoading(false);
+        }
+    };
+    
+    // Fungsi untuk menghapus tag - gunakan tindakan._id dari propData
+    const removeTag = async (tagToRemove: string) => {
+        // Pastikan tagToRemove adalah string
+        const tagString = normalizeTag(tagToRemove);
+        
+        // Gunakan propData untuk mendapatkan tindakan._id
+        if (!propData?.tindakan?._id) {
+            console.error("Tindakan ID tidak tersedia dari propData, tidak dapat menghapus tag");
+            return;
+        }
+        
+        try {
+            setIsTagLoading(true);
+            
+            // Kirim permintaan hapus tag ke API menggunakan tindakan._id dari propData
+            await axios.delete(`${API_URL}/tindakan/${propData.tindakan._id}/tag/${encodeURIComponent(tagString)}`);
+            
+            // Update state lokal - pastikan semua tag adalah string
+            const newTags = tags.filter(tag => normalizeTag(tag) !== tagString);
+            setTags(newTags);
+            
+            // Update data state
+            setData(prev => {
+                if (!prev || !prev.tindakan || !prev.tindakan._id) return prev;
+                return {
+                    ...prev,
+                    tindakan: {
+                        ...prev.tindakan,
+                        _id: prev.tindakan._id, // ensure _id is always present
+                        tag: Array.isArray(prev.tindakan.tag) ? prev.tindakan.tag.filter(tagItem => {
+                            return normalizeTag(tagItem) !== tagString;
+                        }) : []
+                    }
+                };
+            });
+            
+            console.log("Tag berhasil dihapus:", tagString);
+        } catch (error) {
+            console.error("Error removing tag:", error);
+            alert("Gagal menghapus tag. Silakan coba lagi.");
+        } finally {
+            setIsTagLoading(false);
+        }
+    };
+    
+    // Handler ketika user menekan Enter, Tab, atau spasi di input tag
+    const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        // Support menambahkan tag dengan Enter atau Tab
+        if ((e.key === 'Enter' || e.key === 'Tab') && tagInput.trim()) {
+            e.preventDefault();
+            addTag(tagInput);
+            setShowSuggestions(false);
+        }
+        
+        // Support menambahkan tag dengan spasi (jika tag berisi minimal 3 karakter)
+        if (e.key === ' ' && tagInput.trim().length >= 3) {
+            e.preventDefault();
+            addTag(tagInput);
+            setShowSuggestions(false);
+        }
+        
+        // Tutup suggestion dropdown dengan escape
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            setShowSuggestions(false);
+        }
+    };
+
+    // Fungsi untuk mencari tag yang sudah ada di database
+    const searchTags = async (query: string) => {
+        if (!query || query.trim().length < 2) {
+            setTagSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+        
+        setIsSearchingTags(true);
+        setShowSuggestions(true);
+        
+        try {
+            // Gunakan endpoint search tags untuk tindakan
+            const response = await axios.get(`${API_URL}/tindakan/tags/search?q=${encodeURIComponent(query.trim())}`);
+            
+            if (response.data && Array.isArray(response.data.tags)) {
+                // Filter out tags that are already selected, ensure all comparisons are strings
+                const filteredSuggestions = response.data.tags.filter(
+                    (suggestion: string) => {
+                        const suggestionString = normalizeTag(suggestion);
+                        return !tags.some(tag => normalizeTag(tag) === suggestionString);
+                    }
+                );
+                setTagSuggestions(filteredSuggestions);
+            } else if (response.data && Array.isArray(response.data)) {
+                // Fallback for direct array response
+                const filteredSuggestions = response.data.filter(
+                    (suggestion: string) => {
+                        const suggestionString = normalizeTag(suggestion);
+                        return !tags.some(tag => normalizeTag(tag) === suggestionString);
+                    }
+                );
+                setTagSuggestions(filteredSuggestions);
+            }
+        } catch (error) {
+            console.error("Error searching for tags:", error);
+            setTagSuggestions([]);
+        } finally {
+            setIsSearchingTags(false);
+        }
+    };
+    
+    // Debounce search untuk mencegah terlalu banyak API call
+    useEffect(() => {
+        const delaySearch = setTimeout(() => {
+            if (tagInput.trim()) {
+                searchTags(tagInput);
+            } else {
+                setTagSuggestions([]);
+                setShowSuggestions(false);
+            }
+        }, 300); // 300ms delay
+        
+        return () => clearTimeout(delaySearch);
+    }, [tagInput, tags]);
+    
+    // Tutup suggestion ketika klik di luar komponen
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setShowSuggestions(false);
+        };
+        
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, []);
+
     useEffect(() => {
         if (saveError) {
             alert(saveError);
@@ -229,8 +400,9 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     }, [saveError]);
 
     useEffect(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setShowModal(false);
+        const handleEsc = (e: Event) => {
+            const keyboardEvent = e as unknown as globalThis.KeyboardEvent;
+            if (keyboardEvent.key === "Escape") setShowModal(false);
         };
         window.addEventListener("keydown", handleEsc);
         return () => window.removeEventListener("keydown", handleEsc);
@@ -371,6 +543,109 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                         Salin
                     </button>
                 </>
+            )
+        },
+        {
+            label: "Tag/Hashtag",
+            value: (
+                <div className="space-y-3">
+                    {/* Input Tag */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Masukkan tag/hashtag... (contoh: penting, urgensi, dll)"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={handleTagKeyDown}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (tagInput.trim() && tagSuggestions.length > 0) {
+                                    setShowSuggestions(true);
+                                }
+                            }}
+                            className={`w-full border p-2 rounded-md placeholder:text-gray-500 transition-colors 
+                                ${isTagLoading || isSearchingTags ? 'bg-gray-100 border-gray-300' : 'border-blue-300 bg-blue-50'} 
+                                ${!propData?.tindakan?._id ? 'cursor-not-allowed' : ''}
+                                focus:ring-blue-400 focus:border-blue-500`}
+                            disabled={isTagLoading || !propData?.tindakan?._id}
+                        />
+                        {(isTagLoading || isSearchingTags) && (
+                            <div className="absolute right-3 top-2">
+                                <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                            </div>
+                        )}
+                        
+                        {/* Tag Suggestions Dropdown */}
+                        {showSuggestions && tagSuggestions.length > 0 && (
+                            <div 
+                                className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {tagSuggestions.map((suggestion, index) => (
+                                    <div 
+                                        key={index}
+                                        className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-700 text-sm"
+                                        onClick={() => {
+                                            addTag(suggestion);
+                                            setShowSuggestions(false);
+                                            setTagInput("");
+                                        }}
+                                    >
+                                        #{suggestion}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {!propData?.tindakan?._id && (
+                        <p className="text-xs text-amber-600 mt-1">
+                            Tindakan ID tidak tersedia untuk menambahkan tag
+                        </p>
+                    )}
+                    
+                    {/* Tags Display */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {tags.map((tag, index) => {
+                            // Ensure tag is always a string using helper function
+                            const tagString = normalizeTag(tag);
+                            return (
+                                <div 
+                                    key={index} 
+                                    className={`flex items-center px-2 py-1 rounded-md text-sm
+                                        ${isTagLoading ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
+                                >
+                                    #{tagString}
+                                    <button
+                                        onClick={() => removeTag(tagString)}
+                                        className={`ml-1 focus:outline-none transition-colors
+                                            ${isTagLoading ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
+                                        disabled={isTagLoading}
+                                        title={isTagLoading ? "Sedang memproses..." : "Hapus tag"}
+                                    >
+                                        <RiCloseLine size={16} />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                        
+                        {tags.length === 0 && !isTagLoading && propData?.tindakan?._id && (
+                            <p className="text-sm text-gray-500 italic">Belum ada tag yang ditambahkan</p>
+                        )}
+                        
+                        {isTagLoading && (
+                            <p className="text-sm text-blue-500 italic">Memperbarui tag...</p>
+                        )}
+                    </div>
+                </div>
+            ),
+            action: (
+                <div className="text-xs text-gray-500">
+                    Tekan Enter untuk menambahkan
+                </div>
             )
         },
         {
