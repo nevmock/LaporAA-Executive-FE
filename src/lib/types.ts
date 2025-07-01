@@ -97,6 +97,7 @@ export interface Chat {
     rating?: number;
     processed_by: ProcessedBy;
     is_pinned?: boolean;
+    tags?: string;
 }
 
 export interface ProcessedBy {
