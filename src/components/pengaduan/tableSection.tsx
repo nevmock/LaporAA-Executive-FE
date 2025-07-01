@@ -14,7 +14,7 @@ import axios from "../../utils/axiosInstance";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
-import { Chat, SortKey } from "../../lib/types";
+import { Chat, SortKey, BackendSortKey } from "../../lib/types";
 import { usePhotoDownloader } from "./PhotoDownloader";
 
 // Props interface untuk komponen TableSection
@@ -73,6 +73,14 @@ const TableSection: React.FC<Props> = ({
     loading,
     setSearch,
 }) => {
+    // Backend supported sort keys - kolom yang bisa di-sort
+    const backendSortKeys: BackendSortKey[] = ["prioritas", "status", "situasi", "lokasi_kejadian", "opd", "date", "admin", "from"];
+    
+    // Helper function untuk cek apakah kolom bisa di-sort
+    const isSortable = (key: string): boolean => {
+        return backendSortKeys.includes(key as BackendSortKey);
+    };
+
     // State untuk modal OPD
     const [opdModalVisible, setOpdModalVisible] = React.useState(false);
     const [selectedOpds, setSelectedOpds] = React.useState<string[]>([]);
@@ -229,21 +237,29 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD' },
                                 { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
-                            ].map(({ key, icon, label }) => (
-                                <th
-                                    key={key}
-                                    onClick={() => toggleSort(key as SortKey)}
-                                    className="px-6 py-3 select-none bg-gray-800 text-white hover:bg-white/20 transition cursor-pointer"
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="w-6 flex justify-center">{icon}</div>
-                                        <div className="flex flex-col items-center text-[12px] leading-tight text-center">
-                                            {label.split(" ").map((word, i) => <span key={i}>{word}</span>)}
+                            ].map(({ key, icon, label }) => {
+                                const sortable = isSortable(key);
+                                return (
+                                    <th
+                                        key={key}
+                                        onClick={sortable ? () => toggleSort(key as SortKey) : undefined}
+                                        className={`px-6 py-3 select-none bg-gray-800 text-white transition ${
+                                            sortable 
+                                                ? 'hover:bg-white/20 cursor-pointer' 
+                                                : 'cursor-default opacity-75'
+                                        }`}
+                                        title={sortable ? `Klik untuk mengurutkan berdasarkan ${label || key}` : `${label || key} (tidak dapat diurutkan)`}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="w-6 flex justify-center">{icon}</div>
+                                            <div className="flex flex-col items-center text-[12px] leading-tight text-center">
+                                                {label.split(" ").map((word, i) => <span key={i}>{word}</span>)}
+                                            </div>
+                                            <div>{sortable ? renderSortArrow(key as SortKey) : null}</div>
                                         </div>
-                                        <div>{renderSortArrow(key as SortKey)}</div>
-                                    </div>
-                                </th>
-                            ))}
+                                    </th>
+                                );
+                            })}
                             {/* Kolom hapus jika SuperAdmin */}
                             {role === 'SuperAdmin' && (
                                 <th className="px-6 py-3 bg-gray-800 text-white text-center">
@@ -476,7 +492,7 @@ const TableSection: React.FC<Props> = ({
                                                             window.open(chat.tindakan.url, '_blank', 'noopener,noreferrer');
                                                         }
                                                     }}
-                                                    title={`Klik untuk membuka link: ${chat.tindakan.url}`}
+                                                    title={`Klik untuk membuka laporan SP4N Lapor: ${chat?.tindakan?.trackingId}`}
                                                 >
                                                     <Image 
                                                         src="/Spanlapor-icon.png" 

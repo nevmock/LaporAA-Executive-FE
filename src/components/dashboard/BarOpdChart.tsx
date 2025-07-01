@@ -137,8 +137,8 @@ export default function HorizontalBarPerangkatDaerahChart() {
                 ) => {
                     const clickedOPD = data.categories[config.dataPointIndex];
                     if (clickedOPD) {
-                        // Gunakan key unik untuk dashboard agar tidak konflik dengan halaman pengaduan
-                        sessionStorage.setItem('searchClicked', clickedOPD);
+                        // Gunakan key untuk selectedOpd alih-alih search
+                        sessionStorage.setItem('opdClicked', clickedOPD);
                         window.location.href = '/pengaduan';
                     }
                 }

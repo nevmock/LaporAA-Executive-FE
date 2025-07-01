@@ -78,7 +78,8 @@ export default function Laporan() {
         situasi: selectedSituasi !== "Semua Situasi" ? selectedSituasi : undefined,
         opd: selectedOpd !== "Semua OPD" ? selectedOpd : undefined,
         is_pinned: isPinnedOnly ? true : undefined,
-        byMeOnly: isByMeOnly ? true : undefined,
+        // Backend belum support byMeOnly parameter, jadi dicomment dulu
+        // byMeOnly: isByMeOnly ? true : undefined,
       };
       
       const controller = new AbortController();
@@ -137,9 +138,10 @@ export default function Laporan() {
 
     const clickedSearch = sessionStorage.getItem("searchClicked");
     const clickedStatus = sessionStorage.getItem("statusClicked");
+    const clickedOpd = sessionStorage.getItem("opdClicked");
 
     // PATCH: HANDLE SESSION CLICK
-    if (clickedSearch || clickedStatus) {
+    if (clickedSearch || clickedStatus || clickedOpd) {
       // Hapus semua key filter pengaduan_* dari localStorage
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("pengaduan_")) {
@@ -150,6 +152,7 @@ export default function Laporan() {
       // Isi localStorage dari session (biar persist)
       if (clickedStatus) localStorage.setItem(LS_KEY("status"), clickedStatus);
       if (clickedSearch) localStorage.setItem(LS_KEY("search"), clickedSearch);
+      if (clickedOpd) localStorage.setItem(LS_KEY("opd"), clickedOpd);
     }
 
     // Ambil dari localStorage seperti biasa

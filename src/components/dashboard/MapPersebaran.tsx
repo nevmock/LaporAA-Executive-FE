@@ -239,8 +239,6 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
       layer.bindPopup(`
         <div class="p-2">
           <h3 class="font-bold text-lg">${props.KECAMATAN}</h3>
-          <p class="text-sm text-gray-600">${props.KABKOT}, ${props.PROV}</p>
-          <p class="text-xs text-gray-500">${props.NEGARA}</p>
         </div>
       `);
       

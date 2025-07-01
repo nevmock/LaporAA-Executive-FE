@@ -95,13 +95,14 @@ export interface Chat {
     updatedAt?: string;
     tindakan?: Tindakan;
     rating?: number;
-    processed_by: ProcessedBy;
+    processed_by?: ProcessedBy;
     is_pinned?: boolean;
     tags?: string;
 }
 
 export interface ProcessedBy {
     _id: string;
+    username: string;
     nama_admin: string;
     role: string;
 }
@@ -131,3 +132,6 @@ export interface Report {
 }
 
 export type SortKey = "sessionId" | "user" | "pinned" | "admin" | "detail" | "tracking_id" | "bot_switch" | "tag" | "from" | "date" | "lokasi_kejadian" | "desa" | "prioritas" | "situasi" | "status" | "opd" | "timer";
+
+// Backend supported sort keys - only these columns can be sorted
+export type BackendSortKey = "prioritas" | "status" | "situasi" | "lokasi_kejadian" | "opd" | "date" | "admin" | "from";
