@@ -21,7 +21,12 @@ export interface Data {
     message: string;
     photos: string[];
     tindakan?: TindakanData;
-    processed_by?: string;
+    processed_by?: {
+        _id: string;
+        username: string;
+        nama_admin: string;
+        role: string;
+    };
     createdAt: string;
 }
 
@@ -95,7 +100,12 @@ export interface Chat {
     updatedAt?: string;
     tindakan?: Tindakan;
     rating?: number;
-    processed_by?: ProcessedBy;
+    processed_by?: {
+        _id: string;
+        username: string;
+        nama_admin: string;
+        role: string;
+    };
     is_pinned?: boolean;
     tags?: string;
 }
@@ -127,7 +137,12 @@ export interface Report {
         situasi?: string;
         status?: string;
     };
-    processed_by?: string;
+    processed_by?: {
+        _id: string;
+        username: string;
+        nama_admin: string;
+        role: string;
+    };
     createdAt?: string;
 }
 

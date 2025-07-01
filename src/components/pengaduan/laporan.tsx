@@ -96,12 +96,13 @@ export default function Laporan() {
       
       clearTimeout(timeoutId);
       
-      // Set data for table (flatten user, processed_by, etc. for rendering)
+      // Set data for table (flatten user, address, but keep processed_by as object)
       setData((res.data.data || []).map((item: any) => ({
         ...item,
         user: typeof item.user === "object" && item.user !== null ? item.user.name : item.user,
         address: typeof item.user === "object" && item.user !== null ? item.user.address : item.address,
-        processed_by: typeof item.processed_by === "object" && item.processed_by !== null ? item.processed_by.nama_admin : item.processed_by,
+        // Keep processed_by as object to maintain nama_admin and role properties
+        processed_by: typeof item.processed_by === "object" && item.processed_by !== null ? item.processed_by : null,
         // tindakan is kept as object for status, situasi, etc.
       })));
       setTotalPages(res.data.totalPages || 1);
