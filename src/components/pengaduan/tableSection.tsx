@@ -217,7 +217,7 @@ const TableSection: React.FC<Props> = ({
                             {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
-                                { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontol' },
+                                { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontrol' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
                                 { key: 'admin', icon: <FaEye />, label: 'Detail' },
                                 { key: 'tracking_id', icon: <PiChatsBold />, label: 'Tracking' },
