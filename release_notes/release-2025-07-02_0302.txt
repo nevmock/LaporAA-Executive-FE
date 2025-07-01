@@ -1,0 +1,12 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/dashboard/BoundariesLegend.tsx, src/components/dashboard/MapPersebaran.tsx, src/components/dashboard/MapboxBoundaries.tsx
+📅 2025-07-02_0302
+
+📂 Perubahan file:
+src/components/dashboard/BoundariesLegend.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/MapboxBoundaries.tsx
+src/components/dashboard/MapboxMarkers.tsx
+
+🚀 Meluncur

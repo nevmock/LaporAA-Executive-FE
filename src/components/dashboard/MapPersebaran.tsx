@@ -100,7 +100,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     setBoundariesLoading(true);
     try {
       // Menggunakan API baru untuk mendapatkan data GeoJSON Kabupaten Bekasi
-      const res = await axios.get('http://localhost:3001/geojson/kabupaten-bekasi');
+      const res = await axios.get(`${API_URL}/geojson/kabupaten-bekasi`);
       
       if (res.data.success) {
         // Set data boundaries dari response API
