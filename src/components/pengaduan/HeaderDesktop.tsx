@@ -87,11 +87,24 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
         ...situasiList
     ];
 
-    // Dinamis: statusTabs diambil dari statusCounts
+    // Status tabs dengan urutan yang sesuai statusColors
     const statusTabs = useMemo(() => {
+        const orderedStatuses = [
+            "Perlu Verifikasi",
+            "Verifikasi Situasi", 
+            "Verifikasi Kelengkapan Berkas",
+            "Proses OPD Terkait",
+            "Selesai Penanganan",
+            "Selesai Pengaduan",
+            "Ditutup"
+        ];
+        
         const base = ["Semua Status"];
-        const dynamic = Object.keys(statusCounts).filter(s => s && s !== "Tanpa Status");
-        return base.concat(dynamic);
+        // Filter hanya status yang ada di statusCounts dan urutkan sesuai orderedStatuses
+        const availableStatuses = orderedStatuses.filter(status => 
+            statusCounts[status] && statusCounts[status] > 0
+        );
+        return base.concat(availableStatuses);
     }, [statusCounts]);
 
     return (
