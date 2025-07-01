@@ -34,7 +34,7 @@ export default function BoundariesLegend({
       <div className="space-y-1">
         <button
           onClick={() => onKecamatanSelect('Semua Kecamatan')}
-          className={`flex items-center gap-2 text-xs w-full text-left p-1 rounded hover:bg-gray-100 ${
+          className={`flex items-center gap-2 text-xs text-gray-800 w-full text-left p-1 rounded hover:bg-gray-100 ${
             selectedKecamatan === 'Semua Kecamatan' ? 'bg-blue-50 border border-blue-200' : ''
           }`}
         >
@@ -45,7 +45,7 @@ export default function BoundariesLegend({
           <button
             key={kecamatan}
             onClick={() => onKecamatanSelect(kecamatan)}
-            className={`flex items-center gap-2 text-xs w-full text-left p-1 rounded hover:bg-gray-100 ${
+            className={`flex items-center gap-2 text-xs text-gray-800 w-full text-left p-1 rounded hover:bg-gray-100 ${
               selectedKecamatan === kecamatan ? 'bg-blue-50 border border-blue-200' : ''
             }`}
           >
