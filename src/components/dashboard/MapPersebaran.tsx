@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import axios from '../../utils/axiosInstance';
 import Legend from './legend';
+import BoundariesLegend from './BoundariesLegend';
 import iconByStatus from './icons';
 import { Report } from '../../lib/types';
 import dayjs from 'dayjs';
@@ -52,6 +53,11 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const mapParentRef = useRef<HTMLDivElement>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
   const [limitView, setLimitView] = useState(100); // default 100
+  const [showBoundaries, setShowBoundaries] = useState(true);
+  const [boundariesData, setBoundariesData] = useState<any>(null);
+  const [boundariesLoading, setBoundariesLoading] = useState(false);
+  const [kecamatanList, setKecamatanList] = useState<string[]>([]);
+  const [selectedKecamatan, setSelectedKecamatan] = useState<string>('Semua Kecamatan');
 
   // Daftar 5 tahun terakhir
   const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
@@ -87,10 +93,55 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
     }
   }, [filter, year, month, week, selectedStatus]);
 
+  // Ambil data boundaries dari backend
+  const fetchBoundaries = useCallback(async () => {
+    if (boundariesData || boundariesLoading) return; // Skip jika sudah ada data atau sedang loading
+    
+    setBoundariesLoading(true);
+    try {
+      // Menggunakan API baru untuk mendapatkan data GeoJSON Kabupaten Bekasi
+      const res = await axios.get('http://localhost:3001/geojson/kabupaten-bekasi');
+      
+      if (res.data.success) {
+        // Set data boundaries dari response API
+        setBoundariesData({
+          kecamatan: res.data.data, // Data GeoJSON semua kecamatan
+          kabupaten: null // Akan diisi jika ada data kabupaten terpisah
+        });
+        
+        // Extract daftar kecamatan dari data GeoJSON
+        if (res.data.meta && res.data.meta.kecamatan_list) {
+          setKecamatanList(res.data.meta.kecamatan_list);
+        } else if (res.data.data && res.data.data.features) {
+          // Fallback jika meta tidak ada, extract dari features
+          const kecamatanNames = res.data.data.features.map((feature: any) => 
+            feature.properties.KECAMATAN
+          ).filter((name: string) => name).sort();
+          setKecamatanList([...new Set(kecamatanNames)] as string[]);
+        }
+      } else {
+        console.error('❌ API Error:', res.data.message);
+        setBoundariesData(null);
+      }
+    } catch (err) {
+      console.error('❌ Gagal ambil data boundaries:', err);
+      setBoundariesData(null);
+    } finally {
+      setBoundariesLoading(false);
+    }
+  }, [boundariesData, boundariesLoading]);
+
   // Trigger fetch data setiap kali filter berubah
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Fetch boundaries saat komponen pertama kali di-mount
+  useEffect(() => {
+    if (showBoundaries) {
+      fetchBoundaries();
+    }
+  }, [showBoundaries, fetchBoundaries]);
 
   // Reset minggu ke-1 saat bulan/tahun/filter berubah
   useEffect(() => {
@@ -144,7 +195,77 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const firstValid = validReports[0];
   const mapCenter: [number, number] = firstValid
     ? [firstValid.location.latitude, firstValid.location.longitude]
-    : [-2.5, 118]; // Default: tengah Indonesia
+    : [-6.2373, 107.1686]; // Default: Kabupaten Bekasi (sesuai dokumentasi API)
+
+  // Styling untuk boundaries - Kecamatan dengan warna berbeda-beda
+  const getKecamatanStyle = (feature: any) => {
+    const kecamatanName = feature.properties.KECAMATAN;
+    const isSelected = selectedKecamatan === kecamatanName || selectedKecamatan === 'Semua Kecamatan';
+    
+    // Generate warna berdasarkan nama kecamatan untuk konsistensi
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+      '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D7BDE2',
+      '#A3E4D7', '#FAD7A0', '#D5A6BD', '#AED6F1', '#A9DFBF',
+      '#F9E79F', '#D2B4DE', '#A6E3E9'
+    ];
+    const colorIndex = kecamatanName ? Math.abs(kecamatanName.split('').reduce((a: number, b: string) => a + b.charCodeAt(0), 0)) % colors.length : 0;
+    
+    return {
+      fillColor: isSelected ? colors[colorIndex] : '#E5E7EB',
+      weight: isSelected ? 2 : 1,
+      opacity: isSelected ? 1 : 0.5,
+      color: isSelected ? '#2C3E50' : '#9CA3AF',
+      dashArray: '',
+      fillOpacity: isSelected ? 0.4 : 0.1
+    };
+  };
+
+  const kabupatenStyle = {
+    fillColor: 'transparent',
+    weight: 3,
+    opacity: 1,
+    color: '#1D4ED8',
+    dashArray: '5, 5',
+    fillOpacity: 0
+  };
+
+  // Handler untuk boundaries events
+  const onEachKecamatan = (feature: any, layer: any) => {
+    const props = feature.properties;
+    if (props && props.KECAMATAN) {
+      // Popup dengan informasi kecamatan
+      layer.bindPopup(`
+        <div class="p-2">
+          <h3 class="font-bold text-lg">${props.KECAMATAN}</h3>
+          <p class="text-sm text-gray-600">${props.KABKOT}, ${props.PROV}</p>
+          <p class="text-xs text-gray-500">${props.NEGARA}</p>
+        </div>
+      `);
+      
+      // Hover effects
+      layer.on({
+        mouseover: function (e: any) {
+          const layer = e.target;
+          layer.setStyle({
+            weight: 4,
+            fillOpacity: 0.6
+          });
+        },
+        mouseout: function (e: any) {
+          const layer = e.target;
+          layer.setStyle(getKecamatanStyle(feature));
+        }
+      });
+    }
+  };
+
+  const onEachKabupaten = (feature: any, layer: any) => {
+    if (feature.properties && feature.properties.name) {
+      layer.bindPopup(`<strong>Kabupaten ${feature.properties.name}</strong>`);
+    }
+  };
 
   // Screenshot handler
   const handleScreenshot = async () => {
@@ -199,6 +320,35 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
           <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          {/* Dropdown Kecamatan */}
+          {kecamatanList.length > 0 && (
+            <select 
+              value={selectedKecamatan} 
+              onChange={e => setSelectedKecamatan(e.target.value)} 
+              className="border rounded px-2 py-1 text-sm text-black"
+            >
+              <option value="Semua Kecamatan">Semua Kecamatan</option>
+              {kecamatanList.map(kecamatan => (
+                <option key={kecamatan} value={kecamatan}>{kecamatan}</option>
+              ))}
+            </select>
+          )}
+          {/* Toggle Boundaries */}
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={showBoundaries}
+              onChange={e => setShowBoundaries(e.target.checked)}
+              className="rounded"
+              disabled={boundariesLoading}
+            />
+            <span className="flex items-center gap-1">
+              Tampilkan Wilayah
+              {boundariesLoading && (
+                <span className="w-3 h-3 border border-gray-400 border-t-blue-500 rounded-full animate-spin"></span>
+              )}
+            </span>
+          </label>
           {/* Tombol download CSV */}
           <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
             Download CSV
@@ -240,6 +390,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
         <div
           ref={mapParentRef}
           className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}
+          style={{ position: 'relative' }}
         >
           <MapContainer
             key={isFullscreen ? 'fullscreen' : 'normal'}
@@ -253,6 +404,31 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            
+            {/* Boundaries Kabupaten dan Kecamatan */}
+            {showBoundaries && boundariesData && (
+              <>
+                {/* Kecamatan Boundaries - Data GeoJSON dari API */}
+                {boundariesData.kecamatan && (
+                  <GeoJSON
+                    key={`kecamatan-boundaries-${selectedKecamatan}`} // Re-render saat kecamatan berubah
+                    data={boundariesData.kecamatan}
+                    style={getKecamatanStyle}
+                    onEachFeature={onEachKecamatan}
+                  />
+                )}
+                {/* Kabupaten Boundaries - Jika ada data terpisah */}
+                {boundariesData.kabupaten && (
+                  <GeoJSON
+                    key="kabupaten-boundaries"
+                    data={boundariesData.kabupaten}
+                    style={kabupatenStyle}
+                    onEachFeature={onEachKabupaten}
+                  />
+                )}
+              </>
+            )}
+            
             {/* Marker per laporan valid */}
             {validReports.map(r => {
               const lat = r.location.latitude;
@@ -291,6 +467,14 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
               );
             })}
           </MapContainer>
+          
+          {/* Boundaries Legend */}
+          <BoundariesLegend
+            kecamatanList={kecamatanList}
+            selectedKecamatan={selectedKecamatan}
+            onKecamatanSelect={setSelectedKecamatan}
+            visible={showBoundaries}
+          />
         </div>
       )}
     </div>

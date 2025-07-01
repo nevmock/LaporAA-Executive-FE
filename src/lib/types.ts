@@ -14,11 +14,15 @@ export interface Data {
         latitude: number;
         longitude: number;
         description: string;
+        desa?: string;
+        kecamatan?: string;
+        kabupaten?: string;
     };
     message: string;
     photos: string[];
     tindakan?: TindakanData;
     processed_by?: string;
+    createdAt: string;
 }
 
 export interface TindakanData {
@@ -39,7 +43,6 @@ export interface TindakanData {
     keterangan: string;
     status_laporan: string;
     prioritas: string;
-    tags?: string[];
     tindakanId?: string;
     tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
@@ -76,7 +79,6 @@ export interface Tindakan {
     keterangan: string;
     status_laporan: string;
     prioritas: string;
-    tags?: string[];
     tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
 
@@ -95,8 +97,6 @@ export interface Chat {
     rating?: number;
     processed_by: ProcessedBy;
     is_pinned?: boolean;
-    tags?: string[];
-    tag?: Array<{ hash_tag: string; _id: string } | string>;
 }
 
 export interface ProcessedBy {

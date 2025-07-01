@@ -379,12 +379,12 @@ export default function Proses({
                         value={newKesimpulan}
                         onChange={(e) => setNewKesimpulan(e.target.value)}
                         rows={3}
-                        maxLength={250}
+                        // maxLength={250}
                         className="w-full border border-yellow-300 bg-yellow-50 p-2 rounded-md placeholder:text-grey-700 focus:ring-yellow-400 focus:border-yellow-500"
                         placeholder="Tempel atau Ketik Tindak Lanjut dari Halaman SP4N Lapor . . . . "
                     />
                     <p className="text-sm text-gray-500 text-right">
-                        {newKesimpulan.length}/250 karakter
+                        {newKesimpulan.length} karakter
                     </p>
                     <div className="mt-2 flex justify-center">
                         <button
