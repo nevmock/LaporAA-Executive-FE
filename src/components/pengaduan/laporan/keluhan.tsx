@@ -148,9 +148,17 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
 
     // Copy to clipboard helper
     const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Teks berhasil disalin ke clipboard");
-        });
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Teks berhasil disalin ke clipboard");
+            }).catch(() => {
+                // Fallback for older browsers or when clipboard API fails
+                alert("Gagal menyalin ke clipboard");
+            });
+        } else {
+            // Fallback when clipboard API is not available
+            alert("Fitur copy tidak tersedia");
+        }
     };
 
     // Handler untuk download foto individual

@@ -1,0 +1,20 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update package.json, src/app/(dashboard)/dashboard/Home.tsx, src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+📅 2025-07-04_1811
+
+📂 Perubahan file:
+package.json
+src/app/(dashboard)/dashboard/Home.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/(dashboard)/user-management/page.tsx
+src/app/AppShell.tsx
+src/app/layout.tsx
+src/components/TopNavbar.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/laporan/profile.tsx
+src/hooks/useAuth.ts
+src/services/botModeService.ts
+
+🚀 Meluncur

@@ -12,6 +12,17 @@ import { Tooltip } from "../../../../components/Tooltip";
 import { useBotModeWithTab } from "../../../../hooks/useBotMode";
 import { BotModeDebugPanel } from "../../../../components/BotModeIndicator";
 
+// Dynamic imports
+const EnhancedModeManagement = dynamic(() => import("../../../../components/EnhancedModeManagement"), { 
+  loading: () => <div>Loading...</div>, 
+  ssr: false 
+});
+
+const FileManager = dynamic(() => import("../../../../components/FileManager"), { 
+  loading: () => <div>Loading...</div>, 
+  ssr: false 
+});
+
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
 const MemoTindakan = dynamic(() => import("../../../../components/pengaduan/laporan/tindakan"), { 
@@ -39,6 +50,8 @@ export default function ChatPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [showEnhancedModeManagement, setShowEnhancedModeManagement] = useState(false);
+  const [showFileManager, setShowFileManager] = useState(false);
   
   // Force mode state - menggunakan pattern yang sama seperti di tableSection
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -482,6 +495,30 @@ export default function ChatPage() {
                       )}
                     </button>
                   )}
+                  
+                  {/* Enhanced Mode Management Button (for admin) */}
+                  {role === 'admin' && (
+                    <button
+                      onClick={() => setShowEnhancedModeManagement(true)}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm bg-purple-500 hover:bg-purple-600 text-white"
+                      title="Advanced Mode Management"
+                    >
+                      <FaCog className="inline mr-1" />
+                      Advanced
+                    </button>
+                  )}
+                  
+                  {/* File Manager Button */}
+                  {(role === "Bupati" || role === "SuperAdmin" || role === "Admin") && (
+                    <button
+                      onClick={() => setShowFileManager(true)}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      title="File Manager"
+                    >
+                      <FaFileAlt className="inline mr-1" />
+                      Files
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -533,6 +570,26 @@ export default function ChatPage() {
             });
           }}
           onChangeMode={handleModeChange}
+        />
+      )}
+
+      {/* Enhanced Mode Management Modal */}
+      {showEnhancedModeManagement && (
+        <EnhancedModeManagement
+          userId={data?.from || ''}
+          currentMode={botMode.mode}
+          onModeChange={handleModeChange}
+          onClose={() => setShowEnhancedModeManagement(false)}
+        />
+      )}
+      
+      {/* File Manager Modal */}
+      {showFileManager && (
+        <FileManager
+          onClose={() => setShowFileManager(false)}
+          selectMode={false}
+          userId={data?.from}
+          chatSession={sessionId}
         />
       )}
     </div>

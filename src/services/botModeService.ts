@@ -420,7 +420,7 @@ export class BotModeService {
      * Force mode to bot when leaving (SIMPLE - NO API CALLS TO PREVENT LOOPS)
      */
     forceModeToBotOnExit(from: string) {
-        if (!from) return;
+        if (!from || typeof navigator === 'undefined') return;
 
         try {
             // ULTRA SIMPLE: Just beacon, no checks, no promises, no async
@@ -440,16 +440,20 @@ export class BotModeService {
      * Setup beforeunload handler (MINIMAL - NO LOOPS)
      */
     private setupBeforeUnloadHandler() {
+        if (typeof window === 'undefined') return;
+
         const handleBeforeUnload = () => {
             // SIMPLEST APPROACH: Only send beacon for cleanup, no checks
             this.modeCache.forEach((cached, from) => {
                 if (cached.mode === 'manual') {
                     try {
                         // Simple beacon approach - no fetch, no promises, no async
-                        const formData = new FormData();
-                        formData.append('_method', 'PUT');
-                        formData.append('mode', 'bot');
-                        navigator.sendBeacon(`${this.config.apiBaseUrl}/mode/${from}`, formData);
+                        if (typeof navigator !== 'undefined') {
+                            const formData = new FormData();
+                            formData.append('_method', 'PUT');
+                            formData.append('mode', 'bot');
+                            navigator.sendBeacon(`${this.config.apiBaseUrl}/mode/${from}`, formData);
+                        }
                     } catch (error) {
                         // Silent fail - nothing we can do in beforeunload
                     }

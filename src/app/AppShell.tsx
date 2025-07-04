@@ -2,6 +2,7 @@
 
 import Sidebar from "../components/sidebar";
 import TopNavbar from "../components/TopNavbar";
+import GlobalNotificationSystem from "../components/socket/GlobalNotificationSystem";
 import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
@@ -77,6 +78,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen w-screen flex-col sm:flex-row">
+            {/* Global Notification System */}
+            <GlobalNotificationSystem />
+            
             {isMobile ? (
                 <>
                     <div className="flex flex-col h-screen overflow-hidden">
