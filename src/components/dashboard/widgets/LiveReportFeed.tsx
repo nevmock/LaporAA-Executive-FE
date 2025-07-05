@@ -240,7 +240,7 @@ export default function LiveReportFeed({
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-2">
           <Bell className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-800">Aktivitas Real-time</h3>
+          <h3 className="font-semibold text-gray-800">Aktivitas Terbaru</h3>
           {unreadCount > 0 && (
             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               {unreadCount}
@@ -248,15 +248,7 @@ export default function LiveReportFeed({
           )}
         </div>
         
-        <div className="flex items-center gap-2">
-          {/* Connection indicator */}
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
-          }`} />
-          <span className="text-xs text-gray-500">
-            {isConnected ? 'Live' : 'Offline'}
-          </span>
-          
+        <div className="flex items-center gap-2">          
           {unreadCount > 0 && (
             <button
               onClick={markAsRead}

@@ -30,15 +30,17 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
     reconnectAttempts,
     networkStatus,
     connectionQuality,
-    error 
+    error,
+    reconnect
   } = useSocket();
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [reconnectionProgress, setReconnectionProgress] = useState(0);
+  const [isManualReconnecting, setIsManualReconnecting] = useState(false);
 
   // Simulate reconnection progress
   useEffect(() => {
-    if (isReconnecting) {
+    if (isReconnecting || isManualReconnecting) {
       setReconnectionProgress(0);
       const interval = setInterval(() => {
         setReconnectionProgress(prev => {
@@ -51,8 +53,22 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
     } else if (isConnected) {
       setReconnectionProgress(100);
       setTimeout(() => setReconnectionProgress(0), 1000);
+      setIsManualReconnecting(false); // Reset manual reconnect state
     }
-  }, [isReconnecting, isConnected]);
+  }, [isReconnecting, isConnected, isManualReconnecting]);
+
+  // Manual reconnect handler
+  const handleManualReconnect = async () => {
+    if (isManualReconnecting || isReconnecting) return;
+    
+    try {
+      setIsManualReconnecting(true);
+      await reconnect();
+    } catch (error) {
+      console.error('Manual reconnect failed:', error);
+      setIsManualReconnecting(false);
+    }
+  };
 
   const getSizeClasses = () => {
     switch (size) {
@@ -97,6 +113,8 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   };
 
   const getStatusText = () => {
+    if (isManualReconnecting) return 'Menghubungkan ulang...';
+    
     switch (connectionStatus) {
       case 'connected':
         return 'Terhubung';
@@ -184,6 +202,18 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
           )}
         </div>
         
+        {/* Manual Reconnect Button */}
+        {!isConnected && (
+          <button
+            onClick={handleManualReconnect}
+            disabled={isReconnecting || isManualReconnecting}
+            className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+            title="Hubungkan ulang ke server"
+          >
+            <FaSpinner className={`w-3 h-3 ${isManualReconnecting ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+        
         {/* Network Quality Indicator */}
         <div className="ml-2">
           {getQualityIcon()}
@@ -191,7 +221,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       </div>
 
       {/* Reconnection Progress Bar */}
-      {showProgress && isReconnecting && (
+      {showProgress && (isReconnecting || isManualReconnecting) && (
         <div className="absolute -bottom-6 left-0 right-0 bg-gray-200 rounded-full h-1 overflow-hidden">
           <div 
             className="bg-orange-500 h-full transition-all duration-500 ease-out"

@@ -80,33 +80,8 @@ export default function LiveStats() {
   }, [socket, isConnected, handleStatsUpdate]);
 
   return (
-    <div className="relative">
-      {/* Real-time indicator */}
-      <div className="absolute top-2 right-2 z-10">
-        <div className="flex items-center gap-2 text-xs">
-          {/* Connection status */}
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
-          }`} />
-          
-          {/* Last update time */}
-          <span className="text-gray-500">
-            Terakhir: {lastUpdate.toLocaleTimeString('id-ID', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </span>
-          
-          {/* Real-time badge */}
-          {isConnected && (
-            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-              Real-time
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Wrapped SummaryTable */}
+    <div className="w-full">
+      {/* Wrapped SummaryTable without real-time indicators */}
       <SummaryTable key={refreshTrigger} />
     </div>
   );

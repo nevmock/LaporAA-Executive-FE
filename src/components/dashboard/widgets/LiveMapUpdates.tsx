@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSocket } from '@/hooks/useSocket';
-import MapPersebaran from './MapPersebaran';
+import MapPersebaran from '../maps/MapPersebaran';
 
 interface MapUpdateData {
   type: 'new_marker' | 'marker_update' | 'marker_delete' | 'boundary_update';
@@ -21,6 +21,15 @@ interface MapUpdateData {
 interface LiveMapUpdatesProps {
   isFullscreen?: boolean;
   className?: string;
+  timeFilter?: string;
+  year?: number;
+  month?: number;
+  week?: number;
+  selectedStatus?: string;
+  selectedKecamatan?: string;
+  limitView?: number;
+  showBoundaries?: boolean;
+  setBoundariesLoading?: (loading: boolean) => void;
 }
 
 /**
@@ -28,7 +37,19 @@ interface LiveMapUpdatesProps {
  * Wraps MapPersebaran with real-time socket updates
  * Provides live marker updates and boundary changes
  */
-export default function LiveMapUpdates({ isFullscreen = false, className = "" }: LiveMapUpdatesProps) {
+export default function LiveMapUpdates({ 
+  isFullscreen = false, 
+  className = "",
+  timeFilter = 'monthly',
+  year = new Date().getFullYear(),
+  month = new Date().getMonth() + 1,
+  week = 1,
+  selectedStatus = 'Semua Status',
+  selectedKecamatan = 'Semua Kecamatan',
+  limitView = 100,
+  showBoundaries = true,
+  setBoundariesLoading
+}: LiveMapUpdatesProps) {
   const { socket, isConnected } = useSocket();
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -130,52 +151,20 @@ export default function LiveMapUpdates({ isFullscreen = false, className = "" }:
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Real-time updates indicator */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3 max-w-xs">
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
-          }`} />
-          <span className="text-xs font-medium">
-            {isConnected ? 'Live Updates' : 'Offline'}
-          </span>
-        </div>
-        
-        <div className="text-xs text-gray-600">
-          Terakhir: {lastUpdate.toLocaleTimeString('id-ID', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })}
-        </div>
-
-        {/* Recent updates */}
-        {recentUpdates.length > 0 && (
-          <div className="mt-2 space-y-1">
-            <div className="text-xs font-medium text-gray-700">Update Terbaru:</div>
-            {recentUpdates.slice(0, 3).map((update, index) => (
-              <div key={index} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                {getUpdateMessage(update)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* New report notification overlay */}
-      {recentUpdates.some(u => u.type === 'new_marker') && (
-        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 text-white px-3 py-2 rounded-lg shadow-lg animate-pulse">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-white rounded-full animate-ping" />
-            <span className="text-sm font-medium">Laporan baru diterima!</span>
-          </div>
-        </div>
-      )}
-
-      {/* Wrapped MapPersebaran component */}
+    <div className={`w-full h-full ${className}`}>
+      {/* Clean map display without live indicators */}
       <MapPersebaran 
         key={refreshTrigger} 
         isFullscreen={isFullscreen}
+        filter={timeFilter}
+        year={year}
+        month={month}
+        week={week}
+        selectedStatus={selectedStatus}
+        selectedKecamatan={selectedKecamatan}
+        limitView={limitView}
+        showBoundaries={showBoundaries}
+        setBoundariesLoading={setBoundariesLoading}
       />
     </div>
   );

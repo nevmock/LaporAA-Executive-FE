@@ -36,7 +36,7 @@ export default function FullScreen({
 
   // JSX untuk tampilan fullscreen modal
   const modal = (
-    <div className="fixed inset-0 z-[9999] bg-white p-6 overflow-auto flex flex-col">
+    <div className="fixed inset-0 z-[999999] bg-white p-6 overflow-auto flex flex-col">
       {/* Tombol untuk menutup fullscreen */}
       <div className="flex justify-end items-center mb-4">
         <button

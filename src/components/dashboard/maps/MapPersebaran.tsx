@@ -2,11 +2,11 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
-import axios from '../../utils/axiosInstance';
-import Legend from './legend';
-import BoundariesLegend from './BoundariesLegend';
-import iconByStatus from './icons';
-import { Report } from '../../lib/types';
+import axios from '../../../utils/axiosInstance';
+import Legend from '../utils/legend';
+import BoundariesLegend from '../widgets/BoundariesLegend';
+import iconByStatus from '../utils/icons';
+import { Report } from '../../../lib/types';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import { MdOutlineScreenshotMonitor } from "react-icons/md";
@@ -41,23 +41,50 @@ const months = [
 
 const now = dayjs();
 
+interface MapPersebaranProps {
+  isFullscreen?: boolean;
+  filter?: string;
+  year?: number;
+  month?: number;
+  week?: number;
+  selectedStatus?: string;
+  selectedKecamatan?: string;
+  limitView?: number;
+  showBoundaries?: boolean;
+  setBoundariesLoading?: (loading: boolean) => void;
+}
+
 // Komponen utama Peta Persebaran Laporan
-export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?: boolean }) {
+export default function MapPersebaran({ 
+  isFullscreen = false,
+  filter: initialFilter = 'monthly',
+  year: initialYear = now.year(),
+  month: initialMonth = now.month() + 1,
+  week: initialWeek = 1,
+  selectedStatus: initialSelectedStatus = 'Semua Status',
+  selectedKecamatan: initialSelectedKecamatan = 'Semua Kecamatan',
+  limitView: initialLimitView = 100,
+  showBoundaries: initialShowBoundaries = true,
+  setBoundariesLoading
+}: MapPersebaranProps) {
   const [reports, setReports] = useState<Report[]>([]);
-  const [filter, setFilter] = useState('monthly');
-  const [year, setYear] = useState(now.year());
-  const [month, setMonth] = useState(now.month() + 1);
-  const [week, setWeek] = useState(1);
-  const [selectedStatus, setSelectedStatus] = useState('Semua Status');
+  const [filter, setFilter] = useState(initialFilter);
+  const [year, setYear] = useState(initialYear);
+  const [month, setMonth] = useState(initialMonth);
+  const [week, setWeek] = useState(initialWeek);
+  const [selectedStatus, setSelectedStatus] = useState(initialSelectedStatus);
+  const [selectedKecamatan, setSelectedKecamatan] = useState(initialSelectedKecamatan);
+  const [limitView, setLimitView] = useState(initialLimitView);
+  const [showBoundaries, setShowBoundaries] = useState(initialShowBoundaries);
   const [mapReady, setMapReady] = useState(false);
   const mapParentRef = useRef<HTMLDivElement>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
-  const [limitView, setLimitView] = useState(100); // default 100
-  const [showBoundaries, setShowBoundaries] = useState(true);
   const [boundariesData, setBoundariesData] = useState<any>(null);
-  const [boundariesLoading, setBoundariesLoading] = useState(false);
+  const [boundariesLoading, setBoundariesLoadingInternal] = useState(false);
   const [kecamatanList, setKecamatanList] = useState<string[]>([]);
-  const [selectedKecamatan, setSelectedKecamatan] = useState<string>('Semua Kecamatan');
+
+  // Use external setBoundariesLoading if provided, otherwise use internal
+  const handleSetBoundariesLoading = setBoundariesLoading || setBoundariesLoadingInternal;
 
   // Daftar 5 tahun terakhir
   const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
@@ -97,7 +124,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   const fetchBoundaries = useCallback(async () => {
     if (boundariesData || boundariesLoading) return; // Skip jika sudah ada data atau sedang loading
     
-    setBoundariesLoading(true);
+    handleSetBoundariesLoading(true);
     try {
       // Menggunakan API baru untuk mendapatkan data GeoJSON Kabupaten Bekasi
       const res = await axios.get(`${API_URL}/geojson/kabupaten-bekasi`);
@@ -127,7 +154,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
       console.error('❌ Gagal ambil data boundaries:', err);
       setBoundariesData(null);
     } finally {
-      setBoundariesLoading(false);
+      handleSetBoundariesLoading(false);
     }
   }, [boundariesData, boundariesLoading]);
 
@@ -147,6 +174,18 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   useEffect(() => {
     setWeek(1);
   }, [month, year, filter]);
+
+  // Sync external props with internal state
+  useEffect(() => {
+    setFilter(initialFilter);
+    setYear(initialYear);
+    setMonth(initialMonth);
+    setWeek(initialWeek);
+    setSelectedStatus(initialSelectedStatus);
+    setSelectedKecamatan(initialSelectedKecamatan);
+    setLimitView(initialLimitView);
+    setShowBoundaries(initialShowBoundaries);
+  }, [initialFilter, initialYear, initialMonth, initialWeek, initialSelectedStatus, initialSelectedKecamatan, initialLimitView, initialShowBoundaries]);
 
   // Auto-refresh data setiap 5 menit (ganti ke 1 menit buat development/test)
   useEffect(() => {
@@ -288,88 +327,9 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Filter dan kontrol */}
-      <div className="flex flex-wrap gap-2 md:flex-row md:items-center md:justify-between mb-4">
-        <h4 className="text-lg font-semibold text-gray-800">Peta Persebaran</h4>
-        <div className="flex flex-wrap gap-2 items-center justify-end mt-5">
-          {/* Dropdown filter */}
-          <select value={limitView} onChange={e => setLimitView(Number(e.target.value))} className="border rounded px-2 py-1 text-sm text-black">
-            {[100, 200, 300, 400, 500].map(opt => (<option key={opt} value={opt}>Tampilkan {opt}</option>))}
-          </select>
-          <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
-            {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-          <select value={year} onChange={e => setYear(+e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          {(filter === 'monthly' || filter === 'weekly') && (
-            <select value={month} onChange={e => setMonth(+e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
-              {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-            </select>
-          )}
-          {filter === 'weekly' && (
-            <select value={week} onChange={e => setWeek(+e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
-              {Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1).map(w => (
-                <option key={w} value={w}>Minggu ke-{w}</option>
-              ))}
-            </select>
-          )}
-          <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="border rounded px-2 py-1 text-sm text-black">
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          {/* Dropdown Kecamatan */}
-          {kecamatanList.length > 0 && (
-            <select 
-              value={selectedKecamatan} 
-              onChange={e => setSelectedKecamatan(e.target.value)} 
-              className="border rounded px-2 py-1 text-sm text-black"
-            >
-              <option value="Semua Kecamatan">Semua Kecamatan</option>
-              {kecamatanList.map(kecamatan => (
-                <option key={kecamatan} value={kecamatan}>{kecamatan}</option>
-              ))}
-            </select>
-          )}
-          {/* Toggle Boundaries */}
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={showBoundaries}
-              onChange={e => setShowBoundaries(e.target.checked)}
-              className="rounded"
-              disabled={boundariesLoading}
-            />
-            <span className="flex items-center gap-1">
-              Tampilkan Wilayah
-              {boundariesLoading && (
-                <span className="w-3 h-3 border border-gray-400 border-t-blue-500 rounded-full animate-spin"></span>
-              )}
-            </span>
-          </label>
-          {/* Tombol download CSV */}
-          <button onClick={handleDownloadCSV} className="border rounded px-2 py-1 text-sm bg-green-500 text-white hover:bg-green-600">
-            Download CSV
-          </button>
-          {/* Tombol Screenshot Map */}
-          <button
-            onClick={handleScreenshot}
-            className={`border rounded px-2 py-1 text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
-            disabled={!mapReady || isScreenshotLoading}
-            title={mapReady ? 'Screenshot peta' : 'Tunggu sampai peta siap'}
-          >
-            {isScreenshotLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-blue-200 rounded-full animate-spin"></span>
-                Memproses...
-              </>
-            ) : (
-              <><MdOutlineScreenshotMonitor /> Screenshot</>
-            )}
-          </button>
-        </div>
-      </div>
-
+    <div className="w-full h-full flex flex-col" style={{ height: '100%' }}>
+      {/* Map content - all filters now handled by FilterControls in parent */}
+      
       {/* Loading */}
       {!mapReady ? (
         <div className="flex items-center justify-center h-full text-gray-600">
@@ -379,7 +339,7 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
           </div>
         </div>
       ) : validReports.length === 0 ? (
-        <div className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="h-full" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
             Tidak ada laporan ditemukan untuk filter ini.
           </div>
@@ -387,14 +347,14 @@ export default function MapPersebaran({ isFullscreen = false }: { isFullscreen?:
       ) : (
         <div
           ref={mapParentRef}
-          className={isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}
+          className="h-full"
           style={{ position: 'relative' }}
         >
           <MapContainer
-            key={isFullscreen ? 'fullscreen' : 'normal'}
+            key="map-container"
             center={mapCenter}
-            zoom={isFullscreen ? 11 : 10}
-            scrollWheelZoom={false}
+            zoom={10}
+            scrollWheelZoom={true}
             style={{ height: '100%', width: '100%' }}
           >
             <Legend />

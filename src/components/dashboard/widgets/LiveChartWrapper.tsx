@@ -83,44 +83,9 @@ export default function LiveChartWrapper({
   }, [socket, isConnected, chartType, handleChartUpdate]);
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Live update indicator overlay */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
-        {/* Connection status */}
-        <div className={`w-2 h-2 rounded-full ${
-          isConnected ? 'bg-green-500' : 'bg-gray-400'
-        } ${isUpdating ? 'animate-pulse' : ''}`} />
-        
-        {/* Update animation */}
-        {isUpdating && (
-          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
-            Updating...
-          </div>
-        )}
-        
-        {/* Last update time */}
-        <div className="bg-white bg-opacity-90 backdrop-blur text-xs text-gray-600 px-2 py-1 rounded">
-          {lastUpdate.toLocaleTimeString('id-ID', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })}
-        </div>
-        
-        {/* Real-time badge */}
-        {isConnected && (
-          <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-            Live
-          </div>
-        )}
-      </div>
-
-      {/* Chart update shimmer effect */}
-      {isUpdating && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer z-5" />
-      )}
-
-      {/* Wrapped chart component */}
-      <div className={`transition-opacity duration-300 ${isUpdating ? 'opacity-75' : 'opacity-100'}`}>
+    <div className={`w-full h-full ${className}`}>
+      {/* Wrapped chart component without live indicators */}
+      <div className="w-full h-full">
         {React.cloneElement(children as React.ReactElement, { key: refreshTrigger })}
       </div>
     </div>

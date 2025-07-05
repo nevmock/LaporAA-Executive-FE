@@ -15,6 +15,7 @@ export interface AdminPerformanceDashboard {
 export interface AdminStat {
   adminId: string;
   adminName: string;
+  username?: string; // Optional username field
   role: string;
   totalActivities: number;
   reportActivities: number;
@@ -24,6 +25,7 @@ export interface AdminStat {
 export interface ReportStat {
   adminId: string;
   adminName: string;
+  username?: string; // Optional username field
   role: string;
   totalProcessed: number;
   statusBreakdown: {
@@ -36,6 +38,7 @@ export interface ActivityStat {
   date: string;
   adminId: string;
   adminName: string;
+  username?: string; // Optional username field
   totalActivities: number;
   activities: {
     type: string;
@@ -176,5 +179,22 @@ export const adminPerformanceService = {
     
     const response = await axiosInstance.get(`/performance/monthly?${queryParams.toString()}`);
     return response.data;
+  },
+
+  // Get reports by status for specific admin
+  getReportsByStatus: async (params: {
+    adminId: string;
+    status: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any[]> => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('adminId', params.adminId);
+    queryParams.append('status', params.status);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    
+    const response = await axiosInstance.get(`/performance/reports-by-status?${queryParams.toString()}`);
+    return response.data?.reports || [];
   },
 };

@@ -19,6 +19,17 @@ import {
 } from 'react-icons/fi';
 import { adminPerformanceService, AdminPerformanceDashboard } from '@/services/adminPerformanceService';
 
+// Warna status sesuai dengan warna marker di map dan dashboard
+const STATUS_COLORS: Record<string, string> = {
+  'Perlu Verifikasi': '#ef4444',        // red
+  'Verifikasi Situasi': '#a855f7',      // violet
+  'Verifikasi Kelengkapan Berkas': '#f97316', // orange
+  'Proses OPD Terkait': '#eab308',      // yellow
+  'Selesai Penanganan': '#3b82f6',      // blue
+  'Selesai Pengaduan': '#22c55e',       // green
+  'Ditutup': '#374151',                 // black/gray
+};
+
 interface AdminPerformanceProps {
   selectedAdminId?: string;
 }
@@ -36,6 +47,17 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
     isOpen: false,
     title: '',
     content: ''
+  });
+  const [statusModal, setStatusModal] = useState<{ 
+    isOpen: boolean; 
+    status: string; 
+    adminName: string; 
+    reports: any[] 
+  }>({
+    isOpen: false,
+    status: '',
+    adminName: '',
+    reports: []
   });
 
   const loadDashboardData = async () => {
@@ -98,6 +120,43 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
 
   const closeInfo = () => {
     setInfoModal({ isOpen: false, title: '', content: '' });
+  };
+
+  // Status modal functionality
+  const showStatusReports = async (status: string, adminName: string, adminId: string) => {
+    try {
+      console.log('Fetching reports for:', { status, adminName, adminId, dateRange });
+      
+      // Fetch reports for this specific status and admin
+      const reports = await adminPerformanceService.getReportsByStatus({
+        adminId,
+        status,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+      
+      console.log('Received reports:', reports);
+      
+      setStatusModal({
+        isOpen: true,
+        status,
+        adminName,
+        reports: reports || []
+      });
+    } catch (error) {
+      console.error('Error fetching status reports:', error);
+      alert(`Error loading reports: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setStatusModal({
+        isOpen: true,
+        status,
+        adminName,
+        reports: []
+      });
+    }
+  };
+
+  const closeStatusModal = () => {
+    setStatusModal({ isOpen: false, status: '', adminName: '', reports: [] });
   };
 
   // Download functionality
@@ -703,8 +762,13 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                     });
                   });
                   
-                  const statusData = Object.entries(statusMap).map(([name, value]) => ({ name, value }));
-                  const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+                  const statusData = Object.entries(statusMap).map(([name, value]) => ({ 
+                    name, 
+                    value,
+                    itemStyle: {
+                      color: STATUS_COLORS[name] || '#6b7280'
+                    }
+                  }));
                   
                   return {
                     tooltip: {
@@ -728,7 +792,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                           shadowColor: 'rgba(0, 0, 0, 0.5)'
                         }
                       },
-                      color: colors
+                      color: statusData.map(item => item.itemStyle.color)
                     }]
                   };
                 })()}
@@ -823,13 +887,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                     const statusData = admin?.statusBreakdown.find(s => s.status === status);
                     return statusData ? statusData.count : 0;
                   }),
-                  color: status === 'Selesai Penanganan' || status === 'Selesai Pengaduan' || status === 'Ditutup'
-                    ? '#10B981'
-                    : status === 'Proses OPD Terkait'
-                    ? '#3B82F6'
-                    : status === 'Perlu Verifikasi'
-                    ? '#F59E0B'
-                    : '#6B7280'
+                  color: STATUS_COLORS[status] || '#6b7280'
                 }))
               };
             })()}
@@ -987,7 +1045,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{admin.adminName || 'Unknown Admin'}</div>
-                          <div className="text-sm text-gray-500">ID: {admin.adminId.slice(-8)}</div>
+                          <div className="text-sm text-gray-500">{admin.username || 'No username'}</div>
                         </div>
                       </div>
                     </td>
@@ -1009,17 +1067,19 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {admin.statusBreakdown.map((status, idx) => (
-                          <span key={idx} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            status.status === 'Selesai Penanganan' || status.status === 'Selesai Pengaduan' || status.status === 'Ditutup'
-                              ? 'bg-green-100 text-green-800'
-                              : status.status === 'Proses OPD Terkait'
-                              ? 'bg-blue-100 text-blue-800'
-                              : status.status === 'Perlu Verifikasi'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
+                          <button
+                            key={idx}
+                            onClick={() => showStatusReports(status.status, admin.adminName || 'Unknown', admin.adminId)}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
+                            style={{
+                              backgroundColor: `${STATUS_COLORS[status.status] || '#6b7280'}20`,
+                              color: STATUS_COLORS[status.status] || '#6b7280',
+                              border: `1px solid ${STATUS_COLORS[status.status] || '#6b7280'}40`
+                            }}
+                            title={`Klik untuk melihat detail laporan ${status.status}`}
+                          >
                             {status.status}: {status.count}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </td>
@@ -1099,13 +1159,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                     value: s.count,
                     name: s.status,
                     itemStyle: {
-                      color: s.status === 'Selesai Penanganan' || s.status === 'Selesai Pengaduan' || s.status === 'Ditutup'
-                        ? '#10B981'
-                        : s.status === 'Proses OPD Terkait'
-                        ? '#3B82F6'
-                        : s.status === 'Perlu Verifikasi'
-                        ? '#F59E0B'
-                        : '#6B7280'
+                      color: STATUS_COLORS[s.status] || '#6b7280'
                     }
                   })),
                   emphasis: {
@@ -1128,15 +1182,10 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
               {admin.statusBreakdown.map((status, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${
-                      status.status === 'Selesai Penanganan' || status.status === 'Selesai Pengaduan' || status.status === 'Ditutup'
-                        ? 'bg-green-500'
-                        : status.status === 'Proses OPD Terkait'
-                        ? 'bg-blue-500'
-                        : status.status === 'Perlu Verifikasi'
-                        ? 'bg-yellow-500'
-                        : 'bg-gray-500'
-                    }`}></div>
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: STATUS_COLORS[status.status] || '#6b7280' }}
+                    ></div>
                     <span className="text-gray-600">{status.status}</span>
                   </div>
                   <span className="font-medium text-gray-900">{status.count}</span>
@@ -1167,6 +1216,102 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Reports Modal */}
+      {statusModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Laporan {statusModal.status}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Admin: {statusModal.adminName} | Total: {statusModal.reports.length} laporan
+                </p>
+              </div>
+              <button
+                onClick={closeStatusModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
+              {statusModal.reports.length > 0 ? (
+                <div className="space-y-4">
+                  {statusModal.reports.map((report, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            #{report.sessionId || `Report-${idx + 1}`}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {report.message ? 
+                              (report.message.length > 100 ? 
+                                `${report.message.substring(0, 100)}...` : 
+                                report.message
+                              ) : 
+                              'No message available'
+                            }
+                          </p>
+                        </div>
+                        <span 
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: `${STATUS_COLORS[statusModal.status] || '#6b7280'}20`,
+                            color: STATUS_COLORS[statusModal.status] || '#6b7280'
+                          }}
+                        >
+                          {statusModal.status}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        {report.createdAt && (
+                          <div>Dibuat: {formatDateTime(report.createdAt)}</div>
+                        )}
+                        {report.opd && Array.isArray(report.opd) && report.opd.length > 0 && (
+                          <div>OPD: {report.opd.join(', ')}</div>
+                        )}
+                        {report.location?.kecamatan && (
+                          <div>Kecamatan: {report.location.kecamatan}</div>
+                        )}
+                        {report.location?.desa && (
+                          <div>Desa: {report.location.desa}</div>
+                        )}
+                        {report.location?.description && (
+                          <div>Lokasi: {report.location.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FiFileText size={48} className="mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Tidak ada laporan
+                  </h3>
+                  <p className="text-gray-600">
+                    Tidak ada laporan dengan status "{statusModal.status}" untuk admin {statusModal.adminName} pada periode ini.
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end">
+              <button
+                onClick={closeStatusModal}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Tutup
               </button>
             </div>
           </div>

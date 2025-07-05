@@ -39,17 +39,28 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   useEffect(() => {
     if (!autoConnect) return;
 
+    let isMounted = true; // Track component mount status
+    let initializationPromise: Promise<void> | null = null;
+
     const initializeSocket = async () => {
       try {
+        if (!isMounted) return; // Check if component is still mounted
+        
         setConnectionStatus('connecting');
         
-        // Get auth data from localStorage
+        // Get auth data from localStorage with SSR guard
+        if (typeof window === 'undefined') return;
+        
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId') || localStorage.getItem('username');
         const role = localStorage.getItem('role');
         const sessionId = localStorage.getItem('sessionId');
         
+        if (!isMounted) return; // Check again before connection
+        
         await socketService.connect(apiUrl, authData);
+        
+        if (!isMounted) return; // Check before authentication
         
         // Authenticate with the server
         if (token && userId && role) {
@@ -61,19 +72,48 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
           });
         }
         
-        console.log('✅ Socket service initialized');
+        if (isMounted) {
+          console.log('✅ Socket service initialized');
+        }
       } catch (error) {
-        console.error('❌ Failed to initialize socket service:', error);
-        setError(error instanceof Error ? error.message : 'Connection failed');
-        setConnectionStatus('disconnected');
+        if (isMounted) {
+          console.error('❌ Failed to initialize socket service:', error);
+          setError(error instanceof Error ? error.message : 'Connection failed');
+          setConnectionStatus('disconnected');
+        }
       }
     };
 
-    initializeSocket();
+    initializationPromise = initializeSocket();
 
     // Cleanup on unmount
     return () => {
-      socketService.disconnect();
+      isMounted = false; // Mark as unmounted
+      
+      // Cancel any pending initialization
+      if (initializationPromise) {
+        initializationPromise.catch(() => {
+          // Silently ignore errors during cleanup
+        });
+      }
+      
+      // Enhanced cleanup to prevent extension errors
+      try {
+        if (socketService.getSocket()?.connected) {
+          // Send disconnect signal before cleanup
+          socketService.emit('client_cleanup', { reason: 'navigation' });
+          
+          // Wait briefly for server acknowledgment
+          setTimeout(() => {
+            socketService.disconnect();
+          }, 100);
+        } else {
+          socketService.disconnect();
+        }
+      } catch (error) {
+        // Silent cleanup - prevent extension error propagation
+        console.debug('Silent cleanup during navigation:', error);
+      }
     };
   }, [apiUrl, authData, autoConnect]);
 
@@ -132,22 +172,27 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       setIsReconnecting(false);
     };
 
-    // Register event listeners with proper type casting
-    socketService.on('connect', handleConnect as (...args: unknown[]) => void);
-    socketService.on('disconnect', handleDisconnect as (...args: unknown[]) => void);
-    socketService.on('connect_error', handleConnectError as (...args: unknown[]) => void);
-    socketService.on('reconnect', handleReconnect as (...args: unknown[]) => void);
-    socketService.on('reconnecting', handleReconnecting as (...args: unknown[]) => void);
-    socketService.on('reconnect_error', handleReconnectError as (...args: unknown[]) => void);
+    // Register event listeners with safe wrappers
+    socketService.safeOn('connect', handleConnect);
+    socketService.safeOn('disconnect', handleDisconnect);
+    socketService.safeOn('connect_error', handleConnectError);
+    socketService.safeOn('reconnect', handleReconnect);
+    socketService.safeOn('reconnecting', handleReconnecting);
+    socketService.safeOn('reconnect_error', handleReconnectError);
 
     // Cleanup event listeners
     return () => {
-      socketService.off('connect', handleConnect as (...args: unknown[]) => void);
-      socketService.off('disconnect', handleDisconnect as (...args: unknown[]) => void);
-      socketService.off('connect_error', handleConnectError as (...args: unknown[]) => void);
-      socketService.off('reconnect', handleReconnect as (...args: unknown[]) => void);
-      socketService.off('reconnecting', handleReconnecting as (...args: unknown[]) => void);
-      socketService.off('reconnect_error', handleReconnectError as (...args: unknown[]) => void);
+      try {
+        socketService.off('connect', handleConnect as (...args: unknown[]) => void);
+        socketService.off('disconnect', handleDisconnect as (...args: unknown[]) => void);
+        socketService.off('connect_error', handleConnectError as (...args: unknown[]) => void);
+        socketService.off('reconnect', handleReconnect as (...args: unknown[]) => void);
+        socketService.off('reconnecting', handleReconnecting as (...args: unknown[]) => void);
+        socketService.off('reconnect_error', handleReconnectError as (...args: unknown[]) => void);
+      } catch (error) {
+        // Ignore cleanup errors during navigation
+        console.debug('Socket cleanup during navigation:', error);
+      }
     };
   }, []);
 
@@ -159,10 +204,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         try {
           await messageQueue.flush(async (message) => {
             try {
-              socketService.sendMessage(message.type, message.payload);
-              return true; // Success
+              // Use safe emit with timeout
+              const success = await socketService.safeEmit(message.type, message.payload);
+              return success;
             } catch (error) {
-              console.error('Failed to send message:', error);
+              console.error('Failed to send queued message:', error);
               return false; // Failed
             }
           });
@@ -186,6 +232,65 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     const interval = setInterval(updateOfflineQueue, 5000); // Update every 5 seconds
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Add periodic connection health check
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const healthCheckInterval = setInterval(() => {
+      const isHealthy = socketService.checkConnectionHealth();
+      if (!isHealthy) {
+        console.log('⚠️ Connection health check failed');
+        setIsConnected(false);
+        setConnectionStatus('disconnected');
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, [isConnected]);
+
+  // Handle page visibility changes to prevent connection issues
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Page hidden - prepare for potential cleanup
+        console.log('📱 Page hidden - maintaining socket connection');
+        socketService.emit('page_hidden', { timestamp: Date.now() });
+      } else if (document.visibilityState === 'visible') {
+        // Page visible - check connection health
+        console.log('📱 Page visible - checking socket health');
+        const isHealthy = socketService.checkConnectionHealth();
+        if (!isHealthy && isConnected) {
+          console.log('🔄 Page visible but socket unhealthy, reconnecting...');
+          setIsReconnecting(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isConnected]);
+
+  // Handle beforeunload to prevent connection errors during navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleBeforeUnload = () => {
+      console.log('🔄 Page unloading - preparing socket cleanup');
+      // Don't disconnect immediately, let the cleanup happen naturally
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   // Context value
@@ -219,6 +324,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     },
     unsubscribe: (event: string, callback: SocketEventCallback) => {
       socketService.off(event, callback);
+    },
+    // Manual reconnection method
+    reconnect: async () => {
+      try {
+        setIsReconnecting(true);
+        setConnectionStatus('reconnecting');
+        setError(null);
+        
+        await socketService.reconnect();
+        
+        console.log('✅ Manual reconnection successful via context');
+      } catch (error) {
+        console.error('❌ Manual reconnection failed via context:', error);
+        setError(error instanceof Error ? error.message : 'Reconnection failed');
+        setIsReconnecting(false);
+        setConnectionStatus('disconnected');
+        throw error;
+      }
     },
     // Add network status and additional properties
     getNetworkStatus: () => networkStatus,

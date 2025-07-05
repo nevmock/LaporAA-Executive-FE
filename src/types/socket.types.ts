@@ -18,6 +18,7 @@ export interface SocketContextType {
   sendMessage: (event: string, data: unknown) => void;
   subscribe: (event: string, callback: SocketEventCallback) => void;
   unsubscribe: (event: string, callback: SocketEventCallback) => void;
+  reconnect: () => Promise<void>;
   offlineQueue: QueuedMessage[];
   networkStatus: 'online' | 'offline';
   connectionQuality: 'poor' | 'fair' | 'good' | 'excellent';
