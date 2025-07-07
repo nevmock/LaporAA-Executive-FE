@@ -1,6 +1,6 @@
 "use client";
 
-import { TindakanData } from "../../../../lib/types";
+import { TindakanData, Data } from "../../../../lib/types";
 import { FaStar } from "react-icons/fa";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -9,14 +9,18 @@ import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+interface SaveDataFunction {
+    (nextStatus?: string): Promise<unknown>;
+}
+
 export default function Selesai2({
     data,
     reportData, // eslint-disable-line @typescript-eslint/no-unused-vars
     saveData // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
     data: Partial<TindakanData> & { sessionId: string };
-    reportData?: any;
-    saveData?: (nextStatus?: string) => Promise<any>;
+    reportData?: Data;
+    saveData?: SaveDataFunction;
 }) {
     // Gunakan reportData untuk info laporan utama
     const laporan = data || {};

@@ -8,6 +8,7 @@ import {
     FiHome,
     FiInbox,
     FiChevronLeft,
+    FiFileText,
 } from "react-icons/fi";
 import { Tooltip } from "./Tooltip";
 
@@ -87,6 +88,20 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                             >
                                 {countPending}
                             </div>
+                        )}
+                    </Link>
+
+                    {/* Buat Laporan */}
+                    <Link href="/dashboard/buat-laporan" className={navItemClass(isActive("/dashboard/buat-laporan"))}>
+                        {isCollapsed ? (
+                            <Tooltip text="Buat Laporan">
+                                <FiFileText size={22} />
+                            </Tooltip>
+                        ) : (
+                            <>
+                                <FiFileText size={22} />
+                                <span className="text-sm font-medium">Buat Laporan</span>
+                            </>
                         )}
                     </Link>
                 </nav>

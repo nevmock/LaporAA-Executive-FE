@@ -7,7 +7,6 @@ import BarOpdChart from '../../../components/dashboard/charts/BarOpdChart';
 import BarWilayahChartKecamatan from '../../../components/dashboard/charts/BarWilayahChartKecamatan';
 import LineChart from '../../../components/dashboard/charts/LineChart';
 import LiveMapUpdates from '../../../components/dashboard/widgets/LiveMapUpdates';
-import { ModernChartCard } from '../../../components/dashboard/modern';
 import { FiArrowLeft, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 
 const CHART_COMPONENTS = {
@@ -45,6 +44,16 @@ export default function ChartFullscreenPage() {
 
   const chartConfig = CHART_COMPONENTS[chartType];
 
+  // Move useEffect to before conditional return
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   if (!chartConfig) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -73,15 +82,6 @@ export default function ChartFullscreenPage() {
       setIsFullscreen(false);
     }
   };
-
-  React.useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
 
   return (
     <div className="min-h-screen bg-white">

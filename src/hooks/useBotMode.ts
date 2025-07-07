@@ -21,13 +21,12 @@ export interface UseBotModeReturn {
   isManualModeActive: () => Promise<boolean>;
   clearError: () => void;
   refreshMode: () => Promise<void>;
-  cacheStats: any;
 }
 
 export function useBotMode({
   userId,
   initialMode = 'bot',
-  autoManageOnTab = true,
+  // autoManageOnTab = true, // Currently unused but kept for future features
   debug = false
 }: UseBotModeOptions): UseBotModeReturn {
   const [modeState, setModeState] = useState<ModeState>({
@@ -86,8 +85,9 @@ export function useBotMode({
           isChanging: false,
           error: null,
         });
-      } catch (error: any) {
-        handleError(`Failed to initialize mode: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error instanceof Error ? error.message : "Unknown error occurred" : 'Unknown error occurred';
+        handleError(`Failed to initialize mode: ${errorMessage}`);
       }
     };
 
@@ -122,8 +122,9 @@ export function useBotMode({
         isChanging: false,
         error: null,
       });
-    } catch (error: any) {
-      handleError(`Failed to change mode: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error instanceof Error ? error.message : "Unknown error occurred" : 'Unknown error occurred';
+      handleError(`Failed to change mode: ${errorMessage}`);
     }
   }, [userId, handleError]);
 
@@ -145,8 +146,8 @@ export function useBotMode({
         isChanging: false,
         error: null,
       });
-    } catch (error: any) {
-      handleError(`Failed to ensure mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to ensure mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
     }
   }, [userId, handleError]);
 
@@ -170,8 +171,8 @@ export function useBotMode({
         isChanging: false,
         error: null,
       });
-    } catch (error: any) {
-      handleError(`Failed to refresh mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to refresh mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
     }
   }, [userId, handleError]);
 
@@ -189,8 +190,8 @@ export function useBotMode({
       
       // Refresh mode after setting force mode
       await refreshMode();
-    } catch (error: any) {
-      handleError(`Failed to set force mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to set force mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
     }
   }, [userId, handleError, refreshMode]);
 
@@ -213,8 +214,8 @@ export function useBotMode({
         isChanging: false,
         error: null,
       }));
-    } catch (error: any) {
-      handleError(`Failed to set manual mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to set manual mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
     }
   }, [userId, handleError]);
 
@@ -227,8 +228,8 @@ export function useBotMode({
 
     try {
       return await serviceRef.current.getForceMode(userId);
-    } catch (error: any) {
-      handleError(`Failed to get force mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to get force mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
       return false;
     }
   }, [userId, handleError]);
@@ -242,8 +243,8 @@ export function useBotMode({
 
     try {
       return await serviceRef.current.isManualModeActive(userId);
-    } catch (error: any) {
-      handleError(`Failed to check manual mode: ${error.message}`);
+    } catch (error: unknown) {
+      handleError(`Failed to check manual mode: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
       return false;
     }
   }, [userId, handleError]);
@@ -252,9 +253,6 @@ export function useBotMode({
   const clearError = useCallback(() => {
     setModeState(prev => ({ ...prev, error: null }));
   }, []);
-
-  // Get cache stats
-  const cacheStats = serviceRef.current?.getCacheStats() || null;
 
   return {
     mode: modeState.mode,
@@ -269,7 +267,6 @@ export function useBotMode({
     isManualModeActive,
     clearError,
     refreshMode,
-    cacheStats,
   };
 }
 
@@ -288,68 +285,102 @@ export function useBotModeWithTab({
   const botMode = useBotMode({ userId, debug });
   const [forceMode, setForceModeState] = useState<boolean>(false);
   const [isCheckingForceMode, setIsCheckingForceMode] = useState<boolean>(false);
+  
+  // Refs to track previous values and prevent unnecessary updates
+  const prevActiveTab = useRef<string>(activeTab);
+  const prevForceMode = useRef<boolean>(forceMode);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check force mode status on initialization - ONCE ONLY
-  useEffect(() => {
+  const checkForceModeStable = useCallback(async () => {
     if (!userId || !botMode.isReady || isCheckingForceMode) return;
 
-    const checkForceMode = async () => {
-      setIsCheckingForceMode(true);
-      try {
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise<boolean>((_, reject) => {
-          setTimeout(() => reject(new Error('Force mode check timeout')), 8000);
-        });
-        
-        const forcePromise = botMode.getForceMode();
-        const isForceActive = await Promise.race([forcePromise, timeoutPromise]);
-        
-        setForceModeState(isForceActive);
-        console.log(`Initial force mode check for ${userId}:`, isForceActive);
-      } catch (error) {
-        console.warn('Failed to check force mode, using default:', error);
-        setForceModeState(false); // Default to false on error
-      } finally {
-        setIsCheckingForceMode(false);
-      }
-    };
+    setIsCheckingForceMode(true);
+    try {
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error('Force mode check timeout')), 8000);
+      });
+      
+      const forcePromise = botMode.getForceMode();
+      const isForceActive = await Promise.race([forcePromise, timeoutPromise]);
+      
+      setForceModeState(isForceActive);
+      console.log(`Initial force mode check for ${userId}:`, isForceActive);
+    } catch (error) {
+      console.warn('Failed to check force mode, using default:', error);
+      setForceModeState(false); // Default to false on error
+    } finally {
+      setIsCheckingForceMode(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, botMode.isReady, botMode.getForceMode, isCheckingForceMode]);
 
+  useEffect(() => {
     // Add delay to prevent immediate execution on mount
-    const timeoutId = setTimeout(checkForceMode, 1000);
+    const timeoutId = setTimeout(checkForceModeStable, 1000);
     return () => clearTimeout(timeoutId);
-  }, [userId, botMode.isReady]); // Removed isCheckingForceMode from deps
+  }, [checkForceModeStable]);
 
   // Handle tab changes with force mode logic - OPTIMIZED
-  useEffect(() => {
+  const handleTabChangeStable = useCallback(async () => {
     if (!userId || !botMode.isReady || isCheckingForceMode || forceMode === undefined) return;
 
-    const handleTabChange = async () => {
-      try {
-        // CRITICAL: Check force mode first to prevent override
-        if (forceMode) {
-          console.log('Force mode active, skipping automatic mode change');
-          return; // Don't change mode if force is active
-        }
+    // Only proceed if activeTab or forceMode actually changed
+    if (prevActiveTab.current === activeTab && prevForceMode.current === forceMode) {
+      return;
+    }
 
-        // Normal logic: enter message tab = manual mode, exit = bot mode
-        if (activeTab === messageTabKey) {
-          console.log('Entering message tab - setting manual mode (30 minutes)');
-          await botMode.setManualMode(30); // 30 minutes timeout
-        } else {
-          console.log('Exiting message tab - setting bot mode');
-          await botMode.changeMode('bot');
-        }
-      } catch (error) {
-        console.error('Failed to handle tab change:', error);
-        // Don't show alert here to prevent user disruption
+    try {
+      // CRITICAL: Check force mode first to prevent override
+      if (forceMode) {
+        console.log('Force mode active, skipping automatic mode change');
+        return; // Don't change mode if force is active
+      }
+
+      // Normal logic: enter message tab = manual mode, exit = bot mode
+      if (activeTab === messageTabKey) {
+        console.log('Entering message tab - setting manual mode (30 minutes)');
+        await botMode.setManualMode(30); // 30 minutes timeout
+      } else {
+        console.log('Exiting message tab - setting bot mode');
+        await botMode.changeMode('bot');
+      }
+    } catch (error) {
+      console.error('Failed to handle tab change:', error);
+      // Don't show alert here to prevent user disruption
+    }
+
+    // Update refs to track current values
+    prevActiveTab.current = activeTab;
+    prevForceMode.current = forceMode;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, messageTabKey, userId, forceMode, botMode.isReady, botMode.setManualMode, botMode.changeMode, isCheckingForceMode]);
+
+  useEffect(() => {
+    // Clear any existing debounce timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Add debounced delay to prevent rapid succession calls
+    debounceTimeoutRef.current = setTimeout(handleTabChangeStable, 500);
+    
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
+  }, [handleTabChangeStable]);
 
-    // Add small delay to prevent rapid succession calls + debounce
-    const timeoutId = setTimeout(handleTabChange, 300); // Increased delay
-    
-    return () => clearTimeout(timeoutId);
-  }, [activeTab, messageTabKey, userId, forceMode]); // Removed botMode and isCheckingForceMode
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     ...botMode,

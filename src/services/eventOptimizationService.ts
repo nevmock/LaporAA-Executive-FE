@@ -13,7 +13,7 @@ export interface EventFilter {
 export interface OptimizedEvent {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
   target: 'global' | 'room' | 'user';
   rooms?: string[];
   userId?: string;
@@ -307,7 +307,7 @@ export class EventOptimizationService {
     // This would be implemented by the socket service
     console.log(`📡 Batch event ready for emission:`, {
       type: batchEvent.type,
-      eventCount: batchEvent.data.count,
+      eventCount: (batchEvent.data as { count?: number })?.count || 0,
       rooms: batchEvent.rooms,
       priority: batchEvent.priority
     });

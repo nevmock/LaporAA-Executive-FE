@@ -14,5 +14,5 @@ export const useAuth = () => {
                 router.replace("/login");
             }
         }
-    }, []);
+    }, [router]); // Added missing dependency
 };

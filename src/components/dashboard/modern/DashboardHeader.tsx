@@ -6,8 +6,7 @@ import {
   FiDownload, 
   FiRefreshCw,
   FiInfo,
-  FiEye,
-  FiSettings
+  FiEye
 } from 'react-icons/fi';
 
 interface FilterOption {

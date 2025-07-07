@@ -4,12 +4,10 @@
 import { io, Socket } from 'socket.io-client';
 import { 
   ConnectionConfig, 
-  SocketEvent, 
   QueuedMessage, 
   AuthData, 
   ConnectionStats,
   NetworkStatus,
-  SocketEventCallback,
   SocketEventHandler
 } from '../types/socket.types';
 import { eventOptimizer, OptimizedEvent } from './eventOptimizationService';
@@ -141,7 +139,7 @@ class SocketService {
       // Remove all event listeners first
       this.eventListeners.forEach((callbacks, event) => {
         callbacks.forEach(callback => {
-          this.socket?.off(event, callback as any);
+          this.socket?.off(event, callback as SocketEventHandler);
         });
       });
       
@@ -278,7 +276,7 @@ class SocketService {
     }
 
     if (this.socket) {
-      this.socket.off(event, callback as any);
+      this.socket.off(event, callback as SocketEventHandler);
     }
   }
 
@@ -642,7 +640,7 @@ class SocketService {
     // Re-register existing event listeners
     this.eventListeners.forEach((callbacks, event) => {
       callbacks.forEach(callback => {
-        this.socket?.on(event, callback as any);
+        this.socket?.on(event, callback as SocketEventHandler);
       });
     });
   }
@@ -718,6 +716,7 @@ class SocketService {
 
     // Network Information API (if available)
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const connection = (navigator as any).connection;
       
       const updateNetworkInfo = () => {
@@ -788,7 +787,7 @@ class SocketService {
       }, timeout);
 
       try {
-        this.socket.emit(event, data, (response: unknown) => {
+        this.socket.emit(event, data, () => {
           clearTimeout(timeoutId);
           resolve(true);
         });

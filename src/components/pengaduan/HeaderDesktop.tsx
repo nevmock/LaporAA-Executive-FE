@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
@@ -56,9 +56,9 @@ const HeaderDesktop: React.FC<HeaderDesktopProps> = ({
     selectedSituasi,
     setSelectedSituasi,
     situasiList,
-    situasiTotal,
+    // Note: situasiTotal removed as it was unused
     opdList,
-    opdTotal,
+    // Note: opdTotal removed as it was unused
     selectedOpd,
     setSelectedOpd,
     isPinnedOnly,
@@ -297,7 +297,7 @@ function ListBoxFilter({
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
-    const updateDropdownPosition = () => {
+    const updateDropdownPosition = useCallback(() => {
         if (buttonRef.current && typeof window !== 'undefined') {
             const rect = buttonRef.current.getBoundingClientRect();
             setDropdownStyle({
@@ -310,11 +310,11 @@ function ListBoxFilter({
                 zIndex: zIndex + 100,
             });
         }
-    };
+    }, [isOpdFilter, isSituasiFilter, zIndex]);
 
     // Debounced version to prevent excessive updates
     const debouncedUpdatePosition = useRef<NodeJS.Timeout | null>(null);
-    const debouncedUpdate = () => {
+    const debouncedUpdate = useCallback(() => {
         if (debouncedUpdatePosition.current) {
             clearTimeout(debouncedUpdatePosition.current);
         }
@@ -323,7 +323,7 @@ function ListBoxFilter({
                 updateDropdownPosition();
             }
         }, 16); // Increased to 16ms (60fps) for smoother performance
-    };
+    }, [updateDropdownPosition]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -347,7 +347,7 @@ function ListBoxFilter({
                 clearTimeout(debouncedUpdatePosition.current);
             }
         };
-    }, []);
+    }, [debouncedUpdate]);
 
     return (
         <div className="relative w-full" style={{ zIndex }}>

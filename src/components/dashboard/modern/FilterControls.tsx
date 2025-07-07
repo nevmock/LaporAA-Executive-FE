@@ -6,6 +6,35 @@ interface FilterOption {
   value: string | number;
 }
 
+interface SelectFilter {
+  type: 'select';
+  label: string;
+  value: string | number;
+  onChange: (value: string | number) => void;
+  options?: FilterOption[];
+  placeholder?: string;
+  icon?: React.ReactNode;
+}
+
+interface ToggleFilter {
+  type: 'toggle';
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  icon?: React.ReactNode;
+}
+
+interface InputFilter {
+  type: 'input';
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  icon?: React.ReactNode;
+}
+
+type CustomFilter = SelectFilter | ToggleFilter | InputFilter;
+
 interface FilterControlsProps {
   filters: {
     // Core time filters (always available)
@@ -65,15 +94,7 @@ interface FilterControlsProps {
     };
     
     // Custom filters (for extensibility)
-    custom?: Array<{
-      type: 'select' | 'toggle' | 'input';
-      label: string;
-      value: any;
-      onChange: (value: any) => void;
-      options?: FilterOption[];
-      placeholder?: string;
-      icon?: React.ReactNode;
-    }>;
+    custom?: CustomFilter[];
   };
 }
 

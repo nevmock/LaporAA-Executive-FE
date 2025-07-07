@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   FiActivity, 
   FiClock, 
@@ -25,7 +25,7 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
     endDate: new Date().toISOString().split('T')[0]
   });
 
-  const loadAdminDetail = async () => {
+  const loadAdminDetail = useCallback(async () => {
     try {
       setLoading(true);
       const data = await adminPerformanceService.getAdminDetail(adminId, {
@@ -38,11 +38,11 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminId, dateRange.startDate, dateRange.endDate]);
 
   useEffect(() => {
     loadAdminDetail();
-  }, [adminId, dateRange]);
+  }, [loadAdminDetail]);
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);

@@ -4,6 +4,8 @@ import { IoMdCloseCircle } from "react-icons/io";
 import { GrLinkNext } from "react-icons/gr";
 import { FaCheckDouble } from "react-icons/fa";
 import { RiArrowGoBackLine } from "react-icons/ri";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { TindakanClientState } from "../../../lib/types";
 import axios from "../../../utils/axiosInstance";
 
 interface ActionButtonsProps {
@@ -24,9 +26,9 @@ interface ActionButtonsProps {
     handlePreviousStep: () => void;
     handleNextStep: () => void;
     saveData: () => Promise<void>;
-    formData: any;
+    formData: TindakanClientState;
     API_URL: string;
-    router: any;
+    router: AppRouterInstance;
     setIsSaving: (v: boolean) => void;
     confirmedVerifikasi2: boolean;
 }

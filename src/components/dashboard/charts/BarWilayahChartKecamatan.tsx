@@ -18,12 +18,7 @@ const FILTERS = [
 
 const now = dayjs();
 
-function getChartHeight(barCount: number) {
-    const barHeight = 50; // px per bar (ubah sesuai kebutuhan)
-    const minHeight = 300;
-    const maxHeight = 1200;
-    return Math.max(minHeight, Math.min(barCount * barHeight, maxHeight));
-}
+// Note: getChartHeight function removed as it was unused
 
 export default function BarWilayahChartKecamatan() {
     // State filter waktu dan wilayah
@@ -62,8 +57,7 @@ export default function BarWilayahChartKecamatan() {
         }
     }, [periodsLoading, filter, hasDataForMonth, month, getDefaultMonth, getDefaultYear, year]);
 
-    // Generate years array (last 5 years)
-    const years = useMemo(() => Array.from({ length: 5 }, (_, i) => now.year() - i), []);
+    // Note: years variable removed as it was unused
 
     // Chart data state
     const [data, setData] = useState<{
@@ -76,7 +70,7 @@ export default function BarWilayahChartKecamatan() {
         totals: [],
     });
 
-    const chartHeight = useMemo(() => getChartHeight(data.categories.length), [data.categories.length]);
+    // Note: chartHeight variable removed as it was unused
 
     // Hitung jumlah minggu dalam 1 bulan
     const getWeeksInMonth = (year: number, month: number) => {
@@ -203,10 +197,11 @@ export default function BarWilayahChartKecamatan() {
             textStyle: {
                 color: '#ffffff'
             },
-            formatter: function(params: any) {
+            formatter: function(params: unknown) {
                 const param = Array.isArray(params) ? params[0] : params;
-                const fullLabel = data.categories[param.dataIndex];
-                return `<div style="max-width: 300px; word-wrap: break-word;">${fullLabel}: ${param.value}<br/><i style="color: #60a5fa;">💡 Klik untuk melihat detail</i></div>`;
+                const typedParam = param as { dataIndex: number; value: number };
+                const fullLabel = data.categories[typedParam.dataIndex];
+                return `<div style="max-width: 300px; word-wrap: break-word;">${fullLabel}: ${typedParam.value}<br/><i style="color: #60a5fa;">💡 Klik untuk melihat detail</i></div>`;
             }
         },
         xAxis: {
@@ -291,17 +286,17 @@ export default function BarWilayahChartKecamatan() {
     }), [data, selectedKecamatan, truncatedCategories]);
 
     // Handle chart click events for navigation
-    const handleChartClick = (params: any) => {
-        const clicked = data.categories[params.dataIndex];
-        if (!clicked) return;
-        sessionStorage.setItem('searchClicked', clicked);
-        window.location.href = '/pengaduan';
+    const handleChartClick = (params: { dataIndex?: number }) => {
+        if (params.dataIndex !== undefined) {
+            const clicked = data.categories[params.dataIndex];
+            if (clicked) {
+                sessionStorage.setItem('searchClicked', clicked);
+                window.location.href = '/pengaduan';
+            }
+        }
     };
 
-    // Handle refresh
-    const handleRefresh = () => {
-        fetchData();
-    };
+    // Note: handleRefresh function removed as it was unused
 
     const weekOptions = Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1);
 

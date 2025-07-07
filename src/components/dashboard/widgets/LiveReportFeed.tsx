@@ -19,6 +19,20 @@ interface ReportActivity {
   priority?: 'high' | 'medium' | 'low';
 }
 
+interface ReportEventData {
+  type: 'new_report' | 'status_change' | 'assignment' | 'comment';
+  reportId: string;
+  title?: string;
+  status?: string;
+  oldStatus?: string;
+  newStatus?: string;
+  location?: string;
+  assignedTo?: string;
+  adminName?: string;
+  priority?: 'high' | 'medium' | 'low';
+  [key: string]: unknown;
+}
+
 interface LiveReportFeedProps {
   maxItems?: number;
   showActions?: boolean;
@@ -58,7 +72,7 @@ export default function LiveReportFeed({
   }, [maxItems]);
 
   // Handle real-time report events
-  const handleReportEvent = useCallback((data: any) => {
+  const handleReportEvent = useCallback((data: ReportEventData) => {
     const timestamp = new Date().toISOString();
     
     switch (data.type) {

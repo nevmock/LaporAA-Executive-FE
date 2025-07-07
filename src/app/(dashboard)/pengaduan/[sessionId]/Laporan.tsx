@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FaWhatsapp, FaCheck, FaExclamationCircle, FaFileAlt, FaCog, FaClipboardCheck, FaCheckCircle, FaTimesCircle, FaRobot } from "react-icons/fa";
@@ -74,9 +74,25 @@ export default function ChatPage() {
     }
   }, [botMode.error]);
   
-  // Manual mode change handler for Message component
+  // Manual mode change handler for Message component with debouncing
+  const modeChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [changingMode, setChangingMode] = useState(false);
+  
   const handleModeChange = async (newMode: "bot" | "manual") => {
     console.log(`Mode change requested: ${newMode}`);
+    
+    // Prevent multiple rapid calls
+    if (changingMode) {
+      console.log('Mode change already in progress, skipping...');
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (modeChangeTimeoutRef.current) {
+      clearTimeout(modeChangeTimeoutRef.current);
+    }
+    
+    setChangingMode(true);
     
     try {
       if (newMode === 'manual') {
@@ -88,9 +104,23 @@ export default function ChatPage() {
     } catch (error) {
       console.error('Failed to change mode:', error);
       alert('Failed to change mode. Please try again.');
+    } finally {
+      // Add small delay before allowing next mode change
+      modeChangeTimeoutRef.current = setTimeout(() => {
+        setChangingMode(false);
+      }, 1000);
     }
   };
   
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (modeChangeTimeoutRef.current) {
+        clearTimeout(modeChangeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Toggle force mode - menggunakan hook botMode untuk konsistensi
   const toggleForceMode = async (from: string, currentForceMode: boolean) => {
     if (!botMode || !botMode.setForceMode) {
@@ -558,7 +588,7 @@ export default function ChatPage() {
           isReady={botMode.isReady}
           isChanging={botMode.isChanging}
           error={botMode.error}
-          cacheStats={botMode.cacheStats}
+          cacheStats={null}
           onRefresh={botMode.refreshMode}
           onClearCache={() => {
             // Clear cache using the service
@@ -589,7 +619,6 @@ export default function ChatPage() {
           onClose={() => setShowFileManager(false)}
           selectMode={false}
           userId={data?.from}
-          chatSession={sessionId}
         />
       )}
     </div>

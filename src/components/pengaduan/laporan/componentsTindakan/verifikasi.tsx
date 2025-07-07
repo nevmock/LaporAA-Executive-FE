@@ -4,16 +4,12 @@ import { FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
 
 export default function Verifikasi({
     data,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onChange,
 }: {
     data: Partial<TindakanData>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanData>>>;
 }) {
-    const handleChangeSituasi = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        onChange((prev) => ({ ...prev, [name]: value }));
-    };
-
     const isClosed = data?.status === "Ditutup";
 
     return (

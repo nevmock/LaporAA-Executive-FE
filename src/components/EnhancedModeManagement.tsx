@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaHistory, FaClock, FaUsers, FaChartBar, FaBell, FaStopwatch, FaRobot, FaUser } from 'react-icons/fa';
 import { useModeManagement, ModeHistoryEntry, ModeScheduleEntry, ModeStatistics, ActiveUser } from '../hooks/useModeManagement';
 
@@ -11,11 +11,10 @@ interface EnhancedModeManagementProps {
 
 const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
   userId,
-  currentMode,
   onModeChange,
   onClose
 }) => {
-  const [activeTab, setActiveTab] = useState<'history' | 'schedule' | 'bulk' | 'stats' | 'notifications' | 'custom'>('history');
+  const [activeTab, setActiveTab] = useState<TabId>('history');
   const modeManagement = useModeManagement();
   
   // States for different tabs
@@ -36,8 +35,11 @@ const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
     daysOfWeek: [] as number[]
   });
   
+  // Tab types
+  type TabId = 'history' | 'schedule' | 'bulk' | 'stats' | 'notifications' | 'custom';
+  
   // Tab content components
-  const tabs = [
+  const tabs: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'history', label: 'History', icon: FaHistory },
     { id: 'schedule', label: 'Schedule', icon: FaClock },
     { id: 'bulk', label: 'Bulk Management', icon: FaUsers },
@@ -46,12 +48,7 @@ const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
     { id: 'custom', label: 'Custom Duration', icon: FaStopwatch }
   ];
 
-  // Load data based on active tab
-  useEffect(() => {
-    loadTabData();
-  }, [activeTab]);
-
-  const loadTabData = async () => {
+  const loadTabData = useCallback(async () => {
     modeManagement.clearError();
     
     try {
@@ -74,7 +71,13 @@ const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
     } catch (err) {
       console.error('Error loading tab data:', err);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, modeManagement]);
+
+  // Load data based on active tab
+  useEffect(() => {
+    loadTabData();
+  }, [loadTabData]);
 
   const loadModeHistory = async () => {
     try {
@@ -119,7 +122,7 @@ const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
     }
     
     try {
-      const result = await modeManagement.bulkChangeModes({
+      await modeManagement.bulkChangeModes({
         users: selectedUsers,
         mode,
         changedBy: 'admin', // This should come from current user context
@@ -520,7 +523,7 @@ const EnhancedModeManagement: React.FC<EnhancedModeManagementProps> = ({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-blue-500 text-white'

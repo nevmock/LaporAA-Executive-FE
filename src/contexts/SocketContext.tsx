@@ -7,7 +7,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { socketService } from '../services/socketService';
 import { messageQueue } from '../services/messageQueue';
 import useNetworkStatus from '../hooks/useNetworkStatus';
-import { SocketContextType, AuthData, QueuedMessage, Socket, SocketEventCallback } from '../types/socket.types';
+import { SocketContextType, AuthData, QueuedMessage, SocketEventCallback } from '../types/socket.types';
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
@@ -119,7 +119,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   // Set up event listeners for connection status
   useEffect(() => {
-    const handleConnect = (...args: unknown[]) => {
+    const handleConnect = () => {
       console.log('✅ Socket connected via context');
       setIsConnected(true);
       setIsReconnecting(false);

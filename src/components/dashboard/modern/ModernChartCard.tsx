@@ -2,6 +2,15 @@ import React, { useState, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { EChartsOption } from 'echarts';
 import { IconType } from 'react-icons';
+
+interface ChartEventParams {
+  data?: unknown;
+  dataIndex?: number;
+  name?: string;
+  value?: number | string;
+  seriesName?: string;
+  [key: string]: unknown;
+}
 import { 
   FiMaximize2, 
   FiMinimize2, 
@@ -30,8 +39,8 @@ interface ModernChartCardProps {
   onInfo?: () => void;
   onDownload?: () => void;
   onFullscreen?: () => void;
-  onChartClick?: (params: any) => void;  // Add chart click handler
-  onChartEvents?: Record<string, (params: any) => void>;  // Multiple event handlers
+  onChartClick?: (params: ChartEventParams) => void;  // Add chart click handler
+  onChartEvents?: Record<string, (params: ChartEventParams) => void>;  // Multiple event handlers
   className?: string;
   chartType?: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
   color?: 'blue' | 'green' | 'red' | 'orange' | 'purple' | 'indigo';

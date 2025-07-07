@@ -241,9 +241,8 @@ export class PerformanceMonitoringService {
   /**
    * Verify event delivery
    */
-  async verifyEventDelivery(testEvent: any, timeout = 5000): Promise<{ delivered: boolean; latency?: number }> {
+  async verifyEventDelivery(testEvent: { type: string; data: unknown }, timeout = 5000): Promise<{ delivered: boolean; latency?: number }> {
     const startTime = Date.now();
-    const testId = `delivery-test-${startTime}`;
 
     return new Promise((resolve) => {
       const timeoutHandle = setTimeout(() => {
@@ -337,8 +336,11 @@ export class PerformanceMonitoringService {
    */
   private getCurrentMemoryUsage(): number {
     // Check if the browser supports memory API
-    if (typeof (performance as any).memory !== 'undefined') {
-      return (performance as any).memory.usedJSHeapSize / 1024 / 1024; // MB
+    const performanceWithMemory = performance as Performance & { 
+      memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } 
+    };
+    if (typeof performanceWithMemory.memory !== 'undefined') {
+      return performanceWithMemory.memory.usedJSHeapSize / 1024 / 1024; // MB
     }
     return 0;
   }
@@ -348,8 +350,11 @@ export class PerformanceMonitoringService {
    */
   private getTotalMemory(): number {
     // Check if the browser supports memory API
-    if (typeof (performance as any).memory !== 'undefined') {
-      return (performance as any).memory.totalJSHeapSize / 1024 / 1024; // MB
+    const performanceWithMemory = performance as Performance & { 
+      memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } 
+    };
+    if (typeof performanceWithMemory.memory !== 'undefined') {
+      return performanceWithMemory.memory.totalJSHeapSize / 1024 / 1024; // MB
     }
     return 0;
   }

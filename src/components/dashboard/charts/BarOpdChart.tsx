@@ -61,10 +61,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
         }
     }, [periodsLoading, filter, hasDataForMonth, month, getDefaultMonth, getDefaultYear, year]);
 
-    const years = useMemo(() =>
-        Array.from({ length: 5 }, (_, i) => now.year() - i),
-        []
-    );
+    // Note: years variable removed as it was unused
 
     const [data, setData] = useState<{
         categories: string[];
@@ -167,10 +164,11 @@ export default function HorizontalBarPerangkatDaerahChart() {
             textStyle: {
                 color: '#ffffff'
             },
-            formatter: function(params: any) {
+            formatter: function(params: unknown) {
                 const param = Array.isArray(params) ? params[0] : params;
-                const fullLabel = data.fullLabels[param.dataIndex] || data.categories[param.dataIndex];
-                return `<div style="max-width: 300px; word-wrap: break-word;">${fullLabel}<br/>${param.seriesName}: ${param.value}<br/><i style="color: #60a5fa;">💡 Klik untuk melihat detail</i></div>`;
+                const typedParam = param as { dataIndex: number; seriesName: string; value: number };
+                const fullLabel = data.fullLabels[typedParam.dataIndex] || data.categories[typedParam.dataIndex];
+                return `<div style="max-width: 300px; word-wrap: break-word;">${fullLabel}<br/>${typedParam.seriesName}: ${typedParam.value}<br/><i style="color: #60a5fa;">💡 Klik untuk melihat detail</i></div>`;
             }
         },
         xAxis: {
@@ -255,11 +253,13 @@ export default function HorizontalBarPerangkatDaerahChart() {
     }), [data, truncatedCategories]);
 
     // Handle chart click events for navigation
-    const handleChartClick = (params: any) => {
-        const clickedOPD = data.categories[params.dataIndex];
-        if (clickedOPD) {
-            sessionStorage.setItem('opdClicked', clickedOPD);
-            window.location.href = '/pengaduan';
+    const handleChartClick = (params: { dataIndex?: number }) => {
+        if (params.dataIndex !== undefined) {
+            const clickedOPD = data.categories[params.dataIndex];
+            if (clickedOPD) {
+                sessionStorage.setItem('opdClicked', clickedOPD);
+                window.location.href = '/pengaduan';
+            }
         }
     };
 
@@ -287,10 +287,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
 
     const weekOptions = getWeeksInMonth(year, month);
 
-    // Handle refresh
-    const handleRefresh = () => {
-        fetchData();
-    };
+    // Note: handleRefresh function removed as it was unused
 
     // Filter controls component
     const filterControls = (

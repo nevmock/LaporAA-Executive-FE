@@ -18,7 +18,7 @@ interface NetworkInformation extends EventTarget {
   downlink?: number;
   rtt?: number;
   saveData?: boolean;
-  onchange?: ((this: NetworkInformation, ev: Event) => any) | null;
+  onchange?: ((this: NetworkInformation, ev: Event) => unknown) | null;
 }
 
 declare global {

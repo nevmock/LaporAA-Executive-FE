@@ -49,12 +49,7 @@ export default function BoundariesLegend({
     return colors[colorIndex];
   };
 
-  const getCurrentColor = () => {
-    if (selectedKecamatan === 'Semua Kecamatan') {
-      return 'linear-gradient(to right, #60a5fa, #3b82f6)';
-    }
-    return getKecamatanColor(selectedKecamatan);
-  };
+  // Note: getCurrentColor function removed as it was unused
 
   const allOptions = ['Semua Kecamatan', ...kecamatanList];
 

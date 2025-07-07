@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { FiLogOut, FiHome, FiInbox, FiUsers, FiBell } from "react-icons/fi";
+import { FiLogOut, FiHome, FiInbox, FiUsers } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
-import ConnectionStatus from "./socket/ConnectionStatus";
 import MessageCounter from "./socket/MessageCounter";
 import NotificationDropdown from "./socket/NotificationDropdown";
 
@@ -14,11 +13,11 @@ interface TopNavbarProps {
     role: string | null;
     onLogout: () => void;
     isMobile?: boolean;
-    countPending?: number;
+    // Note: countPending parameter removed as it's unused (replaced by real-time MessageCounter)
     namaAdmin?: string;
 }
 
-const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, countPending = 0, namaAdmin }) => {
+const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, namaAdmin }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,7 +80,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                 {/* Real-time components - visible on both mobile and desktop */}
                 <div className="flex items-center gap-2">
                     {/* Connection Status */}
-                    <ConnectionStatus />
+                    {/* <ConnectionStatus showText={false} /> */}
                     
                     {/* Notifications Dropdown */}
                     <NotificationDropdown />
@@ -116,11 +115,6 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                     {!isMobile && namaAdmin && (
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-600 font-medium">{namaAdmin}</span>
-                            {/* Real-time message counter for desktop */}
-                            <MessageCounter 
-                                className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow text-center min-w-[18px]"
-                                showIcon={false}
-                            />
                         </div>
                     )}
                     

@@ -130,7 +130,12 @@ export interface MonthlyReport {
   totalActivities: number;
   totalReportsProcessed: number;
   avgResponseTime: number;
-  adminProductivity: any[];
+  adminProductivity: Array<{
+    admin: string;
+    processed: number;
+    avgTime: number;
+    rating: number;
+  }>;
 }
 
 export const adminPerformanceService = {
@@ -187,7 +192,13 @@ export const adminPerformanceService = {
     status: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<any[]> => {
+  }): Promise<Array<{
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+    processedAt?: string;
+  }>> => {
     const queryParams = new URLSearchParams();
     queryParams.append('adminId', params.adminId);
     queryParams.append('status', params.status);

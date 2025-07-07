@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import axios from "../../../utils/axiosInstance";
-import { FaPaperPlane, FaImage, FaTimes, FaPlay, FaPause, FaDownload, FaFileAlt, FaMapMarkerAlt, FaVolumeUp, FaVideo, FaMusic, FaPaperclip, FaPlus, FaFolder } from "react-icons/fa";
+import { FaPaperPlane, FaImage, FaTimes, FaDownload, FaFileAlt, FaMapMarkerAlt, FaVolumeUp, FaVideo, FaMusic, FaPlus, FaFolder, FaSearchPlus, FaSearchMinus, FaExpand, FaCompress } from "react-icons/fa";
 import FileManager from "../../FileManager";
+import Portal from "../../Portal";
 import { FileItem } from "../../../hooks/useFileManagement";
 import { useSocketChat } from "../../../hooks/useSocket";
-import ConnectionStatus from "../../socket/ConnectionStatus";
+import { MessageData, QueuedMessage, FailedMessage } from "../../../lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL || "http://localhost:3001";
 
@@ -18,6 +19,11 @@ interface MessageItem {
     timestamp: string;
     type?: string;         // text | image | etc
     mediaUrl?: string;     // for image
+    id?: string;           // for message queue tracking
+    file?: File;           // for failed message retry
+    caption?: string;      // for media captions
+    error?: string;        // for failed messages
+    failedAt?: Date;       // for failed message timestamp
 }
 
 // Props interface untuk manual mode control
@@ -28,7 +34,12 @@ interface MessageProps {
     forceMode?: boolean; // Receive force mode from parent
 }
 
-export default function Message({ from, mode, onModeChange, forceMode = false }: MessageProps) {
+export default function Message({ 
+    from, 
+    mode, 
+    onModeChange: _, // eslint-disable-line @typescript-eslint/no-unused-vars
+    forceMode = false // eslint-disable-line @typescript-eslint/no-unused-vars
+}: MessageProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
@@ -36,7 +47,6 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const [isScrolledUp, setIsScrolledUp] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [modeChanging, setModeChanging] = useState(false);
     
     // Use global socket context instead of local socket
     const socket = useSocketChat(from);
@@ -59,9 +69,8 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({});
     
     // Advanced Message Features states
-    const [messageQueue, setMessageQueue] = useState<any[]>([]);
-    const [failedMessages, setFailedMessages] = useState<any[]>([]);
-    const [sendingMessages, setSendingMessages] = useState<Record<string, boolean>>({});
+    const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
+    const [failedMessages, setFailedMessages] = useState<FailedMessage[]>([]);
     const [compressingImage, setCompressingImage] = useState(false);
     const [splittingMessage, setSplittingMessage] = useState(false);
     const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -69,14 +78,23 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     // File Manager states
     const [fileManagerOpen, setFileManagerOpen] = useState(false);
     
+    // Preview Modal states
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string>("");
+    const [previewType, setPreviewType] = useState<"image" | "video" | "audio" | "document">("image");
+    const [previewName, setPreviewName] = useState<string>("");
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    
     // Real-time Enhancement states
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
-    const [isTyping, setIsTyping] = useState(false);
-    const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+    const [, setOnlineUsers] = useState<string[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
     const [messageStatuses, setMessageStatuses] = useState<Record<string, 'sending' | 'delivered' | 'read' | 'failed'>>({});
     const [readReceipts, setReadReceipts] = useState<Record<string, boolean>>({});
-    const [lastSeen, setLastSeen] = useState<Record<string, Date>>({});
-    const [adminOnlineStatus, setAdminOnlineStatus] = useState<'online' | 'offline' | 'away'>('offline');
+    const [, setAdminOnlineStatus] = useState<'online' | 'offline' | 'away'>('offline'); // eslint-disable-line @typescript-eslint/no-unused-vars
     
     // Typing timeout ref
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,33 +118,6 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     const videoInputRef = useRef<HTMLInputElement | null>(null);
     const audioInputRef = useRef<HTMLInputElement | null>(null);
     const documentInputRef = useRef<HTMLInputElement | null>(null);
-
-    // Manual mode toggle function
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const toggleMode = async () => {
-        if (modeChanging || !onModeChange) return;
-        
-        setModeChanging(true);
-        try {
-            const newMode = mode === "bot" ? "manual" : "bot";
-            
-            if (newMode === "manual") {
-                // Set manual mode dengan timeout 30 menit
-                await axios.post(`${API_URL}/mode/manual/${from}`, { minutes: 30 });
-            } else {
-                // Set bot mode
-                await axios.put(`${API_URL}/mode/${from}`, { mode: "bot" });
-            }
-            
-            onModeChange(newMode);
-            console.log(`Mode manually changed to ${newMode} for ${from}`);
-        } catch (error) {
-            console.error("Failed to change mode:", error);
-            alert("Gagal mengubah mode. Silakan coba lagi.");
-        } finally {
-            setModeChanging(false);
-        }
-    };
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -240,7 +231,6 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                     return prev.filter(id => id !== data.userId);
                 }
             });
-            setLastSeen(prev => ({ ...prev, [data.userId]: new Date() }));
         });
 
         socket.on("messageStatus", (...args: unknown[]) => {
@@ -276,7 +266,55 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                 clearTimeout(typingTimeoutRef.current);
             }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket.isConnected, from]);
+
+    // Keyboard event handlers for preview modal
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!previewOpen) return;
+            
+            switch (e.key) {
+                case 'Escape':
+                    closePreview();
+                    break;
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    setZoomLevel(prev => Math.min(prev * 1.2, 5));
+                    break;
+                case '-':
+                    e.preventDefault();
+                    setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+                    break;
+                case '0':
+                    e.preventDefault();
+                    setZoomLevel(1);
+                    setDragPosition({ x: 0, y: 0 });
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    setIsFullscreen(prev => !prev);
+                    break;
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    if (previewUrl) {
+                        const link = document.createElement('a');
+                        link.href = previewUrl;
+                        link.download = previewName || 'download';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [previewOpen]); // Only depend on previewOpen - other values are accessed via closure
 
     const handleScroll = () => {
         if (!chatContainerRef.current) return;
@@ -398,7 +436,6 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         if (!socket.isConnected) return;
         
         if (typing) {
-            setIsTyping(true);
             socket.sendTyping(true);
             
             // Clear existing timeout
@@ -408,11 +445,9 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
             
             // Set new timeout to stop typing indicator
             typingTimeoutRef.current = setTimeout(() => {
-                setIsTyping(false);
                 socket.sendTyping(false);
             }, 2000); // Stop typing indicator after 2 seconds of inactivity
         } else {
-            setIsTyping(false);
             socket.sendTyping(false);
             
             if (typingTimeoutRef.current) {
@@ -422,15 +457,18 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const markMessageAsRead = (messageId: string) => {
         if (!socket.isConnected) return;
         socket.markMessageRead(messageId);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const updateMessageStatus = (messageId: string, status: 'sending' | 'delivered' | 'read' | 'failed') => {
         setMessageStatuses(prev => ({ ...prev, [messageId]: status }));
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formatLastSeen = (date: Date) => {
         const now = new Date();
         const diff = now.getTime() - date.getTime();
@@ -501,6 +539,7 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         setUploadMenuOpen(false);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -564,6 +603,7 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const clearImageSelection = () => {
         setSelectedImage(null);
         setImagePreview(null);
@@ -574,35 +614,30 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     };
 
     // Enhanced message sending with queue and retry
-    const addToMessageQueue = (messageData: any) => {
+    const addToMessageQueue = (messageData: MessageData) => {
         const messageId = Date.now().toString();
-        const queueItem = { ...messageData, id: messageId, timestamp: new Date() };
+        const queueItem: QueuedMessage = { ...messageData, id: messageId, timestamp: new Date() };
         setMessageQueue(prev => [...prev, queueItem]);
-        setSendingMessages(prev => ({ ...prev, [messageId]: true }));
         return messageId;
     };
 
     const removeFromMessageQueue = (messageId: string) => {
         setMessageQueue(prev => prev.filter(item => item.id !== messageId));
-        setSendingMessages(prev => {
-            const newState = { ...prev };
-            delete newState[messageId];
-            return newState;
-        });
     };
 
-    const addToFailedMessages = (messageData: any, error: string) => {
-        setFailedMessages(prev => [...prev, { ...messageData, error, failedAt: new Date() }]);
+    const addToFailedMessages = (messageData: MessageData, error: string) => {
+        const failedMessage: FailedMessage = { ...messageData, id: Date.now().toString(), error, failedAt: new Date() };
+        setFailedMessages(prev => [...prev, failedMessage]);
     };
 
-    const retryFailedMessage = async (failedMessage: any) => {
+    const retryFailedMessage = async (failedMessage: FailedMessage) => {
         setFailedMessages(prev => prev.filter(item => item.id !== failedMessage.id));
         
-        if (failedMessage.type === 'image') {
+        if (failedMessage.type === 'image' && failedMessage.file) {
             await sendImageMessageEnhanced(failedMessage.file, failedMessage.caption);
-        } else if (failedMessage.type === 'file') {
+        } else if (failedMessage.type === 'file' && failedMessage.file) {
             await sendFileMessageEnhanced(failedMessage.file, failedMessage.caption);
-        } else {
+        } else if (failedMessage.message) {
             await sendTextMessageEnhanced(failedMessage.message);
         }
     };
@@ -638,10 +673,9 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                     if (i < parts.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 700));
                     }
-                } catch (error) {
+                } catch {
                     removeFromMessageQueue(messageId);
                     addToFailedMessages({
-                        id: messageId,
                         type: 'text',
                         message: part,
                         part: i + 1,
@@ -660,14 +694,14 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                     role: localStorage.getItem("role") || "Admin",
                 });
                 removeFromMessageQueue(messageId);
-            } catch (error) {
+            } catch {
                 removeFromMessageQueue(messageId);
-                addToFailedMessages({ id: messageId, type: 'text', message }, 'Failed to send message');
+                addToFailedMessages({ type: 'text', message }, 'Failed to send message');
             }
         }
     };
 
-    const sendImageMessageEnhanced = async (imageFile: File, caption: string) => {
+    const sendImageMessageEnhanced = async (imageFile: File, caption?: string) => {
         const messageId = addToMessageQueue({ type: 'image', file: imageFile, caption });
         setIsUploading(true);
         setUploadProgress(0);
@@ -680,7 +714,9 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         try {
             const formData = new FormData();
             formData.append('image', imageFile);
-            formData.append('caption', caption);
+            if (caption) {
+                formData.append('caption', caption);
+            }
             formData.append('nama_admin', localStorage.getItem("nama_admin") || "Admin");
             formData.append('role', localStorage.getItem("role") || "Admin");
             
@@ -703,16 +739,16 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                 setImagePreview(null);
                 setUploadProgress(0);
             }
-        } catch (error) {
+        } catch {
             removeFromMessageQueue(messageId);
-            addToFailedMessages({ id: messageId, type: 'image', file: imageFile, caption }, 'Failed to send image');
+            addToFailedMessages({ type: 'image', file: imageFile, caption }, 'Failed to send image');
         } finally {
             setIsUploading(false);
             setCompressingImage(false);
         }
     };
 
-    const sendFileMessageEnhanced = async (file: File, caption: string) => {
+    const sendFileMessageEnhanced = async (file: File, caption?: string) => {
         const messageId = addToMessageQueue({ type: 'file', file, caption });
         setIsUploading(true);
         setUploadProgress(0);
@@ -722,7 +758,9 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
             const nama_admin = localStorage.getItem("nama_admin") || "Admin";
             const role = localStorage.getItem("role") || "Admin";
             
-            formData.append('caption', caption);
+            if (caption) {
+                formData.append('caption', caption);
+            }
             formData.append('nama_admin', nama_admin);
             formData.append('role', role);
             
@@ -757,9 +795,9 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                 setFilePreview(null);
                 setUploadProgress(0);
             }
-        } catch (error) {
+        } catch {
             removeFromMessageQueue(messageId);
-            addToFailedMessages({ id: messageId, type: 'file', file, caption }, 'Failed to send file');
+            addToFailedMessages({ type: 'file', file, caption }, 'Failed to send file');
         } finally {
             setIsUploading(false);
         }
@@ -849,6 +887,7 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -857,10 +896,90 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    // Preview Modal functions
+    const openPreview = (url: string, type: "image" | "video" | "audio" | "document", name: string) => {
+        const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
+        setPreviewUrl(fullUrl);
+        setPreviewType(type);
+        setPreviewName(name);
+        setPreviewOpen(true);
+        setZoomLevel(1);
+        setDragPosition({ x: 0, y: 0 });
+        setIsFullscreen(false);
+    };
+
+    const closePreview = () => {
+        setPreviewOpen(false);
+        setPreviewUrl("");
+        setPreviewName("");
+        setZoomLevel(1);
+        setDragPosition({ x: 0, y: 0 });
+        setIsDragging(false);
+        setIsFullscreen(false);
+    };
+
+    const handleZoomIn = () => {
+        setZoomLevel(prev => Math.min(prev * 1.2, 5));
+    };
+
+    const handleZoomOut = () => {
+        setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+    };
+
+    const handleResetZoom = () => {
+        setZoomLevel(1);
+        setDragPosition({ x: 0, y: 0 });
+    };
+
+    const toggleFullscreen = () => {
+        setIsFullscreen(!isFullscreen);
+    };
+
+    const handleDownload = () => {
+        if (previewUrl) {
+            const link = document.createElement('a');
+            link.href = previewUrl;
+            link.download = previewName || 'download';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (zoomLevel > 1) {
+            setIsDragging(true);
+            setDragStart({ x: e.clientX - dragPosition.x, y: e.clientY - dragPosition.y });
+        }
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isDragging && zoomLevel > 1) {
+            setDragPosition({
+                x: e.clientX - dragStart.x,
+                y: e.clientY - dragStart.y
+            });
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleWheel = (e: React.WheelEvent) => {
+        if (previewType === "image") {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            setZoomLevel(prev => Math.min(Math.max(prev * delta, 0.1), 5));
+        }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleVideoPlay = (mediaUrl: string) => {
         setPlayingVideo(playingVideo === mediaUrl ? null : mediaUrl);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleAudioPlay = (mediaUrl: string) => {
         setPlayingAudio(playingAudio === mediaUrl ? null : mediaUrl);
     };
@@ -884,18 +1003,23 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
 
     // Media display components
     const renderVideoPlayer = (mediaUrl: string, caption?: string) => (
-        <div className="relative mb-2">
+        <div className="relative mb-2 group cursor-pointer" onClick={() => openPreview(mediaUrl, "video", `Video-${Date.now()}`)}>
             <video
-                className="rounded-lg max-w-full max-h-64 object-cover"
-                controls
+                className="rounded-lg max-w-full max-h-64 object-cover pointer-events-none"
+                controls={false}
                 preload="metadata"
                 onLoadStart={() => handleMediaLoad(mediaUrl, true)}
                 onLoadedData={() => handleMediaLoad(mediaUrl, false)}
                 onError={() => handleMediaLoad(mediaUrl, false)}
+                onClick={(e) => e.stopPropagation()}
             >
                 <source src={mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}${mediaUrl}`} />
                 Video tidak dapat dimuat
             </video>
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                <FaSearchPlus className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" size={24} />
+            </div>
             {loadingMedia[mediaUrl] && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
                     <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -941,21 +1065,31 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         
         return (
             <div className="mb-2">
-                <div 
-                    className="bg-gray-100 rounded-lg p-3 max-w-xs cursor-pointer hover:bg-gray-200 transition-colors"
-                    onClick={() => downloadFile(fullUrl, filename)}
-                >
-                    <div className="flex items-center gap-3">
-                        {getFileIcon(filename)}
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-800 truncate">
-                                {filename}
-                            </p>
-                            <p className="text-xs text-gray-500 uppercase">
-                                {ext} file
-                            </p>
+                <div className="flex gap-2">
+                    {/* Preview button */}
+                    <div 
+                        className="bg-blue-100 rounded-lg p-3 cursor-pointer hover:bg-blue-200 transition-colors flex-1"
+                        onClick={() => openPreview(fullUrl, "document", filename)}
+                    >
+                        <div className="flex items-center gap-3">
+                            {getFileIcon(filename)}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-800 truncate">
+                                    {filename}
+                                </p>
+                                <p className="text-xs text-gray-500 uppercase">
+                                    {ext} file - Click to preview
+                                </p>
+                            </div>
+                            <FaSearchPlus className="text-blue-500 text-sm" />
                         </div>
-                        <FaDownload className="text-gray-500 text-sm" />
+                    </div>
+                    {/* Download button */}
+                    <div 
+                        className="bg-gray-100 rounded-lg p-3 cursor-pointer hover:bg-gray-200 transition-colors"
+                        onClick={() => downloadFile(fullUrl, filename)}
+                    >
+                        <FaDownload className="text-gray-500 text-lg" />
                     </div>
                 </div>
                 {message && message !== `[Document] ${filename}` && (
@@ -966,17 +1100,23 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
     };
 
     const renderStickerDisplay = (mediaUrl: string) => (
-        <div className="mb-2">
-            <Image
-                src={mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}${mediaUrl}`}
-                alt="Sticker"
-                width={150}
-                height={150}
-                className="rounded-lg object-contain"
-                onError={(e) => {
-                    e.currentTarget.src = "https://via.placeholder.com/150?text=Sticker";
-                }}
-            />
+        <div className="mb-2 group cursor-pointer" onClick={() => openPreview(mediaUrl, "image", `Sticker-${Date.now()}`)}>
+            <div className="relative">
+                <Image
+                    src={mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}${mediaUrl}`}
+                    alt="Sticker"
+                    width={150}
+                    height={150}
+                    className="rounded-lg object-contain transition-transform hover:scale-105"
+                    onError={(e) => {
+                        e.currentTarget.src = "https://via.placeholder.com/150?text=Sticker";
+                    }}
+                />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                    <FaSearchPlus className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" size={24} />
+                </div>
+            </div>
         </div>
     );
 
@@ -1047,107 +1187,38 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
         }, 100);
     };
 
-    // Handle file selection from File Manager
+    // Handle file selection from File Manager - only for preview
     const handleFileManagerSelect = (file: FileItem) => {
         setFileManagerOpen(false);
         setUploadMenuOpen(false);
         
-        // Send file message directly using the existing file URL
-        const messageData = {
-            from: from,
-            message: file.name,
-            type: file.mimeType.startsWith('image/') ? 'image' : 
-                  file.mimeType.startsWith('video/') ? 'video' :
-                  file.mimeType.startsWith('audio/') ? 'audio' : 'document',
-            mediaUrl: file.url,
-            caption: file.name
-        };
-        
-        // Send via API directly
-        sendFileFromManager(messageData);
-    };
-    
-    // Send file selected from File Manager
-    const sendFileFromManager = async (messageData: any) => {
-        if (mode === "bot") {
-            alert("Mode saat ini dalam Bot Mode. Ubah ke Manual Mode untuk mengirim file.");
-            return;
-        }
-        
-        const tempId = Date.now().toString();
-        
-        try {
-            // Add to sending queue
-            setSendingMessages(prev => ({ ...prev, [tempId]: true }));
+        // Set preview based on file type - just for display, no editing
+        if (file.mimeType.startsWith('image/')) {
+            // Create a File object for image preview
+            const imageFile = new File([], file.name, { type: file.mimeType });
+            setSelectedImage(imageFile);
+            setSelectedFile(null);
+            setImagePreview(file.url ? (file.url.startsWith('http') ? file.url : `${API_URL}${file.url}`) : null);
+            setFilePreview(null);
+        } else {
+            // For other file types, create a File object and set file preview
+            const selectedFileObj = new File([], file.name, { type: file.mimeType });
+            setSelectedFile(selectedFileObj);
+            setSelectedImage(null);
+            setImagePreview(null);
             
-            // Send via API
-            const response = await axios.post(`/chat/send/${from}`, messageData);
-            
-            if (response.data.success) {
-                // Add to messages
-                const newMessage = {
-                    _id: response.data.messageId,
-                    sessionId: from,
-                    message: messageData.message,
-                    senderName: "Admin",
-                    from: from,
-                    timestamp: new Date().toISOString(),
-                    type: messageData.type,
-                    mediaUrl: messageData.mediaUrl
-                };
-                
-                setMessages(prev => [...prev, newMessage]);
-                
-                // Send via socket
-                if (socket.isConnected) {
-                    socket.sendMessage(newMessage.message, newMessage.type, newMessage.mediaUrl);
-                }
+            if (file.mimeType.startsWith('video/') || file.mimeType.startsWith('audio/')) {
+                setFilePreview(file.url ? (file.url.startsWith('http') ? file.url : `${API_URL}${file.url}`) : null);
+            } else {
+                setFilePreview(null);
             }
-        } catch (error) {
-            console.error('Error sending file from manager:', error);
-            alert('Gagal mengirim file dari File Manager');
-        } finally {
-            setSendingMessages(prev => {
-                const newState = { ...prev };
-                delete newState[tempId];
-                return newState;
-            });
         }
+        
+        // Don't change the message input - keep it as is for user to type their own caption
     };
 
     return (
         <div className="flex flex-col h-full relative">
-            {/* Connection Status Indicator */}
-            <div className="absolute top-4 right-4 z-10">
-                <ConnectionStatus showText={true} showDetails={false} />
-            </div>
-
-            {/* Online Status & Admin Info */}
-            <div className="absolute top-4 left-4 z-10">
-                <div className="flex items-center gap-3">
-                    {/* User Online Status */}
-                    {onlineUsers.includes(from) && (
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                            <span>User Online</span>
-                        </div>
-                    )}
-                    
-                    {/* Admin Online Status */}
-                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                        adminOnlineStatus === 'online' ? 'bg-green-100 text-green-800' : 
-                        adminOnlineStatus === 'away' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'
-                    }`}>
-                        <div className={`w-2 h-2 rounded-full ${
-                            adminOnlineStatus === 'online' ? 'bg-green-500' : 
-                            adminOnlineStatus === 'away' ? 'bg-yellow-500' : 
-                            'bg-gray-500'
-                        }`}></div>
-                        <span>Admin {adminOnlineStatus === 'online' ? 'Online' : adminOnlineStatus === 'away' ? 'Away' : 'Offline'}</span>
-                    </div>
-                </div>
-            </div>
 
             {/* Chat Area */}
             <div
@@ -1168,17 +1239,23 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                                 {msg.type === "image" && msg.mediaUrl ? (
                                     <>
                                         {!imageLoaded && <div className="w-full h-48 bg-gray-200 rounded-md mb-2"></div>}
-                                        <Image
-                                            src={msg.mediaUrl.startsWith('http') ? msg.mediaUrl : `${API_URL}${msg.mediaUrl}`}
-                                            alt="Gambar"
-                                            width={300}
-                                            height={200}
-                                            className={`rounded mb-2 max-w-full ${imageLoaded ? "" : "opacity-0"}`}
-                                            onLoad={handleImageLoad}
-                                            onError={(e) => {
-                                                e.currentTarget.src = "https://via.placeholder.com/150?text=No+Image";
-                                            }}
-                                        />
+                                        <div className="relative group cursor-pointer" onClick={() => openPreview(msg.mediaUrl!, "image", `Image-${formatDate(msg.timestamp)}`)}>
+                                            <Image
+                                                src={msg.mediaUrl.startsWith('http') ? msg.mediaUrl : `${API_URL}${msg.mediaUrl}`}
+                                                alt="Gambar"
+                                                width={300}
+                                                height={200}
+                                                className={`rounded mb-2 max-w-full transition-transform hover:scale-105 ${imageLoaded ? "" : "opacity-0"}`}
+                                                onLoad={handleImageLoad}
+                                                onError={(e) => {
+                                                    e.currentTarget.src = "https://via.placeholder.com/150?text=No+Image";
+                                                }}
+                                            />
+                                            {/* Hover overlay */}
+                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded mb-2 flex items-center justify-center">
+                                                <FaSearchPlus className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" size={24} />
+                                            </div>
+                                        </div>
                                         {msg.message && msg.message !== "[Gambar]" && (
                                             <div
                                                 className="whitespace-pre-wrap text-sm"
@@ -1598,8 +1675,150 @@ export default function Message({ from, mode, onModeChange, forceMode = false }:
                     onFileSelect={handleFileManagerSelect}
                     selectMode={true}
                     userId={from}
-                    chatSession={from}
                 />
+            )}
+
+            {/* Preview Modal */}
+            {previewOpen && (
+                <Portal>
+                    <div 
+                        className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[1000000]"
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={closePreview}
+                    >
+                        {/* Top Controls */}
+                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-[1000001]" style={{ pointerEvents: 'auto' }}>
+                            <div className="text-white font-medium truncate max-w-md">
+                                {previewName}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {previewType === "image" && (
+                                    <>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+                                            className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                            title="Zoom Out (-)"
+                                        >
+                                            <FaSearchMinus size={16} />
+                                        </button>
+                                        <span className="text-white text-sm min-w-[60px] text-center">
+                                            {Math.round(zoomLevel * 100)}%
+                                        </span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+                                            className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                            title="Zoom In (+)"
+                                        >
+                                            <FaSearchPlus size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleResetZoom(); }}
+                                            className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-2 rounded-full transition-colors text-sm"
+                                            title="Reset Zoom (0)"
+                                        >
+                                            Reset
+                                        </button>
+                                    </>
+                                )}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                    title="Toggle Fullscreen (F)"
+                                >
+                                    {isFullscreen ? <FaCompress size={16} /> : <FaExpand size={16} />}
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                    title="Download (D)"
+                                >
+                                    <FaDownload size={16} />
+                                </button>
+                                <button
+                                    onClick={closePreview}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                    title="Close (Esc)"
+                                >
+                                    <FaTimes size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div 
+                            className={`relative ${isFullscreen ? 'w-full h-full' : 'max-w-7xl max-h-[90vh] w-full mx-4'} flex items-center justify-center`}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            onWheel={handleWheel}
+                            style={{ cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default') }}
+                        >
+                            {previewType === "image" ? (
+                                <Image
+                                    src={previewUrl}
+                                    alt={previewName}
+                                    width={1200}
+                                    height={800}
+                                    className="max-w-full max-h-full object-contain"
+                                    style={{
+                                        transform: `scale(${zoomLevel}) translate(${dragPosition.x / zoomLevel}px, ${dragPosition.y / zoomLevel}px)`,
+                                        transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+                                    }}
+                                    onError={(e) => {
+                                        e.currentTarget.src = "https://via.placeholder.com/400x300?text=Image+Not+Found";
+                                    }}
+                                />
+                            ) : previewType === "video" ? (
+                                <video
+                                    src={previewUrl}
+                                    controls
+                                    className={`${isFullscreen ? 'w-full h-full' : 'max-w-full max-h-full'} object-contain`}
+                                    autoPlay={false}
+                                />
+                            ) : previewType === "audio" ? (
+                                <div className="bg-white p-8 rounded-lg">
+                                    <div className="text-center mb-4">
+                                        <FaVolumeUp size={48} className="mx-auto text-gray-400 mb-4" />
+                                        <h3 className="text-lg font-medium text-gray-800">{previewName}</h3>
+                                    </div>
+                                    <audio
+                                        src={previewUrl}
+                                        controls
+                                        className="w-full"
+                                        autoPlay={false}
+                                    />
+                                </div>
+                            ) : previewType === "document" ? (
+                                <div className="bg-white p-8 rounded-lg max-w-md">
+                                    <div className="text-center">
+                                        <FaFileAlt size={48} className="mx-auto text-gray-400 mb-4" />
+                                        <h3 className="text-lg font-medium text-gray-800 mb-2">{previewName}</h3>
+                                        <p className="text-gray-600 mb-4">Click download to view this document</p>
+                                        <button
+                                            onClick={handleDownload}
+                                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            <FaDownload className="inline mr-2" />
+                                            Download
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {/* Bottom Instructions */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center text-sm opacity-75">
+                            <div className="bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                                {previewType === "image" && "Use +/- to zoom, 0 to reset, F for fullscreen, D to download, Esc to close"}
+                                {previewType === "video" && "F for fullscreen, D to download, Esc to close"}
+                                {previewType === "audio" && "D to download, Esc to close"}
+                                {previewType === "document" && "D to download, Esc to close"}
+                            </div>
+                        </div>
+                    </div>
+                </Portal>
             )}
 
             {/* Messages */}

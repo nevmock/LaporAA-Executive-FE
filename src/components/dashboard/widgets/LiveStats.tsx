@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSocket } from '@/hooks/useSocket';
-import SummaryTable from './SummaryTable';
+import SummaryTable from '../tables/SummaryTable';
 
 interface StatsUpdateData {
   type: 'status_counts' | 'new_report' | 'status_change';
@@ -22,13 +22,12 @@ interface StatsUpdateData {
  */
 export default function LiveStats() {
   const { socket, isConnected } = useSocket();
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  // Note: lastUpdate variable removed as it was unused
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Force refresh the wrapped SummaryTable
   const triggerRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
-    setLastUpdate(new Date());
   }, []);
 
   // Handle real-time statistics updates

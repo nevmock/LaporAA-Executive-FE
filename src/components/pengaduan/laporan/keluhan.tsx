@@ -1,14 +1,13 @@
 "use client";
-import { useEffect, useState, KeyboardEvent } from "react";
+import { useEffect, useState, KeyboardEvent, useCallback } from "react";
 import Image from "next/image";
 import axios from "../../../utils/axiosInstance";
 import dynamic from "next/dynamic";
 import Zoom from "react-medium-image-zoom";
 import { useSwipeable } from "react-swipeable";
-import Profile from "./profile";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
-import PhotoDownloader, { usePhotoDownloader } from "../PhotoDownloader";
+import { usePhotoDownloader } from "../PhotoDownloader";
 import { RiCloseLine } from "react-icons/ri";
 import { Data } from "../../../lib/types";
 
@@ -16,7 +15,7 @@ const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-export default function Keluhan({ sessionId, data: propData }: { sessionId: string; data?: any }) {
+export default function Keluhan({ sessionId, data: propData }: { sessionId: string; data?: Data }) {
     // Debug logging untuk props
     console.info("🔍 [Keluhan] Component rendered with props:", {
         sessionId,
@@ -62,17 +61,17 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     // Helper function to ensure tag is always a string
-    const normalizeTag = (tag: any): string => {
+    const normalizeTag = (tag: string | { hash_tag: string; _id: string }): string => {
         if (typeof tag === 'string') return tag;
         if (typeof tag === 'object' && tag !== null && 'hash_tag' in tag) return String(tag.hash_tag);
         return String(tag);
     };
 
     // Helper function to normalize tags array
-    const normalizeTags = (tagsArray: any[]): string[] => {
+    const normalizeTags = useCallback((tagsArray: (string | { hash_tag: string; _id: string })[]): string[] => {
         if (!Array.isArray(tagsArray)) return [];
         return tagsArray.map(normalizeTag).filter(tag => tag && tag.trim() !== '');
-    };
+    }, []);
 
     // Sync state jika propData berubah
     useEffect(() => {
@@ -97,7 +96,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                 setTags([]);
             }
         }
-    }, [propData]);
+    }, [propData, normalizeTags]);
 
     // Save message update
     const saveMessage = async () => {
@@ -205,7 +204,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             console.info("🔍 [Keluhan] Setting empty tags from useEffect");
             setTags([]);
         }
-    }, [propData?.tindakan?.tag]);
+    }, [propData?.tindakan?.tag, normalizeTags]);
 
     // Fungsi untuk menambahkan tag - gunakan tindakan._id dari propData
     const addTag = async (tag: string) => {
@@ -333,7 +332,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     };
 
     // Fungsi untuk mencari tag yang sudah ada di database
-    const searchTags = async (query: string) => {
+    const searchTags = useCallback(async (query: string) => {
         if (!query || query.trim().length < 2) {
             setTagSuggestions([]);
             setShowSuggestions(false);
@@ -372,7 +371,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
         } finally {
             setIsSearchingTags(false);
         }
-    };
+    }, [tags]); // Add tags dependency
     
     // Debounce search untuk mencegah terlalu banyak API call
     useEffect(() => {
@@ -386,7 +385,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
         }, 300); // 300ms delay
         
         return () => clearTimeout(delaySearch);
-    }, [tagInput, tags]);
+    }, [tagInput, tags, searchTags]);
     
     // Tutup suggestion ketika klik di luar komponen
     useEffect(() => {
@@ -452,7 +451,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             try {
                 setLocationDetails(JSON.parse(cachedLocation));
                 return; // Use cached data if available
-            } catch (e) {
+            } catch {
                 // If parsing fails, proceed with fetch
                 console.warn("Failed to parse cached location");
             }
@@ -507,7 +506,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [data?.location?.latitude, data?.location?.longitude]);
+    }, [data?.location?.latitude, data?.location?.longitude, data]);
 
     if (!data) {
         return <p className="text-center text-gray-500">Memuat data Laporan...</p>;

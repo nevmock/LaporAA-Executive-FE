@@ -1,4 +1,4 @@
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 
 export interface RoomConfig {
   name: string;
@@ -183,10 +183,10 @@ export class SocketRoomService {
    * Broadcast event to a room with filtering
    */
   broadcastToRoom(
-    io: any,
+    io: Server,
     roomId: string,
     event: string,
-    data: any,
+    data: unknown,
     excludeSocketId?: string,
     filterFn?: (user: SocketUser) => boolean
   ): number {
@@ -214,7 +214,7 @@ export class SocketRoomService {
   /**
    * Broadcast to all admin users
    */
-  broadcastToAdmins(io: any, event: string, data: any, excludeSocketId?: string): number {
+  broadcastToAdmins(io: Server, event: string, data: unknown, excludeSocketId?: string): number {
     let sentCount = 0;
     
     for (const [socketId, user] of this.users) {

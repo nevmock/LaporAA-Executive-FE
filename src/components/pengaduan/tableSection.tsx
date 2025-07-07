@@ -15,7 +15,7 @@ import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
 import { Chat, SortKey, BackendSortKey } from "../../lib/types";
-import { usePhotoDownloader } from "./PhotoDownloader";
+// import { usePhotoDownloader } from "./PhotoDownloader"; // Unused import
 
 // Props interface untuk komponen TableSection
 interface Props {
@@ -88,11 +88,11 @@ const TableSection: React.FC<Props> = ({
     const [pinnedReports, setPinnedReports] = React.useState<Record<string, boolean>>({});
     const [loadingPin, setLoadingPin] = React.useState<Record<string, boolean>>({});
     
-    // State untuk menyimpan informasi laporan untuk modal foto
-    const [photoModalInfo, setPhotoModalInfo] = React.useState<{
-        sessionId: string;
-        userName: string;
-    } | null>(null);
+    // State untuk menyimpan informasi laporan untuk modal foto (currently unused)
+    // const [photoModalInfo, setPhotoModalInfo] = React.useState<{
+    //     sessionId: string;
+    //     userName: string;
+    // } | null>(null);
 
     // Fungsi untuk download foto tunggal dengan nama yang benar
     const downloadSinglePhoto = async (photoUrl: string, sessionId: string, userName: string, photoPath: string) => {
@@ -306,7 +306,7 @@ const TableSection: React.FC<Props> = ({
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
                                                 <Switch
                                                     checked={isPrioritas}
-                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                    onChange={(e) => toggleMode(chat.tindakan?.report || '', e)}
                                                     className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
                                                 >
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -712,7 +712,7 @@ const TableSection: React.FC<Props> = ({
                                                                     downloadSinglePhoto(photoUrl, chat.sessionId, chat.user || 'Unknown', firstPhoto);
                                                                 }
                                                             }}
-                                                            onError={(e) => {
+                                                            onError={() => {
                                                                 console.error('Error loading image:', photoUrl);
                                                                 console.error('Photo data:', chat.photos);
                                                                 // Instead of manipulating DOM, show alert directly

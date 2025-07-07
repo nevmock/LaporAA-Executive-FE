@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { TindakanClientState } from "../../../lib/types";
 import axios from "../../../utils/axiosInstance";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -14,8 +15,8 @@ export const STATUS_LIST = [
   "Ditutup",
 ];
 
-export function useTindakanState(tindakan: any) {
-  const [formData, setFormData] = useState<any>({});
+export function useTindakanState(tindakan: TindakanClientState) {
+  const [formData, setFormData] = useState<TindakanClientState>({} as TindakanClientState);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [notif, setNotif] = useState<string | null>(null);
   const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
@@ -43,7 +44,7 @@ export function useTindakanState(tindakan: any) {
         
         // Just create a copy of the tindakan object - the processed_by field will be managed
         // and set by the TindakanComponent when it calls setFormData
-        let formattedTindakan = {...tindakan};
+        const formattedTindakan = {...tindakan};
         
         setFormData(formattedTindakan);
         const stepIndex = STATUS_LIST.indexOf(tindakan.status || "Perlu Verifikasi");
@@ -60,7 +61,7 @@ export function useTindakanState(tindakan: any) {
 
   const validateCurrentStep = useCallback(() => {
     const status = STATUS_LIST[currentStepIndex];
-    let requiredFields: string[] = [];
+    let requiredFields: (keyof TindakanClientState)[] = [];
     if (status === "Verifikasi Situasi") requiredFields = ["situasi"];
     else if (status === "Verifikasi Kelengkapan Berkas") requiredFields = ["trackingId", "url", "status_laporan"];
     else if (status === "Proses OPD Terkait") requiredFields = ["kesimpulan", "opd"];
@@ -164,15 +165,16 @@ export function useTindakanState(tindakan: any) {
       
       console.log("Update processed_by successful:", response.status);
       return response;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error updating processed_by:", err);
-      if (err.response && err.response.data && err.response.data.message) {
-        console.error("Server error message:", err.response.data.message);
+      if (err instanceof Error) {
+        console.error("Error message:", err.message);
       }
       // Don't reject - we'll continue with the main flow
-      return { status: "error", message: err.message || "Unknown error" };
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      return { status: "error", message: errorMessage };
     }
-  }, [formData, setNotif]);
+  }, [formData]); // setNotif is stable and doesn't need to be in dependencies
 
   const saveData = useCallback(async (nextStatus?: string) => {
     try {
@@ -235,15 +237,16 @@ export function useTindakanState(tindakan: any) {
       setNotif("✅ Data berhasil disimpan");
       
       return response;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error in saveData:", err);
       // More detailed error messaging
-      setNotif(`❌ Gagal menyimpan data: ${err?.response?.data?.message || err?.message || 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setNotif(`❌ Gagal menyimpan data: ${errorMessage}`);
       return Promise.reject(err);
     } finally {
       setTimeout(() => setNotif(null), 5000);
     }
-  }, [formData, API_URL]);
+  }, [formData]); // API_URL is a constant and doesn't need to be in dependencies
 
   const handleNextStep = useCallback(async () => {
     // if (!validateCurrentStep()) {
@@ -286,7 +289,7 @@ export function useTindakanState(tindakan: any) {
     } finally {
       setIsLoading(false);
     }
-  }, [currentStepIndex, saveData, validateCurrentStep, updateProcessedBy, setNotif]);
+  }, [currentStepIndex, saveData, updateProcessedBy]); // validateCurrentStep and setNotif are stable
 
   const handlePreviousStep = useCallback(async () => {
     // Show confirmation modal instead of directly going back
@@ -306,9 +309,10 @@ export function useTindakanState(tindakan: any) {
       console.log(`Successfully saved previous step ${prevIndex}, reloading page...`);
       window.location.reload(); // Reload to reflect changes
       setShowBackModal(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error going back to previous step:", error);
-      alert(`Gagal kembali ke step sebelumnya: ${error?.message || "Terjadi kesalahan"}`);
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan";
+      alert(`Gagal kembali ke step sebelumnya: ${errorMessage}`);
       setIsLoading(false); // Reset loading state on error
     }
     // Jangan set loading false jika sukses karena halaman akan reload

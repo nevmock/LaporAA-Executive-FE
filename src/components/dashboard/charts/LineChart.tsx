@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { EChartsOption } from 'echarts';
-import { ModernChartCard, colorPalettes, defaultChartOptions, FilterControls } from '../modern';
+import { ModernChartCard, colorPalettes, FilterControls } from '../modern';
+// Note: defaultChartOptions import removed as it was unused
 import { useAvailablePeriods } from '../../../hooks/useAvailablePeriods';
 import axios from '../../../utils/axiosInstance';
 import dayjs from 'dayjs';
@@ -67,7 +68,7 @@ export default function LineChart() {
     const [loading, setLoading] = useState(true);
 
     // Tahun berjalan + 4 tahun sebelumnya
-    const years = useMemo(() => Array.from({ length: 5 }, (_, i) => now.year() - i), []);
+    // Note: years variable removed as it was unused
 
     // Menghitung jumlah minggu dalam bulan tertentu
     const getWeeksInMonth = (y: number, m: number) => {
@@ -83,7 +84,7 @@ export default function LineChart() {
     };
 
     // Mapping data API ke kategori & total berdasarkan mode (weekly, monthly, yearly)
-    const getChartDataByMode = (data: Array<{ date: string; total: number }>) => {
+    const getChartDataByMode = useCallback((data: Array<{ date: string; total: number }>) => {
         if (filter === 'weekly') {
             const first = dayjs(`${year}-${month}-01`);
             const start = first.startOf('week').add(1, 'day').add(week - 1, 'week');
@@ -103,7 +104,7 @@ export default function LineChart() {
                 return match?.total ?? 0;
             }));
         }
-    };
+    }, [filter, year, month, week]);
 
     // Reset minggu ke-1 setiap kali filter berubah
     useEffect(() => {
@@ -124,7 +125,7 @@ export default function LineChart() {
                 setTotals([]);
             })
             .finally(() => setLoading(false));
-    }, [filter, year, month, week]);
+    }, [filter, year, month, week, getChartDataByMode]);
 
     // Fungsi export data ke format CSV
     const handleDownloadCSV = () => {
@@ -176,9 +177,10 @@ export default function LineChart() {
             textStyle: {
                 color: '#ffffff'
             },
-            formatter: function(params: any) {
+            formatter: function(params: unknown) {
                 const param = Array.isArray(params) ? params[0] : params;
-                return `${param.name}<br/>${param.seriesName}: ${param.value}`;
+                const typedParam = param as { name: string; seriesName: string; value: number };
+                return `${typedParam.name}<br/>${typedParam.seriesName}: ${typedParam.value}`;
             }
         },
         xAxis: {
@@ -274,18 +276,6 @@ export default function LineChart() {
                     shadowColor: 'rgba(0, 0, 0, 0.3)',
                     scale: 1.2
                 }
-            },
-            markPoint: {
-                data: [
-                    { type: 'max', name: 'Maksimum' },
-                    { type: 'min', name: 'Minimum' }
-                ],
-                itemStyle: {
-                    color: colorPalettes.primary[1]
-                },
-                label: {
-                    show: false
-                }
             }
         }],
         animation: true,
@@ -293,18 +283,7 @@ export default function LineChart() {
         animationEasing: 'cubicOut'
     }), [categories, totals, filter]);
 
-    // Handle data export
-    const handleExport = (format: string) => {
-        if (format === 'csv') {
-            handleDownloadCSV();
-        }
-        // Add other format handlers as needed
-    };
-
-    // Handle chart refresh
-    const handleRefresh = () => {
-        fetchData();
-    };
+    // Note: handleExport and handleRefresh functions removed as they were unused
 
     const weekOptions = Array.from({ length: getWeeksInMonth(year, month) }, (_, i) => i + 1);
 

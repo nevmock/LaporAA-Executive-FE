@@ -28,10 +28,6 @@ const MapPersebaranCard = dynamic(() => import('../../../components/dashboard/ma
   ssr: false,
   loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96"></div>
 });
-const ConnectionStatus = dynamic(() => import('../../../components/socket/ConnectionStatus'), { 
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-8 w-32"></div>
-});
 
 export default function Home() {
   const router = useRouter();
@@ -58,16 +54,6 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-
-        {/* Connection Status - Top right corner */}
-        <div className="flex justify-end mb-4">
-          <ConnectionStatus 
-            showText={true} 
-            showDetails={false} 
-            size="sm" 
-            className="shadow-sm"
-          />
-        </div>
 
         {/* Stats and Summary Section */}
         <SummaryTable />

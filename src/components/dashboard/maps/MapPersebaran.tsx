@@ -2,47 +2,36 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
+import L from 'leaflet';
 import axios from '../../../utils/axiosInstance';
 import Legend from '../utils/legend';
 import BoundariesLegend from '../widgets/BoundariesLegend';
 import iconByStatus from '../utils/icons';
 import { Report } from '../../../lib/types';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import { MdOutlineScreenshotMonitor } from "react-icons/md";
+// Note: MdOutlineScreenshotMonitor and html2canvas imports removed as they were unused
 
 // Base URL dari API backend
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-// Opsi filter berdasarkan waktu
-const FILTERS = [
-  { label: 'Weekly', value: 'weekly' },
-  { label: 'Monthly', value: 'monthly' },
-  { label: 'Yearly', value: 'yearly' },
-];
-
-// Opsi status laporan yang bisa difilter
-const STATUS_OPTIONS = [
-  'Semua Status',
-  'Perlu Verifikasi',
-  'Verifikasi Situasi',
-  'Verifikasi Kelengkapan Berkas',
-  'Proses OPD Terkait',
-  'Selesai Penanganan',
-  'Selesai Pengaduan',
-  'Ditutup',
-];
-
-// Label nama bulan
-const months = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
+// Note: FILTERS, STATUS_OPTIONS, and months variables removed as they were unused
 
 const now = dayjs();
 
+// Type definitions for better type safety
+interface BoundariesData {
+  kecamatan?: GeoJSON.FeatureCollection;
+  kabupaten?: GeoJSON.FeatureCollection;
+}
+
+interface LayerEvent {
+  target: {
+    setStyle: (style: Record<string, unknown>) => void;
+  };
+}
+
 interface MapPersebaranProps {
-  isFullscreen?: boolean;
+  // Note: isFullscreen parameter removed as it was unused
   filter?: string;
   year?: number;
   month?: number;
@@ -56,7 +45,7 @@ interface MapPersebaranProps {
 
 // Komponen utama Peta Persebaran Laporan
 export default function MapPersebaran({ 
-  isFullscreen = false,
+  // Note: isFullscreen parameter removed as it was unused
   filter: initialFilter = 'monthly',
   year: initialYear = now.year(),
   month: initialMonth = now.month() + 1,
@@ -78,29 +67,15 @@ export default function MapPersebaran({
   const [showBoundaries, setShowBoundaries] = useState(initialShowBoundaries);
   const [mapReady, setMapReady] = useState(false);
   const mapParentRef = useRef<HTMLDivElement>(null);
-  const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
-  const [boundariesData, setBoundariesData] = useState<any>(null);
-  const [boundariesLoading, setBoundariesLoadingInternal] = useState(false);
+  // Note: isScreenshotLoading removed as it was unused
+  const [boundariesData, setBoundariesData] = useState<BoundariesData | null>(null);
+  const [boundariesLoadingInternal, setBoundariesLoadingInternal] = useState(false);
   const [kecamatanList, setKecamatanList] = useState<string[]>([]);
 
   // Use external setBoundariesLoading if provided, otherwise use internal
   const handleSetBoundariesLoading = setBoundariesLoading || setBoundariesLoadingInternal;
 
-  // Daftar 5 tahun terakhir
-  const years = Array.from({ length: 5 }, (_, i) => now.year() - i);
-
-  // Hitung jumlah minggu dalam satu bulan tertentu
-  const getWeeksInMonth = (y: number, m: number) => {
-    const first = dayjs(`${y}-${m}-01`);
-    const end = first.endOf('month');
-    let weekCount = 1;
-    let cursor = first.startOf('week').add(1, 'day');
-    while (cursor.isBefore(end)) {
-      weekCount++;
-      cursor = cursor.add(1, 'week');
-    }
-    return weekCount;
-  };
+  // Note: years and getWeeksInMonth variables removed as they were unused
 
   // Ambil data laporan dari backend berdasarkan filter
   const fetchData = useCallback(async () => {
@@ -122,7 +97,7 @@ export default function MapPersebaran({
 
   // Ambil data boundaries dari backend
   const fetchBoundaries = useCallback(async () => {
-    if (boundariesData || boundariesLoading) return; // Skip jika sudah ada data atau sedang loading
+    if (boundariesData || boundariesLoadingInternal) return; // Skip jika sudah ada data atau sedang loading
     
     handleSetBoundariesLoading(true);
     try {
@@ -133,7 +108,7 @@ export default function MapPersebaran({
         // Set data boundaries dari response API
         setBoundariesData({
           kecamatan: res.data.data, // Data GeoJSON semua kecamatan
-          kabupaten: null // Akan diisi jika ada data kabupaten terpisah
+          kabupaten: undefined // Akan diisi jika ada data kabupaten terpisah
         });
         
         // Extract daftar kecamatan dari data GeoJSON
@@ -141,10 +116,11 @@ export default function MapPersebaran({
           setKecamatanList(res.data.meta.kecamatan_list);
         } else if (res.data.data && res.data.data.features) {
           // Fallback jika meta tidak ada, extract dari features
-          const kecamatanNames = res.data.data.features.map((feature: any) => 
-            feature.properties.KECAMATAN
-          ).filter((name: string) => name).sort();
-          setKecamatanList([...new Set(kecamatanNames)] as string[]);
+          const kecamatanNames: string[] = res.data.data.features
+            .map((feature: GeoJSON.Feature) => feature.properties?.KECAMATAN)
+            .filter((name: unknown): name is string => typeof name === 'string' && Boolean(name))
+            .sort();
+          setKecamatanList([...new Set(kecamatanNames)]);
         }
       } else {
         console.error('❌ API Error:', res.data.message);
@@ -156,7 +132,7 @@ export default function MapPersebaran({
     } finally {
       handleSetBoundariesLoading(false);
     }
-  }, [boundariesData, boundariesLoading]);
+  }, [boundariesData, boundariesLoadingInternal, handleSetBoundariesLoading]);
 
   // Trigger fetch data setiap kali filter berubah
   useEffect(() => {
@@ -196,33 +172,7 @@ export default function MapPersebaran({
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Export data CSV agregat lokasi dan status
-  const handleDownloadCSV = () => {
-    const summary: Record<string, { total: number; status: string }> = {};
-
-    reports.forEach(r => {
-      const status = r.tindakan?.status || 'Perlu Verifikasi';
-      const kel = r.location.desa || '-';
-      const kec = r.location.kecamatan || '-';
-      const kab = r.location.kabupaten || '-';
-      const key = `${kel},${kec},${kab},${status}`;
-      summary[key] = summary[key] || { total: 0, status };
-      summary[key].total++;
-    });
-
-    let csv = 'Kelurahan/Desa,Kecamatan,Kabupaten/Kota,Status,Total\n';
-    Object.entries(summary).forEach(([key, val]) => {
-      csv += `${key},${val.total}\n`;
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `persebaran-${filter}-${year}${filter !== 'yearly' ? `-${month}` : ''}${filter === 'weekly' ? `-minggu${week}` : ''}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // Note: handleDownloadCSV function removed as it was unused
 
   // Cari pusat peta dari laporan pertama yang valid (berkoordinat) Sort dulu, lalu limit, lalu filter valid koordinat
   const sortedLimitedReports = reports
@@ -237,7 +187,8 @@ export default function MapPersebaran({
     : [-6.2373, 107.1686]; // Default: Kabupaten Bekasi (sesuai dokumentasi API)
 
   // Styling untuk boundaries - Kecamatan dengan warna berbeda-beda
-  const getKecamatanStyle = (feature: any) => {
+  const getKecamatanStyle = (feature?: GeoJSON.Feature) => {
+    if (!feature || !feature.properties) return {};
     const kecamatanName = feature.properties.KECAMATAN;
     const isSelected = selectedKecamatan === kecamatanName || selectedKecamatan === 'Semua Kecamatan';
     
@@ -271,60 +222,40 @@ export default function MapPersebaran({
   };
 
   // Handler untuk boundaries events
-  const onEachKecamatan = (feature: any, layer: any) => {
+  const onEachKecamatan = (feature: GeoJSON.Feature, layer: L.Layer) => {
     const props = feature.properties;
     if (props && props.KECAMATAN) {
       // Popup dengan informasi kecamatan
-      layer.bindPopup(`
+      (layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(`
         <div class="p-2">
           <h3 class="font-bold text-lg">${props.KECAMATAN}</h3>
         </div>
       `);
       
       // Hover effects
-      layer.on({
-        mouseover: function (e: any) {
+      (layer as L.Layer & { on: (events: Record<string, (e: LayerEvent) => void>) => void }).on({
+        mouseover: function (e: LayerEvent) {
           const layer = e.target;
           layer.setStyle({
             weight: 4,
             fillOpacity: 0.6
           });
         },
-        mouseout: function (e: any) {
+        mouseout: function (e: LayerEvent) {
           const layer = e.target;
-          layer.setStyle(getKecamatanStyle(feature));
+          layer.setStyle(getKecamatanStyle(feature) as Record<string, unknown>);
         }
       });
     }
   };
 
-  const onEachKabupaten = (feature: any, layer: any) => {
+  const onEachKabupaten = (feature: GeoJSON.Feature, layer: L.Layer) => {
     if (feature.properties && feature.properties.name) {
-      layer.bindPopup(`<strong>Kabupaten ${feature.properties.name}</strong>`);
+      (layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(`<strong>Kabupaten ${feature.properties.name}</strong>`);
     }
   };
 
-  // Screenshot handler
-  const handleScreenshot = async () => {
-    if (!mapParentRef.current) return;
-    try {
-      setIsScreenshotLoading(true); // <-- set loading
-      mapParentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const canvas = await html2canvas(mapParentRef.current, {
-        useCORS: true,
-        backgroundColor: "#fff",
-      });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const link = document.createElement('a');
-      link.href = imgData;
-      link.download = `screenshot-peta-${filter}-${year}${filter !== 'yearly' ? `-${month}` : ''}${filter === 'weekly' ? `-minggu${week}` : ''}.jpg`;
-      link.click();
-    } catch (err) { // eslint-disable-line @typescript-eslint/no-unused-vars
-      alert('Gagal mengambil screenshot. Silakan coba lagi!');
-    } finally {
-      setIsScreenshotLoading(false); // <-- reset loading
-    }
-  };
+  // Note: handleScreenshot function removed as it was unused
 
   return (
     <div className="w-full h-full flex flex-col" style={{ height: '100%' }}>

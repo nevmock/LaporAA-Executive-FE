@@ -9,8 +9,7 @@ import {
   FiCheckCircle, 
   FiXCircle, 
   FiClock,
-  FiTrendingUp,
-  FiAlertCircle 
+  FiDatabase
 } from 'react-icons/fi';
 
 const STATUS_ORDER = [
@@ -52,6 +51,19 @@ interface StatusCounts {
     [key: string]: number;
 }
 
+interface StatusTrends {
+    [key: string]: {
+        current: number;
+        previous: number;
+        trend: number;
+    };
+}
+
+interface SummaryData {
+    current: StatusCounts;
+    trends: StatusTrends;
+}
+
 export default function SummaryTable() {
     const [filter, setFilter] = useState("all"); // Default: all time
     const [year, setYear] = useState(now.year());
@@ -59,6 +71,7 @@ export default function SummaryTable() {
     const [week, setWeek] = useState(1);
 
     const [statusCounts, setStatusCounts] = useState<StatusCounts>({});
+    const [trends, setTrends] = useState<StatusTrends>({});
     const [loading, setLoading] = useState(false);
 
     // Generate list tahun
@@ -84,23 +97,55 @@ export default function SummaryTable() {
             params.mode = "all";
         }
         axios.get(url, { params })
-            .then(res => setStatusCounts(res.data || {}))
-            .catch(() => setStatusCounts({}))
+            .then(res => {
+                const data: SummaryData = res.data || { current: {}, trends: {} };
+                setStatusCounts(data.current || {});
+                setTrends(data.trends || {});
+            })
+            .catch(() => {
+                setStatusCounts({});
+                setTrends({});
+            })
             .finally(() => setLoading(false));
     }, [filter, year, month, week]);
 
-    // Logic table
+    // Logic perhitungan sesuai permintaan baru
     const totalAll = STATUS_ORDER.reduce((sum, key) => sum + (statusCounts[key] || 0), 0);
-    const totalFollowUp =
+    
+    // Tindak Lanjut: Verifikasi Situasi + Verifikasi Kelengkapan Berkas + Proses OPD Terkait
+    const totalTindakLanjut =
         (statusCounts["Verifikasi Situasi"] || 0) +
         (statusCounts["Verifikasi Kelengkapan Berkas"] || 0) +
-        (statusCounts["Proses OPD Terkait"] || 0) +
-        (statusCounts["Selesai Penanganan"] || 0) +
-        (statusCounts["Selesai Pengaduan"] || 0);
+        (statusCounts["Proses OPD Terkait"] || 0);
 
-    const percentFollowUp = totalAll > 0 ? ((totalFollowUp / totalAll) * 100).toFixed(1) : "0";
-    const percentSelesai = totalAll > 0 ? ((statusCounts["Selesai Pengaduan"] || 0) / totalAll * 100).toFixed(1) : "0";
-    const percentDitutup = totalAll > 0 ? ((statusCounts["Ditutup"] || 0) / totalAll * 100).toFixed(1) : "0";
+    // Selesai Penanganan
+    const totalSelesaiPenanganan = statusCounts["Selesai Penanganan"] || 0;
+    
+    // Selesai Pengaduan
+    const totalSelesaiPengaduan = statusCounts["Selesai Pengaduan"] || 0;
+    
+    // Ditutup
+    const totalDitutup = statusCounts["Ditutup"] || 0;
+
+    // Perhitungan trend untuk setiap kategori
+    const calculateTrend = (currentValue: number, statusList: string[]) => {
+        const currentTotal = statusList.reduce((sum, status) => sum + (statusCounts[status] || 0), 0);
+        const previousTotal = statusList.reduce((sum, status) => sum + (trends[status]?.previous || 0), 0);
+        
+        let trend = 0;
+        if (previousTotal > 0) {
+            trend = ((currentTotal - previousTotal) / previousTotal * 100);
+        } else if (currentTotal > 0) {
+            trend = 100;
+        }
+        return trend;
+    };
+
+    // Trend calculations
+    const trendTindakLanjut = calculateTrend(totalTindakLanjut, ["Verifikasi Situasi", "Verifikasi Kelengkapan Berkas", "Proses OPD Terkait"]);
+    const trendSelesaiPenanganan = trends["Selesai Penanganan"]?.trend || 0;
+    const trendSelesaiPengaduan = trends["Selesai Pengaduan"]?.trend || 0;
+    const trendDitutup = trends["Ditutup"]?.trend || 0;
 
     // Weeks in Month
     function getWeeksInMonth(y: number, m: number) {
@@ -121,18 +166,23 @@ export default function SummaryTable() {
         if (filter === "yearly") filterInfo = `,${year}`;
         else if (filter === "monthly") filterInfo = `,${months[month - 1]},${year}`;
         else if (filter === "weekly") filterInfo = `,Minggu ke-${week},${months[month - 1]},${year}`;
-        let csv = `Status,Total,Persen${filterInfo ? ',Filter' : ''}\n`;
+        
+        let csv = `Status,Total,Trend (%),Previous Period${filterInfo ? ',Filter' : ''}\n`;
+        
+        // Add summary cards data
+        csv += `Total Laporan,${totalAll},,${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+        csv += `Tindak Lanjut,${totalTindakLanjut},${trendTindakLanjut.toFixed(1)}%,${totalTindakLanjut - Math.round(totalTindakLanjut * trendTindakLanjut / 100)}${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+        csv += `Selesai Penanganan,${totalSelesaiPenanganan},${trendSelesaiPenanganan.toFixed(1)}%,${trends["Selesai Penanganan"]?.previous || 0}${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+        csv += `Selesai Pengaduan,${totalSelesaiPengaduan},${trendSelesaiPengaduan.toFixed(1)}%,${trends["Selesai Pengaduan"]?.previous || 0}${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+        csv += `Ditutup,${totalDitutup},${trendDitutup.toFixed(1)}%,${trends["Ditutup"]?.previous || 0}${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+        
+        // Add detailed status breakdown
+        csv += '\nDetail Status,Total,Trend (%),Previous Period\n';
         STATUS_ORDER.forEach((status) => {
-            const percent =
-                status === "Selesai Pengaduan"
-                    ? percentSelesai
-                    : status === "Ditutup"
-                        ? percentDitutup
-                        : "";
-            csv += `${status},${statusCounts[status] || 0}${percent ? `,${percent}%` : ""}${filterInfo ? ',' + filterInfo.replace(/,/g, ' ') : ''}\n`;
+            const trend = trends[status]?.trend || 0;
+            const previous = trends[status]?.previous || 0;
+            csv += `${status},${statusCounts[status] || 0},${trend.toFixed(1)}%,${previous}\n`;
         });
-        csv += `Total Laporan Masuk,${totalAll},\n`;
-        csv += `Total Tindak Lanjut,${totalFollowUp},${percentFollowUp}%\n`;
 
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
@@ -149,8 +199,8 @@ export default function SummaryTable() {
 
     return (
         <div className="space-y-8">
-            {/* Modern Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Modern Stats Cards - Updated to 5 cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <ModernStatCard
                     icon={FiFileText}
                     title="Total Laporan"
@@ -161,27 +211,36 @@ export default function SummaryTable() {
                 <ModernStatCard
                     icon={FiClock}
                     title="Tindak Lanjut"
-                    value={totalFollowUp.toLocaleString()}
-                    trend="up"
-                    trendValue={`${percentFollowUp}%`}
+                    value={totalTindakLanjut.toLocaleString()}
+                    trend={trendTindakLanjut > 0 ? "up" : trendTindakLanjut < 0 ? "down" : "neutral"}
+                    trendValue={`${trendTindakLanjut > 0 ? '+' : ''}${trendTindakLanjut.toFixed(1)}%`}
                     color="orange"
-                    description="Laporan dalam proses"
+                    description="Dalam proses tindak lanjut"
                 />
                 <ModernStatCard
                     icon={FiCheckCircle}
-                    title="Selesai"
-                    value={(statusCounts["Selesai Pengaduan"] || 0).toLocaleString()}
-                    trend="up"
-                    trendValue={`${percentSelesai}%`}
+                    title="Selesai Penanganan"
+                    value={totalSelesaiPenanganan.toLocaleString()}
+                    trend={trendSelesaiPenanganan > 0 ? "up" : trendSelesaiPenanganan < 0 ? "down" : "neutral"}
+                    trendValue={`${trendSelesaiPenanganan > 0 ? '+' : ''}${trendSelesaiPenanganan.toFixed(1)}%`}
+                    color="blue"
+                    description="Penanganan selesai"
+                />
+                <ModernStatCard
+                    icon={FiCheckCircle}
+                    title="Selesai Pengaduan"
+                    value={totalSelesaiPengaduan.toLocaleString()}
+                    trend={trendSelesaiPengaduan > 0 ? "up" : trendSelesaiPengaduan < 0 ? "down" : "neutral"}
+                    trendValue={`${trendSelesaiPengaduan > 0 ? '+' : ''}${trendSelesaiPengaduan.toFixed(1)}%`}
                     color="green"
                     description="Pengaduan selesai"
                 />
                 <ModernStatCard
                     icon={FiXCircle}
                     title="Ditutup"
-                    value={(statusCounts["Ditutup"] || 0).toLocaleString()}
-                    trend="down"
-                    trendValue={`${percentDitutup}%`}
+                    value={totalDitutup.toLocaleString()}
+                    trend={trendDitutup > 0 ? "up" : trendDitutup < 0 ? "down" : "neutral"}
+                    trendValue={`${trendDitutup > 0 ? '+' : ''}${trendDitutup.toFixed(1)}%`}
                     color="red"
                     description="Pengaduan ditutup"
                 />
@@ -199,13 +258,24 @@ export default function SummaryTable() {
                         </p>
                     </div>
                     
-                    <div className="mt-6 lg:mt-0">
+                    <div className="mt-6 lg:mt-0 flex gap-4">
+                        <button
+                            onClick={() => {
+                                // Navigate to report generator page
+                                window.location.href = '/dashboard/buat-laporan';
+                            }}
+                            className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                            type="button"
+                        >
+                            <FiFileText size={18} />
+                            Buat Laporan
+                        </button>
                         <button
                             onClick={handleDownloadCSV}
                             className="inline-flex items-center gap-3 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
                             type="button"
                         >
-                            <FiTrendingUp size={18} />
+                            <FiDatabase size={18} />
                             Export CSV
                         </button>
                     </div>

@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { RiSave3Fill } from "react-icons/ri";
 import { TindakanData } from "../../../../lib/types";
 
+interface SaveDataFunction {
+    (nextStatus?: string): Promise<unknown>;
+}
+
 export default function Verifikasi1({
     data,
     onChange,
@@ -11,7 +15,7 @@ export default function Verifikasi1({
 }: {
     data: Partial<TindakanData>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanData>>>;
-    saveData?: (nextStatus?: string) => Promise<any>;
+    saveData?: SaveDataFunction;
 }) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
@@ -99,7 +103,7 @@ export default function Verifikasi1({
                             
                             try {
                                 saveData()
-                                    .then((result) => {
+                                    .then(() => {
                                         console.log("Form save succeeded in", Date.now() - startTime, "ms");
                                         setSaveMessage("Perubahan berhasil disimpan");
                                         setSaveSuccessModalVisible(true);
@@ -107,7 +111,7 @@ export default function Verifikasi1({
                                         setInitialData({...data});
                                         setHasFormChanges(false);
                                     })
-                                    .catch((error: any) => {
+                                    .catch((error: Error) => {
                                         console.error("Error in form save operation:", error);
                                         alert(`Gagal menyimpan perubahan: ${error?.message || 'Terjadi kesalahan'}`);
                                     })
@@ -116,11 +120,12 @@ export default function Verifikasi1({
                                         setIsSaving(false);
                                         clearTimeout(timeoutId);
                                     });
-                            } catch (error: any) {
+                            } catch (error) {
                                 console.error("Unexpected error in save button handler:", error);
                                 setIsSaving(false);
                                 clearTimeout(timeoutId);
-                                alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                                alert(`Terjadi kesalahan tak terduga saat menyimpan: ${errorMessage}`);
                             }
                         }}
                         disabled={isSaving || !hasFormChanges}

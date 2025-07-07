@@ -3,7 +3,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { FiInbox } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
@@ -44,45 +44,47 @@ const MessageCounter: React.FC<MessageCounterProps> = ({
   const router = useRouter();
 
   // Handle new incoming messages
-  function handleNewMessage(data: any) {
-    console.log('📬 New message received for counter:', data);
+  function handleNewMessage(data: unknown) {
+    const messageData = data as {sessionId: string; user?: {name: string}; message: string; timestamp: string; from?: string; senderName?: string};
+    console.log('📬 New message received for counter:', messageData);
     
     setUnreadMessages(prev => {
-      const existing = prev.find(msg => msg.sessionId === data.sessionId);
+      const existing = prev.find(msg => msg.sessionId === messageData.sessionId);
       
       if (existing) {
         // Update existing conversation
         return prev.map(msg => 
-          msg.sessionId === data.sessionId 
+          msg.sessionId === messageData.sessionId 
             ? {
                 ...msg,
                 count: msg.count + 1,
-                lastMessage: data.message,
-                timestamp: new Date(data.timestamp)
+                lastMessage: messageData.message,
+                timestamp: new Date(messageData.timestamp)
               }
             : msg
         );
       } else {
         // Add new conversation
         return [...prev, {
-          sessionId: data.sessionId,
-          userId: data.from,
-          userName: data.senderName || 'User',
+          sessionId: messageData.sessionId,
+          userId: messageData.from || 'unknown',
+          userName: messageData.senderName || messageData.user?.name || 'User',
           count: 1,
-          lastMessage: data.message,
-          timestamp: new Date(data.timestamp)
+          lastMessage: messageData.message,
+          timestamp: new Date(messageData.timestamp)
         }];
       }
     });
   }
 
   // Handle message read events
-  function handleMessageRead(data: any) {
-    console.log('👁️ Message read event:', data);
+  function handleMessageRead(data: unknown) {
+    const readData = data as {sessionId: string};
+    console.log('👁️ Message read event:', readData);
     
     setUnreadMessages(prev => 
       prev.map(msg => 
-        msg.sessionId === data.sessionId 
+        msg.sessionId === readData.sessionId 
           ? { ...msg, count: Math.max(0, msg.count - 1) }
           : msg
       ).filter(msg => msg.count > 0)
@@ -90,9 +92,10 @@ const MessageCounter: React.FC<MessageCounterProps> = ({
   }
 
   // Handle unread count updates from server
-  function handleUnreadCountUpdate(data: any) {
-    console.log('🔄 Unread count update:', data);
-    setUnreadMessages(data.unreadMessages || []);
+  function handleUnreadCountUpdate(data: unknown) {
+    const updateData = data as {unreadMessages?: UnreadMessage[]};
+    console.log('🔄 Unread count update:', updateData);
+    setUnreadMessages(updateData.unreadMessages || []);
   }
 
   // Calculate total unread count
@@ -101,14 +104,7 @@ const MessageCounter: React.FC<MessageCounterProps> = ({
     setTotalUnread(total);
   }, [unreadMessages]);
 
-  // Fetch initial unread count
-  useEffect(() => {
-    if (socket.isConnected) {
-      fetchUnreadCount();
-    }
-  }, [socket.isConnected]);
-
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -123,7 +119,14 @@ const MessageCounter: React.FC<MessageCounterProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [socket]); // Added dependencies
+
+  // Fetch initial unread count
+  useEffect(() => {
+    if (socket.isConnected) {
+      fetchUnreadCount();
+    }
+  }, [socket.isConnected, fetchUnreadCount]); // Added missing dependency
 
   // Handle click - navigate to pengaduan page or custom handler
   const handleClick = () => {

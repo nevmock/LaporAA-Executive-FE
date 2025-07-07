@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { EChartsOption } from 'echarts';
-import { ModernChartCard, colorPalettes, FilterControls } from '../modern';
+import { ModernChartCard, FilterControls } from '../modern';
+// Note: colorPalettes import removed as it was unused
 import { useAvailablePeriods } from '../../../hooks/useAvailablePeriods';
 import dayjs from 'dayjs';
 import axios from '../../../utils/axiosInstance';
@@ -51,8 +52,7 @@ export default function SummaryPieChart() {
     // Gunakan hook untuk mendapatkan periode yang memiliki data
     const {
         getAvailableMonthOptions,
-        getAllMonthOptions,
-        getAvailableYearOptions,
+        // Note: getAllMonthOptions and getAvailableYearOptions removed as they were unused
         getAllYearOptions,
         getDefaultMonth,
         getDefaultYear,
@@ -92,7 +92,7 @@ export default function SummaryPieChart() {
     };
 
     // Ambil data rekap status dari API
-    const fetchStatusSummary = async () => {
+    const fetchStatusSummary = useCallback(async () => {
         try {
             setLoading(true);
             let url = `${API_URL}/dashboard/status-summary?mode=${filter}&year=${year}`;
@@ -105,7 +105,7 @@ export default function SummaryPieChart() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter, year, month, week]);
 
     // Export data ke CSV
     const handleDownloadCSV = () => {
@@ -219,20 +219,17 @@ export default function SummaryPieChart() {
             animationDuration: 1000,
             animationEasing: 'cubicOut'
         };
-    }, [statusCounts, allZero, data]);
+    }, [allZero, data]);
 
     // Handle chart click events for navigation
-    const handleChartClick = (params: any) => {
+    const handleChartClick = (params: { name?: string }) => {
         const status = params?.name;
         if (!status || !STATUS_ORDER.includes(status)) return;
         sessionStorage.setItem('statusClicked', status);
         window.location.href = '/pengaduan';
     };
 
-    // Handle fullscreen - open in new tab
-    const handleFullscreen = () => {
-        window.open('/chart-fullscreen?type=summary-pie', '_blank');
-    };
+    // Note: handleFullscreen function removed as it was unused
 
     // Handle info modal
     const handleInfo = () => {
@@ -247,7 +244,7 @@ export default function SummaryPieChart() {
     // Fetch data saat filter berubah
     useEffect(() => {
         fetchStatusSummary();
-    }, [filter, year, month, week]);
+    }, [fetchStatusSummary]);
 
     // ===== AUTO REFRESH: Fetch data baru tiap 5 menit =====
     useEffect(() => {
@@ -255,15 +252,12 @@ export default function SummaryPieChart() {
             fetchStatusSummary();
         }, 5 * 60 * 1000); // 5 menit
         return () => clearInterval(interval);
-    }, [filter, year, month, week]);
+    }, [fetchStatusSummary]);
     // ======================================================
 
     const weekOptions = getWeeksInMonth(year, month);
 
-    // Handle refresh
-    const handleRefresh = () => {
-        fetchStatusSummary();
-    };
+    // Note: handleRefresh function removed as it was unused
 
     // Filter controls component
     const filterControls = (

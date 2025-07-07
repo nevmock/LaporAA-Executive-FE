@@ -8,8 +8,19 @@ interface ExportOption {
   icon: React.ReactNode;
 }
 
+interface ExportOptions {
+  quality?: number;
+  format?: string;
+  includeHeader?: boolean;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  [key: string]: unknown;
+}
+
 interface ExportButtonProps {
-  onExport: (type: string, options?: any) => void;
+  onExport: (type: string, options?: ExportOptions) => void;
   loading?: boolean;
   disabled?: boolean;
   showOptions?: boolean;

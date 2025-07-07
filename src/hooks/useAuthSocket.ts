@@ -37,13 +37,14 @@ interface UseAuthSocketReturn {
  */
 export const useAuthSocket = (options: UseAuthSocketOptions = {}): UseAuthSocketReturn => {
   const {
-    autoConnect = true,
+    // autoConnect = true, // Currently unused
     autoJoinUserRoom = true,
     autoJoinRoleRoom = true
   } = options;
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [authDataState, setAuthDataState] = useState<AuthData | null>(null);
 
   const socket = useSocket();
@@ -105,7 +106,7 @@ export const useAuthSocket = (options: UseAuthSocketOptions = {}): UseAuthSocket
         console.log(`🏠 Auto-joined rooms: ${roomsToJoin.join(', ')}`);
       }
     }
-  }, [socket.isConnected, user, isAuthenticated, autoJoinUserRoom, autoJoinRoleRoom]);
+  }, [socket.isConnected, user, isAuthenticated, autoJoinUserRoom, autoJoinRoleRoom, socket]); // Added missing dependency
 
   // Connect with authentication
   const connectWithAuth = useCallback((newAuthData: AuthData) => {

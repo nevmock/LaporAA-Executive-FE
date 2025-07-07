@@ -6,14 +6,13 @@ import { useSocket } from '@/hooks/useSocket';
 interface ChartUpdateData {
   type: 'chart_update' | 'new_data' | 'filter_change';
   chartType: 'pie' | 'line' | 'bar_opd' | 'bar_wilayah';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: string;
 }
 
 interface LiveChartWrapperProps {
   children: React.ReactNode;
   chartType: 'pie' | 'line' | 'bar_opd' | 'bar_wilayah';
-  title: string;
   className?: string;
 }
 
@@ -25,24 +24,15 @@ interface LiveChartWrapperProps {
 export default function LiveChartWrapper({ 
   children, 
   chartType, 
-  title,
   className = ""
 }: LiveChartWrapperProps) {
   const { socket, isConnected } = useSocket();
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  // Note: lastUpdate and isUpdating variables removed as they were unused
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // Force refresh the wrapped chart component
   const triggerRefresh = useCallback(() => {
-    setIsUpdating(true);
     setRefreshTrigger(prev => prev + 1);
-    setLastUpdate(new Date());
-    
-    // Reset updating state after animation
-    setTimeout(() => {
-      setIsUpdating(false);
-    }, 1000);
   }, []);
 
   // Handle real-time chart updates

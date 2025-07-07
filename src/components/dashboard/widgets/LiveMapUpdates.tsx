@@ -38,7 +38,7 @@ interface LiveMapUpdatesProps {
  * Provides live marker updates and boundary changes
  */
 export default function LiveMapUpdates({ 
-  isFullscreen = false, 
+  // Note: isFullscreen parameter removed as it was unused
   className = "",
   timeFilter = 'monthly',
   year = new Date().getFullYear(),
@@ -51,14 +51,13 @@ export default function LiveMapUpdates({
   setBoundariesLoading
 }: LiveMapUpdatesProps) {
   const { socket, isConnected } = useSocket();
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  // Note: lastUpdate variable removed as it was unused
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [recentUpdates, setRecentUpdates] = useState<MapUpdateData[]>([]);
 
   // Force refresh the wrapped MapPersebaran
   const triggerRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
-    setLastUpdate(new Date());
   }, []);
 
   // Add recent update to the list
@@ -134,28 +133,13 @@ export default function LiveMapUpdates({
     return () => clearTimeout(timer);
   }, [recentUpdates]);
 
-  // Get update message
-  const getUpdateMessage = (update: MapUpdateData) => {
-    switch (update.type) {
-      case 'new_marker':
-        return `Marker baru ditambahkan di ${update.data.location || 'lokasi tidak diketahui'}`;
-      case 'marker_update':
-        return `Marker diperbarui: ${update.data.oldStatus} → ${update.data.newStatus}`;
-      case 'marker_delete':
-        return `Marker dihapus dari peta`;
-      case 'boundary_update':
-        return `Data wilayah diperbarui`;
-      default:
-        return 'Peta diperbarui';
-    }
-  };
+  // Note: getUpdateMessage function removed as it was unused
 
   return (
     <div className={`w-full h-full ${className}`}>
       {/* Clean map display without live indicators */}
       <MapPersebaran 
         key={refreshTrigger} 
-        isFullscreen={isFullscreen}
         filter={timeFilter}
         year={year}
         month={month}

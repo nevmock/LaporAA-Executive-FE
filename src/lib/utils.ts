@@ -15,7 +15,7 @@ export function cn(...classes: (string | undefined | null | boolean)[]) {
  * Debug logger that only outputs in development mode
  * Helps with debugging without polluting production logs
  */
-export const debugLog = (message: string, ...args: any[]) => {
+export const debugLog = (message: string, ...args: unknown[]) => {
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEBUG] ${message}`, ...args);
     }

@@ -32,8 +32,15 @@ interface GlobalNotificationSystemProps {
 
 // Individual Toast Notification Component
 function ToastNotification({ notification, onClose }: ToastNotificationProps) {
-  const [isVisible, setIsVisible] = useState(true);
+  // const [isVisible, setIsVisible] = useState(true); // Currently unused
   const [isExiting, setIsExiting] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose(notification.id);
+    }, 300); // Match animation duration
+  }, [notification.id, onClose]);
 
   // Auto-close timer
   useEffect(() => {
@@ -44,14 +51,7 @@ function ToastNotification({ notification, onClose }: ToastNotificationProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [notification.duration]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose(notification.id);
-    }, 300); // Match animation duration
-  };
+  }, [notification.duration, onClose, handleClose]); // Added missing dependency
 
   // Icon based on type
   const getIcon = () => {
@@ -93,7 +93,7 @@ function ToastNotification({ notification, onClose }: ToastNotificationProps) {
           ? 'translate-x-full opacity-0 scale-95' 
           : 'translate-x-0 opacity-100 scale-100'
         }
-        ${isVisible ? 'animate-slide-in-right' : ''}
+        animate-slide-in-right
       `}
     >
       <div className={`
@@ -177,31 +177,6 @@ export default function GlobalNotificationSystem({
   const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
 
-  // Add notification
-  const addNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp'>) => {
-    const newNotification: SystemNotification = {
-      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      duration: notification.duration ?? 5000, // Default 5 seconds
-      ...notification
-    };
-
-    setNotifications(prev => {
-      const updated = [newNotification, ...prev].slice(0, maxNotifications);
-      return updated;
-    });
-
-    // Play sound if enabled
-    if (enableSound && notification.sound !== false) {
-      playNotificationSound(notification.type);
-    }
-  }, [maxNotifications, enableSound]);
-
-  // Remove notification
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  }, []);
-
   // Play notification sound
   const playNotificationSound = useCallback((type: SystemNotification['type']) => {
     if (typeof window !== 'undefined' && 'AudioContext' in window) {
@@ -229,6 +204,31 @@ export default function GlobalNotificationSystem({
       oscillator.start(context.currentTime);
       oscillator.stop(context.currentTime + 0.3);
     }
+  }, []);
+
+  // Add notification
+  const addNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp'>) => {
+    const newNotification: SystemNotification = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      duration: notification.duration ?? 5000, // Default 5 seconds
+      ...notification
+    };
+
+    setNotifications(prev => {
+      const updated = [newNotification, ...prev].slice(0, maxNotifications);
+      return updated;
+    });
+
+    // Play sound if enabled
+    if (enableSound && notification.sound !== false) {
+      playNotificationSound(notification.type);
+    }
+  }, [maxNotifications, enableSound, playNotificationSound]); // Added missing dependency
+
+  // Remove notification
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
   }, []);
 
   // Handle socket notifications
@@ -339,18 +339,9 @@ export default function GlobalNotificationSystem({
       socket.on(event, handleSocketNotification);
     });
 
-    // Connection status notifications
-    socket.on('connect', (...args: unknown[]) => {
-      addNotification({
-        type: 'success',
-        title: 'Terhubung',
-        message: 'Koneksi real-time aktif',
-        priority: 'low',
-        duration: 3000
-      });
-    });
+    // Connection status notifications - connect notification removed per request
 
-    socket.on('disconnect', (...args: unknown[]) => {
+    socket.on('disconnect', () => {
       addNotification({
         type: 'warning',
         title: 'Terputus',
@@ -366,7 +357,6 @@ export default function GlobalNotificationSystem({
       events.forEach(event => {
         socket.off(event, handleSocketNotification);
       });
-      socket.off('connect');
       socket.off('disconnect');
       socket.emit('leave_room', 'system_notifications');
     };

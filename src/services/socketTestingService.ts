@@ -21,7 +21,7 @@ export interface TestResult {
   passed: boolean;
   duration: number;
   error?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export interface LoadTestConfig {
@@ -431,7 +431,13 @@ export class SocketTestingService {
   /**
    * Run specific performance benchmark
    */
-  async runPerformanceBenchmark(config: LoadTestConfig): Promise<any> {
+  async runPerformanceBenchmark(config: LoadTestConfig): Promise<{
+    connectionsCreated: number;
+    eventsGenerated: number;
+    averageLatency: number;
+    successRate: number;
+    memoryUsage: number;
+  }> {
     console.log(`🚀 Running performance benchmark: ${config.connections} connections, ${config.duration}ms`);
     
     const startTime = Date.now();
@@ -457,7 +463,7 @@ export class SocketTestingService {
 
     // Generate events
     const eventInterval = setInterval(() => {
-      for (const eventType of config.eventTypes) {
+      for (let i = 0; i < config.eventTypes.length; i++) {
         performanceMonitor.recordEventSent();
         performanceMonitor.recordLatency(Math.random() * 100 + 10);
         results.eventsGenerated++;

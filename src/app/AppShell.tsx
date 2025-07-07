@@ -91,7 +91,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             role={role}
                             onLogout={handleLogout}
                             isMobile={true}
-                            countPending={countPending}
                             namaAdmin={namaAdmin || undefined}
                         />
 
@@ -112,7 +111,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             role={role}
                             onLogout={handleLogout}
                             isMobile={false}
-                            countPending={countPending}
                             namaAdmin={namaAdmin || undefined}
                         />
 

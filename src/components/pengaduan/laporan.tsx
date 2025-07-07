@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "../../utils/axiosInstance";
 import dynamic from "next/dynamic";
 import { Chat, SortKey } from "../../lib/types";
@@ -63,13 +63,13 @@ export default function Laporan() {
   // Helpers
   const username = typeof window !== "undefined" ? localStorage.getItem("username") || "guest" : "guest";
   const namaAdmin = typeof window !== "undefined" ? localStorage.getItem("nama_admin") || "" : "";
-  const LS_KEY = (field: string) => `pengaduan_${field}_${username}`;
+  const LS_KEY = useCallback((field: string) => `pengaduan_${field}_${username}`, [username]);
 
   // ----------------------- API FUNCTIONS -----------------------
   const getReports = async () => {
     setLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, unknown> = {
         page,
         limit,
         status: selectedStatus !== "Semua Status" ? selectedStatus : undefined,
@@ -97,10 +97,10 @@ export default function Laporan() {
       clearTimeout(timeoutId);
       
       // Set data for table (flatten user, address, but keep processed_by as object)
-      setData((res.data.data || []).map((item: any) => ({
+      setData((res.data.data || []).map((item: Record<string, unknown>) => ({
         ...item,
-        user: typeof item.user === "object" && item.user !== null ? item.user.name : item.user,
-        address: typeof item.user === "object" && item.user !== null ? item.user.address : item.address,
+        user: typeof item.user === "object" && item.user !== null ? (item.user as {name: string}).name : item.user,
+        address: typeof item.user === "object" && item.user !== null ? (item.user as {address: string}).address : item.address,
         // Keep processed_by as object to maintain nama_admin and role properties
         processed_by: typeof item.processed_by === "object" && item.processed_by !== null ? item.processed_by : null,
         // tindakan is kept as object for status, situasi, etc.
@@ -113,11 +113,12 @@ export default function Laporan() {
       setOpdTotal(res.data.totalReports || 0);
       setSituasiList(Object.entries(res.data.summary?.situasi || {}).map(([situasi, count]) => ({ situasi, count: Number(count) })));
       setSituasiTotal(res.data.totalReports || 0);
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (error.name === 'AbortError') {
         console.error("❌ Reports fetch aborted due to timeout");
       } else {
-        console.error("❌ Fetch error:", err);
+        console.error("❌ Fetch error:", error);
       }
       setData([]);
       setStatusCounts({});
@@ -192,7 +193,7 @@ export default function Laporan() {
 
     sessionStorage.clear();
     setHydrated(true);
-  }, [hydrated]);
+  }, [hydrated, namaAdmin, LS_KEY]); // Added missing dependencies
 
   // ----------------------- EFFECTS: FETCH DATA (AFTER HYDRATED) -----------------------
   useEffect(() => {
@@ -297,7 +298,7 @@ export default function Laporan() {
   const filteredData = useMemo(() => {
     return [...data].sort((a, b) => {
       for (const { key, order } of sorts) {
-        let valA: any = "", valB: any = "";
+        let valA: string | number = "", valB: string | number = "";
 
         if (key === "prioritas") {
           valA = a.tindakan?.prioritas === "Ya" ? 1 : 0;
@@ -323,8 +324,8 @@ export default function Laporan() {
           valA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           valB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         } else {
-          valA = (a as any)[key] || "";
-          valB = (b as any)[key] || "";
+          valA = (a as unknown as Record<string, unknown>)[key] as string || "";
+          valB = (b as unknown as Record<string, unknown>)[key] as string || "";
         }
 
         if (valA < valB) return order === "asc" ? -1 : 1;

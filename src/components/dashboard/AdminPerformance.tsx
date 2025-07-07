@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { 
   FiActivity, 
   FiUsers, 
   FiFileText, 
-  FiClock, 
   FiTrendingUp,
   FiCalendar,
   FiEye,
@@ -18,6 +17,40 @@ import {
   FiX
 } from 'react-icons/fi';
 import { adminPerformanceService, AdminPerformanceDashboard } from '@/services/adminPerformanceService';
+
+// Type definitions for better type safety
+interface StatusModalState {
+  isOpen: boolean; 
+  status: string; 
+  adminName: string; 
+  reports: ReportDetails[];
+}
+
+interface ReportDetails {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  processedAt?: string;
+  sessionId?: string;
+  message?: string;
+  location?: {
+    kecamatan?: string;
+    desa?: string;
+    description?: string;
+  } | string;
+  priority?: string;
+  opd?: string[];
+}
+
+interface DownloadDataObject {
+  [key: string]: string | number | string[] | object | undefined;
+}
+
+interface TrendDataPoint {
+  adminName: string;
+  [status: string]: string | number;
+}
 
 // Warna status sesuai dengan warna marker di map dan dashboard
 const STATUS_COLORS: Record<string, string> = {
@@ -48,19 +81,14 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
     title: '',
     content: ''
   });
-  const [statusModal, setStatusModal] = useState<{ 
-    isOpen: boolean; 
-    status: string; 
-    adminName: string; 
-    reports: any[] 
-  }>({
+  const [statusModal, setStatusModal] = useState<StatusModalState>({
     isOpen: false,
     status: '',
     adminName: '',
     reports: []
   });
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await adminPerformanceService.getDashboard({
@@ -74,7 +102,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange.startDate, dateRange.endDate, selectedAdminId]);
 
   const refreshData = async () => {
     try {
@@ -87,13 +115,9 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
 
   useEffect(() => {
     loadDashboardData();
-  }, [dateRange, selectedAdminId]);
+  }, [loadDashboardData]);
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
+  // Note: formatDuration function removed as it was unused
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -160,7 +184,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
   };
 
   // Download functionality
-  const downloadData = (data: any, filename: string, type: 'csv' | 'json' = 'csv') => {
+  const downloadData = (data: DownloadDataObject[] | DownloadDataObject, filename: string, type: 'csv' | 'json' = 'csv') => {
     let content = '';
     let mimeType = '';
 
@@ -207,59 +231,8 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
     efficiencyGaugeChart: "Overall efficiency score for the administrative team. Calculated based on response times, resolution rates, and other performance indicators. Scale: 0-100%"
   };
 
-  // Data preparation for downloads
-  const prepareDownloadData = (chartType: string) => {
-    if (!dashboardData) return null;
-
-    switch (chartType) {
-      case 'summary':
-        return {
-          totalAdmins: dashboardData.adminStats.length,
-          totalReports: dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0),
-          avgResponseTime: calculateAverageResponseTime(),
-          totalActiveSessions: dashboardData.onlineStats.length,
-          dateRange: `${dateRange.startDate} to ${dateRange.endDate}`
-        };
-      case 'responseTime':
-        return dashboardData.reportStats.map(stat => ({
-          adminName: stat.adminName,
-          totalProcessed: stat.totalProcessed,
-          role: stat.role
-        }));
-      case 'reportStatus':
-        const statusCounts: { [key: string]: number } = {};
-        dashboardData.reportStats.forEach(stat => {
-          stat.statusBreakdown.forEach(breakdown => {
-            statusCounts[breakdown.status] = (statusCounts[breakdown.status] || 0) + breakdown.count;
-          });
-        });
-        return Object.entries(statusCounts).map(([status, count]) => ({
-          status,
-          count
-        }));
-      case 'adminActivity':
-        return dashboardData.adminStats.map(admin => ({
-          adminName: admin.adminName,
-          totalActivities: admin.totalActivities,
-          reportActivities: admin.reportActivities,
-          lastActivity: admin.lastActivity
-        }));
-      case 'trendAnalysis':
-        return dashboardData.activityStats.map(activity => ({
-          date: activity.date,
-          adminName: activity.adminName,
-          totalActivities: activity.totalActivities
-        }));
-      default:
-        return dashboardData;
-    }
-  };
-
-  const calculateAverageResponseTime = () => {
-    // This would need to be calculated based on available data
-    // For now, return a placeholder
-    return 45; // minutes
-  };
+  // Note: prepareDownloadData function removed as it was unused
+  // Note: calculateAverageResponseTime function removed as it was unused
 
   if (loading) {
     return (
@@ -822,9 +795,9 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 onClick={() => {
                   const statusCategories = ['Ditutup', 'Selesai Penanganan', 'Proses OPD Terkait', 'Perlu Verifikasi', 'Selesai Pengaduan'];
                   const adminNames = dashboardData.reportStats.map(admin => admin.adminName || 'Unknown');
-                  const trendData = adminNames.slice(0, 5).map(adminName => {
+                  const trendData: TrendDataPoint[] = adminNames.slice(0, 5).map(adminName => {
                     const admin = dashboardData.reportStats.find(a => a.adminName === adminName);
-                    const data: any = { adminName };
+                    const data: TrendDataPoint = { adminName };
                     statusCategories.forEach(status => {
                       const statusData = admin?.statusBreakdown.find(s => s.status === status);
                       data[status] = statusData ? statusData.count : 0;
@@ -874,7 +847,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 yAxis: {
                   type: 'value'
                 },
-                series: statusCategories.map((status, index) => ({
+                series: statusCategories.map((status) => ({
                   name: status,
                   type: 'line',
                   stack: 'Total',
@@ -1280,14 +1253,17 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                         {report.opd && Array.isArray(report.opd) && report.opd.length > 0 && (
                           <div>OPD: {report.opd.join(', ')}</div>
                         )}
-                        {report.location?.kecamatan && (
+                        {typeof report.location === 'object' && report.location?.kecamatan && (
                           <div>Kecamatan: {report.location.kecamatan}</div>
                         )}
-                        {report.location?.desa && (
+                        {typeof report.location === 'object' && report.location?.desa && (
                           <div>Desa: {report.location.desa}</div>
                         )}
-                        {report.location?.description && (
+                        {typeof report.location === 'object' && report.location?.description && (
                           <div>Lokasi: {report.location.description}</div>
+                        )}
+                        {typeof report.location === 'string' && (
+                          <div>Lokasi: {report.location}</div>
                         )}
                       </div>
                     </div>
@@ -1300,7 +1276,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                     Tidak ada laporan
                   </h3>
                   <p className="text-gray-600">
-                    Tidak ada laporan dengan status "{statusModal.status}" untuk admin {statusModal.adminName} pada periode ini.
+                    Tidak ada laporan dengan status &quot;{statusModal.status}&quot; untuk admin {statusModal.adminName} pada periode ini.
                   </p>
                 </div>
               )}

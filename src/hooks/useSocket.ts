@@ -6,7 +6,7 @@
 import { useEffect, useCallback } from 'react';
 import { useSocketContext } from '../contexts/SocketContext';
 import { socketService } from '../services/socketService';
-import { SocketContextType, SocketEventCallback, SocketEventHandler, ConnectionStats } from '../types/socket.types';
+import { SocketContextType, SocketEventHandler, ConnectionStats } from '../types/socket.types';
 
 interface UseSocketOptions {
   autoJoinRooms?: string[];
@@ -40,7 +40,7 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
         socketContext.joinRoom(room);
       });
     }
-  }, [socketContext.isConnected, autoJoinRooms]);
+  }, [socketContext, autoJoinRooms]);
 
   // Register event handlers
   useEffect(() => {
@@ -58,12 +58,13 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
         socketService.off(event, callback);
       });
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socketContext.isConnected, eventHandlers, ...dependencies]);
 
   // Helper methods
   const emit = useCallback((event: string, data?: unknown) => {
     socketContext.sendMessage(event, data);
-  }, [socketContext.sendMessage]);
+  }, [socketContext]);
 
   const on = useCallback((event: string, callback: SocketEventHandler) => {
     socketService.on(event, callback);
@@ -77,13 +78,13 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
     rooms.forEach(room => {
       socketContext.joinRoom(room);
     });
-  }, [socketContext.joinRoom]);
+  }, [socketContext]);
 
   const leaveRooms = useCallback((rooms: string[]) => {
     rooms.forEach(room => {
       socketContext.leaveRoom(room);
     });
-  }, [socketContext.leaveRoom]);
+  }, [socketContext]);
 
   const getCurrentRooms = useCallback(() => {
     return socketService.getRooms();
@@ -157,7 +158,7 @@ export const useSocketRoom = (roomId: string) => {
         socket.leaveRoom(roomId);
       }
     };
-  }, [socket.isConnected, roomId]);
+  }, [socket, roomId]);
 
   return socket;
 };
@@ -176,7 +177,8 @@ export const useSocketEvent = (event: string, callback: SocketEventHandler, depe
     return () => {
       socket.off(event, callback);
     };
-  }, [socket.isConnected, event, callback, ...dependencies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, event, callback, ...dependencies]);
 
   return socket;
 };
@@ -197,7 +199,7 @@ export const useSocketChat = (sessionId: string) => {
       mediaUrl,
       timestamp: new Date().toISOString()
     });
-  }, [socket.emit, sessionId]);
+  }, [socket, sessionId]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
     socket.emit('userTyping', {
@@ -205,7 +207,7 @@ export const useSocketChat = (sessionId: string) => {
       isTyping,
       timestamp: new Date().toISOString()
     });
-  }, [socket.emit, sessionId]);
+  }, [socket, sessionId]);
 
   const markMessageRead = useCallback((messageId: string) => {
     socket.emit('markMessageRead', {
@@ -213,7 +215,7 @@ export const useSocketChat = (sessionId: string) => {
       messageId,
       timestamp: new Date().toISOString()
     });
-  }, [socket.emit, sessionId]);
+  }, [socket, sessionId]);
 
   return {
     ...socket,
@@ -238,15 +240,15 @@ export const useSocketAdmin = (adminId: string) => {
       targetRooms,
       timestamp: new Date().toISOString()
     });
-  }, [socket.emit, adminId]);
+  }, [socket, adminId]);
 
-  const sendSystemAlert = useCallback((alert: any) => {
+  const sendSystemAlert = useCallback((alert: { type: string; message: string; priority?: string }) => {
     socket.emit('systemAlert', {
       adminId,
       alert,
       timestamp: new Date().toISOString()
     });
-  }, [socket.emit, adminId]);
+  }, [socket, adminId]);
 
   return {
     ...socket,

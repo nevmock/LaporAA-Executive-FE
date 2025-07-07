@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiHome, FiInbox } from "react-icons/fi";
+import { FiHome, FiInbox, FiFileText } from "react-icons/fi";
 
 interface Props {
     countPending: number;
@@ -44,6 +44,13 @@ export default function SidebarHorizontal({ countPending }: Props) {
                             {countPending}
                         </span>
                     )}
+                </Link>
+
+                <Link
+                    href="/dashboard/buat-laporan"
+                    className="flex items-center gap-1 hover:text-red-400 transition"
+                >
+                    <FiFileText size={20} />
                 </Link>
             </nav>
         </header>

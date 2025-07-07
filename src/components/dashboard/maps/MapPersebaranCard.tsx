@@ -115,11 +115,7 @@ export default function MapPersebaranCard() {
         alert('Export peta akan segera tersedia. Untuk saat ini, gunakan screenshot atau fitur print browser.');
     };
 
-    // Handle refresh
-    const handleRefresh = () => {
-        // Trigger map refresh - this would refresh the map data
-        window.location.reload();
-    };
+    // Note: handleRefresh function removed as it was unused
 
     // Filter component with all map-specific filters
     const filterControls = (

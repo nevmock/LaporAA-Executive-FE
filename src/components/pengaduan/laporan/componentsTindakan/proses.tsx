@@ -12,6 +12,15 @@ import { RiSave3Fill } from "react-icons/ri";
 const MAX_PHOTOS = 5;
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
+interface SaveDataFunction {
+    (nextStatus?: string): Promise<unknown>;
+}
+
+interface KesimpulanItem {
+    text: string;
+    timestamp: string;
+}
+
 export default function Proses({
     data,
     onChange,
@@ -21,7 +30,7 @@ export default function Proses({
     data: Partial<TindakanClientState>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanClientState>>>;
     onConfirmChange?: (val: boolean) => void;
-    saveData?: (nextStatus?: string) => Promise<any>; // Updated to match the actual return type
+    saveData?: SaveDataFunction;
 }) {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const fileRef = useRef<HTMLInputElement | null>(null);
@@ -271,7 +280,7 @@ export default function Proses({
                                                 setInitialData({ ...data });
                                                 setHasFormChanges(false);
                                             })
-                                            .catch((error: any) => {
+                                            .catch((error: Error) => {
                                                 console.error("Error in form save operation:", error);
                                                 alert(`Gagal menyimpan perubahan: ${error?.message || 'Terjadi kesalahan'}`);
                                             })
@@ -280,11 +289,12 @@ export default function Proses({
                                                 setIsFormSaving(false);
                                                 clearTimeout(timeoutId);
                                             });
-                                    } catch (error: any) {
+                                    } catch (error) {
                                         console.error("Unexpected error in save button handler:", error);
                                         setIsFormSaving(false);
                                         clearTimeout(timeoutId);
-                                        alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
+                                        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                                        alert(`Terjadi kesalahan tak terduga saat menyimpan: ${errorMessage}`);
                                     }
                                 }}
                                 disabled={isFormSaving || !hasFormChanges}
@@ -332,7 +342,7 @@ export default function Proses({
                     {/* Tindak Lanjut List */}
                     <ul className="relative border-l-2 border-yellow-300 pl-6">
                         <span className="font-medium text-gray-800">Tindak Lanjut:</span>
-                        {data.kesimpulan?.map((item: any, idx: number) => (
+                        {data.kesimpulan?.map((item: KesimpulanItem, idx: number) => (
                             <li key={idx} className="mb-5 mt-3 relative">
                                 {/* Titik bulat */}
                                 {/* <span className="absolute -left-7 top-5 w-3 h-3 bg-yellow-400 border-2 border-white rounded-full z-10"></span> */}
