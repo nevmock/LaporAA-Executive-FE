@@ -49,7 +49,6 @@ jobs:
             docker run -d \
               --name laporaa-fe-prod \
               --restart unless-stopped \
-              --network host \
               -p "${{ secrets.PORT }}":3000 \
               nevmock/laporaa-fe-prod:latest
 
