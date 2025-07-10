@@ -36,7 +36,7 @@ class SocketService {
   private reconnectionBackoffTimer: NodeJS.Timeout | null = null; // Reconnection timer
   private isManuallyDisconnected = false; // Track if user manually disconnected
 
-  // Default configuration
+  // Default configuration - optimized for VPS deployment
   private config: ConnectionConfig = {
     timeout: 20000,           // 20 seconds
     pingTimeout: 60000,       // 60 seconds  
@@ -47,7 +47,7 @@ class SocketService {
     randomizationFactor: 0.5,
     autoConnect: true,
     forceNew: false,
-    transports: ['websocket', 'polling'] // Keep both transports
+    transports: ['polling', 'websocket'] // Prioritize polling for VPS stability
   };
 
   constructor() {
@@ -423,36 +423,54 @@ class SocketService {
   }
 
   /**
-   * Attempt manual reconnection with fallback strategies
+   * Attempt manual reconnection with VPS-optimized fallback strategies
    */
   private attemptReconnection(): void {
     if (!this.socket) return;
     
-    console.log('🔄 Attempting smart reconnection...');
+    console.log('🔄 Attempting VPS-optimized reconnection...');
     
     const strategies = [
-      // Strategy 1: Normal reconnection
+      // Strategy 1: Polling-only reconnection (VPS-friendly)
       () => {
-        if (!this.socket?.connected) {
-          this.socket?.connect();
+        if (this.socket && !this.socket.connected) {
+          console.log('🔄 Strategy 1: Polling-only connection...');
+          this.socket.io.opts.transports = ['polling'];
+          this.socket.io.opts.upgrade = false;
+          this.socket.connect();
         }
       },
       
-      // Strategy 2: Force polling (browser extension compatibility)
+      // Strategy 2: Extended timeout with polling
       () => {
         if (this.socket && !this.socket.connected) {
-          console.log('🔄 Switching to polling transport...');
+          console.log('🔄 Strategy 2: Extended timeout polling...');
           this.socket.io.opts.transports = ['polling'];
+          this.socket.io.opts.timeout = 30000;
+          this.socket.io.opts.forceNew = true;
           this.socket.connect();
         }
       },
       
       // Strategy 3: Full reconnection with new instance
       () => {
-        console.log('🔄 Creating new socket instance...');
+        console.log('🔄 Strategy 3: Fresh socket instance...');
         this.disconnect();
         if (this.lastApiUrl) {
-          this.connect(this.lastApiUrl, this.authData || undefined);
+          // Add delay before reconnection
+          setTimeout(() => {
+            this.connect(this.lastApiUrl!, this.authData || undefined);
+          }, 2000);
+        }
+      },
+      
+      // Strategy 4: Fallback with WebSocket retry
+      () => {
+        if (this.socket && !this.socket.connected) {
+          console.log('🔄 Strategy 4: WebSocket retry as last resort...');
+          this.socket.io.opts.transports = ['websocket', 'polling'];
+          this.socket.io.opts.upgrade = true;
+          this.socket.connect();
         }
       }
     ];
@@ -464,18 +482,21 @@ class SocketService {
         strategies[strategyIndex]();
         strategyIndex++;
         
+        // Wait longer between strategies for VPS
         setTimeout(() => {
           if (!this.socket?.connected) {
             tryNextStrategy();
           } else {
-            // Success - restore websocket preference
+            console.log(`✅ VPS reconnection successful with strategy ${strategyIndex}`);
+            // On success, gradually restore transport options
             setTimeout(() => {
               if (this.socket?.connected) {
-                this.socket.io.opts.transports = ['websocket', 'polling'];
+                this.socket.io.opts.transports = ['polling', 'websocket'];
+                this.socket.io.opts.upgrade = true;
               }
-            }, 5000);
+            }, 10000); // Wait 10 seconds before allowing upgrades
           }
-        }, 3000);
+        }, 5000); // 5 second delay between strategies
       }
     };
     
@@ -592,13 +613,35 @@ class SocketService {
       console.error('❌ Socket connection error:', error.message || error);
       this.reconnectAttempts++;
       
-      // Handle specific connection errors
-      if (error.message?.includes('websocket error')) {
-        console.log('🔄 WebSocket error detected, falling back to polling...');
-        // Force fallback to polling on next connection attempt
+      // Handle specific connection errors for VPS deployment
+      const errorMessage = error.message || '';
+      
+      if (errorMessage.includes('websocket error') || 
+          errorMessage.includes('WebSocket connection failed') ||
+          errorMessage.includes('ECONNRESET')) {
+        console.log('🔄 WebSocket error detected, switching to polling only...');
+        // Force polling-only mode for VPS compatibility
         if (this.socket) {
           this.socket.io.opts.transports = ['polling'];
+          this.socket.io.opts.upgrade = false; // Prevent upgrade attempts
         }
+      }
+      
+      if (errorMessage.includes('ETIMEDOUT') || 
+          errorMessage.includes('timeout')) {
+        console.log('🔄 Connection timeout, increasing timeout values...');
+        // Increase timeouts for slow VPS networks
+        if (this.socket) {
+          this.socket.io.opts.timeout = 30000; // 30 seconds
+        }
+      }
+      
+      if (errorMessage.includes('502') || 
+          errorMessage.includes('503') || 
+          errorMessage.includes('504')) {
+        console.log('🔄 Server error detected, will retry with exponential backoff...');
+        // Server is likely restarting, use longer delays
+        this.reconnectAttempts = Math.min(this.reconnectAttempts, 10);
       }
       
       // If too many failed attempts, increase delay

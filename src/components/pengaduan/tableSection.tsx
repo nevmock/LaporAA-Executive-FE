@@ -17,6 +17,9 @@ import { Tooltip } from "./Tooltip";
 import { Chat, SortKey, BackendSortKey } from "../../lib/types";
 // import { usePhotoDownloader } from "./PhotoDownloader"; // Unused import
 
+// Define type for tags
+type TagItem = string | { _id?: string; hash_tag: string };
+
 // Props interface untuk komponen TableSection
 interface Props {
     filteredData: Chat[]; // Data yang sudah difilter dan siap ditampilkan
@@ -87,6 +90,11 @@ const TableSection: React.FC<Props> = ({
     const [modalTitle, setModalTitle] = React.useState("");
     const [pinnedReports, setPinnedReports] = React.useState<Record<string, boolean>>({});
     const [loadingPin, setLoadingPin] = React.useState<Record<string, boolean>>({});
+    
+    // State untuk modal tags
+    const [showTagModal, setShowTagModal] = React.useState(false);
+    const [selectedTags, setSelectedTags] = React.useState<TagItem[]>([]);
+    const [tagModalTitle, setTagModalTitle] = React.useState("");
     
     // State untuk menyimpan informasi laporan untuk modal foto (currently unused)
     // const [photoModalInfo, setPhotoModalInfo] = React.useState<{
@@ -392,14 +400,30 @@ const TableSection: React.FC<Props> = ({
 
                                         {/* Tag */}
                                         <td className="px-3 py-1.5">
-                                            {(
-                                                Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0
-                                                || Array.isArray(chat.tags) && chat.tags.length > 0
-                                            ) ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {/* Render tag dari tindakan.tag (bentuk baru) */}
-                                                    {Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0 &&
-                                                        chat.tindakan.tag.map((tagItem, index) => {
+                                            {(() => {
+                                                // Kombinasi semua tags dari berbagai sumber
+                                                const allTags: TagItem[] = [];
+                                                
+                                                // Tags dari tindakan.tag (bentuk baru)
+                                                if (Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0) {
+                                                    allTags.push(...chat.tindakan.tag);
+                                                }
+                                                // Tags dari root (legacy, jika tindakan.tag kosong)
+                                                else if (Array.isArray(chat.tags) && chat.tags.length > 0) {
+                                                    allTags.push(...chat.tags);
+                                                }
+
+                                                if (allTags.length === 0) {
+                                                    return "-";
+                                                }
+
+                                                // Tampilkan hanya 3 tag pertama
+                                                const displayTags = allTags.slice(0, 2);
+                                                const remainingCount = allTags.length - 2;
+
+                                                return (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {displayTags.map((tagItem, index) => {
                                                             // Jika object
                                                             if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
                                                                 return (
@@ -427,25 +451,25 @@ const TableSection: React.FC<Props> = ({
                                                                 );
                                                             }
                                                             return null;
-                                                        })
-                                                    }
-                                                    {/* Render tags dari root (legacy, jika tindakan.tag kosong) */}
-                                                    {(!chat.tindakan?.tag || chat.tindakan.tag.length === 0) && Array.isArray(chat.tags) && chat.tags.length > 0 &&
-                                                        chat.tags.map((tag, idx) => (
+                                                        })}
+                                                        
+                                                        {/* Tombol "See more" jika ada lebih dari 3 tags */}
+                                                        {remainingCount > 0 && (
                                                             <button
-                                                                key={`legacy-root-tag-${idx}`}
-                                                                className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
-                                                                onClick={() => setSearch(`${tag}`)}
-                                                                title={`Klik untuk mencari tag: #${tag}`}
+                                                                className="bg-gray-100 text-gray-600 text-xs font-medium px-1 py-0.5 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                                                                onClick={() => {
+                                                                    setSelectedTags(allTags);
+                                                                    setTagModalTitle(`Semua Tag - ${chat.sessionId}`);
+                                                                    setShowTagModal(true);
+                                                                }}
+                                                                title={`Lihat ${remainingCount} tag lainnya`}
                                                             >
-                                                                #{tag}
+                                                                +{remainingCount} more
                                                             </button>
-                                                        ))
-                                                    }
-                                                </div>
-                                            ) : (
-                                                "-"
-                                            )}
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Link ke halaman detail */}
@@ -791,6 +815,85 @@ const TableSection: React.FC<Props> = ({
                             <div className="border-t px-6 py-4 flex justify-end">
                                 <button
                                     onClick={() => setOpdModalVisible(false)}
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal untuk menampilkan semua tags */}
+                {showTagModal && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-[50] flex items-center justify-center p-4"
+                        onClick={() => setShowTagModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-lg shadow-xl w-full max-w-md"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center border-b px-6 py-4">
+                                <h3 className="font-semibold text-lg text-black">{tagModalTitle}</h3>
+                                <button
+                                    onClick={() => setShowTagModal(false)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="p-6 max-h-96 overflow-auto text-black">
+                                {selectedTags.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedTags.map((tagItem, index) => {
+                                            // Handle object format
+                                            if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
+                                                return (
+                                                    <button
+                                                        key={tagItem._id || `modal-tag-obj-${index}`}
+                                                        className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                        onClick={() => {
+                                                            setSearch(`${tagItem.hash_tag}`);
+                                                            setShowTagModal(false);
+                                                        }}
+                                                        title={`Klik untuk mencari tag: #${tagItem.hash_tag}`}
+                                                    >
+                                                        #{tagItem.hash_tag}
+                                                    </button>
+                                                );
+                                            }
+                                            // Handle string format (legacy)
+                                            if (typeof tagItem === "string") {
+                                                return (
+                                                    <button
+                                                        key={`modal-tag-str-${index}`}
+                                                        className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                        onClick={() => {
+                                                            setSearch(`${tagItem}`);
+                                                            setShowTagModal(false);
+                                                        }}
+                                                        title={`Klik untuk mencari tag: #${tagItem}`}
+                                                    >
+                                                        #{tagItem}
+                                                    </button>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 text-gray-600">
+                                        Tidak ada data tag untuk ditampilkan
+                                    </div>
+                                )}
+                                <div className="mt-4 text-sm text-gray-600">
+                                    Total: {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
+                                </div>
+                            </div>
+                            <div className="border-t px-6 py-4 flex justify-end">
+                                <button
+                                    onClick={() => setShowTagModal(false)}
                                     className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition"
                                 >
                                     Tutup

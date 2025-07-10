@@ -59,6 +59,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
     const [isSearchingTags, setIsSearchingTags] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showAllTagsModal, setShowAllTagsModal] = useState(false);
 
     // Helper function to ensure tag is always a string
     const normalizeTag = (tag: string | { hash_tag: string; _id: string }): string => {
@@ -257,7 +258,25 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             console.log("✅ [Keluhan] Tag berhasil ditambahkan:", trimmedTag);
         } catch (error) {
             console.error("❌ [Keluhan] Error adding tag:", error);
-            alert("Gagal menambahkan tag. Silakan coba lagi.");
+            
+            // More detailed error logging
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as any;
+                console.error("❌ [Keluhan] Response error:", axiosError.response?.data);
+                console.error("❌ [Keluhan] Response status:", axiosError.response?.status);
+                console.error("❌ [Keluhan] Response headers:", axiosError.response?.headers);
+            } else if (error && typeof error === 'object' && 'request' in error) {
+                const axiosError = error as any;
+                console.error("❌ [Keluhan] Request error:", axiosError.request);
+            } else {
+                console.error("❌ [Keluhan] General error:", error instanceof Error ? error.message : String(error));
+            }
+            
+            // Show user-friendly error message
+            const errorMessage = (error && typeof error === 'object' && 'response' in error) 
+                ? (error as any).response?.data?.message || "Gagal menambahkan tag. Silakan coba lagi."
+                : "Gagal menambahkan tag. Silakan coba lagi.";
+            alert(errorMessage);
         } finally {
             setIsTagLoading(false);
         }
@@ -348,21 +367,39 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             
             if (response.data && Array.isArray(response.data.tags)) {
                 // Filter out tags that are already selected, ensure all comparisons are strings
-                const filteredSuggestions = response.data.tags.filter(
-                    (suggestion: string) => {
+                const filteredSuggestions = response.data.tags
+                    .map((suggestion: any) => {
+                        // Handle different response formats
+                        if (typeof suggestion === 'string') {
+                            return suggestion;
+                        } else if (typeof suggestion === 'object' && suggestion && suggestion.hash_tag) {
+                            return suggestion.hash_tag;
+                        }
+                        return null;
+                    })
+                    .filter((suggestion: string | null) => {
+                        if (!suggestion) return false;
                         const suggestionString = normalizeTag(suggestion);
                         return !tags.some(tag => normalizeTag(tag) === suggestionString);
-                    }
-                );
+                    });
                 setTagSuggestions(filteredSuggestions);
             } else if (response.data && Array.isArray(response.data)) {
                 // Fallback for direct array response
-                const filteredSuggestions = response.data.filter(
-                    (suggestion: string) => {
+                const filteredSuggestions = response.data
+                    .map((suggestion: any) => {
+                        // Handle different response formats
+                        if (typeof suggestion === 'string') {
+                            return suggestion;
+                        } else if (typeof suggestion === 'object' && suggestion && suggestion.hash_tag) {
+                            return suggestion.hash_tag;
+                        }
+                        return null;
+                    })
+                    .filter((suggestion: string | null) => {
+                        if (!suggestion) return false;
                         const suggestionString = normalizeTag(suggestion);
                         return !tags.some(tag => normalizeTag(tag) === suggestionString);
-                    }
-                );
+                    });
                 setTagSuggestions(filteredSuggestions);
             }
         } catch (error) {
@@ -409,7 +446,10 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
     useEffect(() => {
         const handleEsc = (e: Event) => {
             const keyboardEvent = e as unknown as globalThis.KeyboardEvent;
-            if (keyboardEvent.key === "Escape") setShowModal(false);
+            if (keyboardEvent.key === "Escape") {
+                setShowModal(false);
+                setShowAllTagsModal(false);
+            }
         };
         window.addEventListener("keydown", handleEsc);
         return () => window.removeEventListener("keydown", handleEsc);
@@ -616,7 +656,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                     
                     {/* Tags Display */}
                     <div className="flex flex-wrap gap-2 mt-2">
-                        {tags.map((tag, index) => {
+                        {tags.slice(0, 3).map((tag, index) => {
                             // Ensure tag is always a string using helper function
                             const tagString = normalizeTag(tag);
                             return (
@@ -638,6 +678,16 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                                 </div>
                             );
                         })}
+                        
+                        {/* See more button if there are more than 3 tags */}
+                        {tags.length > 3 && (
+                            <button
+                                onClick={() => setShowAllTagsModal(true)}
+                                className="flex items-center px-2 py-1 rounded-md text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                            >
+                                +{tags.length - 3} more
+                            </button>
+                        )}
                         
                         {tags.length === 0 && !isTagLoading && propData?.tindakan?._id && (
                             <p className="text-sm text-gray-500 italic">Belum ada tag yang ditambahkan</p>
@@ -855,6 +905,60 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                             >
                                 →
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Modal untuk menampilkan semua tags */}
+            {showAllTagsModal && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center"
+                    onClick={() => setShowAllTagsModal(false)}
+                >
+                    <div
+                        className="relative bg-white rounded-md p-6 max-w-lg w-[90%] shadow-lg max-h-[80vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowAllTagsModal(false)}
+                            className="absolute top-2 right-3 text-gray-600 hover:text-black text-lg z-10"
+                        >
+                            ✕
+                        </button>
+                        
+                        <h3 className="text-lg font-semibold mb-4">Semua Tag/Hashtag</h3>
+                        
+                        <div className="flex flex-wrap gap-2">
+                            {tags.map((tag, index) => {
+                                const tagString = normalizeTag(tag);
+                                return (
+                                    <div 
+                                        key={index} 
+                                        className={`flex items-center px-3 py-2 rounded-md text-sm
+                                            ${isTagLoading ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
+                                    >
+                                        #{tagString}
+                                        <button
+                                            onClick={() => removeTag(tagString)}
+                                            className={`ml-2 focus:outline-none transition-colors
+                                                ${isTagLoading ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
+                                            disabled={isTagLoading}
+                                            title={isTagLoading ? "Sedang memproses..." : "Hapus tag"}
+                                        >
+                                            <RiCloseLine size={16} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        
+                        {tags.length === 0 && (
+                            <p className="text-sm text-gray-500 italic">Belum ada tag yang ditambahkan</p>
+                        )}
+                        
+                        <div className="mt-4 text-sm text-gray-600">
+                            Total: {tags.length} tag{tags.length !== 1 ? 's' : ''}
                         </div>
                     </div>
                 </div>
