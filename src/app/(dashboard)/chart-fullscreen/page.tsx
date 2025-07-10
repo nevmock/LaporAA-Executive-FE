@@ -39,10 +39,12 @@ const CHART_COMPONENTS = {
 
 export default function ChartFullscreenPage() {
   const searchParams = useSearchParams();
-  const chartType = searchParams.get('type') as keyof typeof CHART_COMPONENTS;
+  const chartTypeParam = searchParams?.get('type') || null;
+  const chartType = chartTypeParam as keyof typeof CHART_COMPONENTS | undefined;
+
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
-  const chartConfig = CHART_COMPONENTS[chartType];
+  const chartConfig = chartType ? CHART_COMPONENTS[chartType] : undefined;
 
   // Move useEffect to before conditional return
   React.useEffect(() => {

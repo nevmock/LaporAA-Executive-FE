@@ -1,0 +1,16 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update next.config.ts, package.json, src/app/(dashboard)/chart-fullscreen/page.tsx
+📅 2025-07-10_1308
+
+📂 Perubahan file:
+next.config.ts
+package.json
+src/app/(dashboard)/chart-fullscreen/page.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/ChartPreview.tsx
+src/app/(dashboard)/dashboard/buat-laporan/page.tsx
+src/app/AppShell.tsx
+src/app/layout.tsx
+src/components/sidebar.tsx
+
+🚀 Meluncur

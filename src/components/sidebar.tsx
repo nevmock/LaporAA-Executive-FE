@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
 
     const isActive = (path: string) =>
-        pathname === path || pathname.startsWith(`${path}/`);
+        pathname === path || (pathname && pathname.startsWith(`${path}/`)) || false;
 
     const navItemClass = (active: boolean) =>
         `flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition ${active

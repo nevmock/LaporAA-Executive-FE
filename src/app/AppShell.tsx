@@ -22,6 +22,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     // Get page title based on pathname
     const getPageTitle = () => {
+        if (!pathname) return 'Laporan AA';
+        
         if (pathname.includes('/dashboard')) {
             return 'Dashboard';
         } else if (pathname.includes('/pengaduan')) {

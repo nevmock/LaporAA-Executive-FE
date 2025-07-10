@@ -81,27 +81,14 @@ export default function BuatLaporanPage() {
         if (!element) return null;
         
         try {
-            // Tambahkan CSS khusus untuk screenshot
-            const screenshotStyles = document.createElement('style');
-            screenshotStyles.textContent = `
-                .report-page-wrapper {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-            `;
-            document.head.appendChild(screenshotStyles);
-
             const canvas = await html2canvas(element, {
-                scale: 1,
+                scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 allowTaint: true,
                 width: 1200,
                 height: 675,
             });
-            
-            // Hapus CSS setelah screenshot
-            document.head.removeChild(screenshotStyles);
             
             return canvas.toDataURL('image/png', 1.0);
         } catch (error) {

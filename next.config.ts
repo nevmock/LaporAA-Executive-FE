@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Transpile packages that have ES module issues
   transpilePackages: ['react-medium-image-zoom'],
+  // Skip special handling of error pages
+  skipMiddlewareUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   images: {
     // Disable image optimization for external URLs to prevent 500 errors
     unoptimized: true,
