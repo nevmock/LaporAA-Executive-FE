@@ -41,9 +41,9 @@ const ReportPageWrapper: React.FC<ReportPageWrapperProps> = ({ children, pageNum
                 {/* Tanggal vertikal dengan SVG */}
                 <svg height="230" width="40" style={{ position: 'absolute', top: '-5px' }}>
                     <text 
-                        x="27" 
-                        y="230" 
-                        transform="rotate(-90 27,230)" 
+                        x="13" 
+                        y="20" 
+                        transform="rotate(90 13,20)" 
                         fontFamily="Inter" 
                         fontSize="16" 
                         fill="#BDBDBD" 
@@ -58,9 +58,9 @@ const ReportPageWrapper: React.FC<ReportPageWrapperProps> = ({ children, pageNum
                 {/* Judul sidebar vertikal dengan SVG */}
                 <svg height="230" width="40" style={{ position: 'absolute', bottom: '50px' }}>
                     <text 
-                        x="27" 
-                        y="230" 
-                        transform="rotate(-90 27,230)" 
+                        x="13" 
+                        y="20" 
+                        transform="rotate(90 13,20)" 
                         fontFamily="Inter" 
                         fontSize="18" 
                         fill="#B91C1C" 
