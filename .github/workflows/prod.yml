@@ -52,7 +52,6 @@ jobs:
               -p "${{ secrets.PORT }}":3000 \
               nevmock/laporaa-fe-prod:latest
 
-              
             echo "🧹 Cleaning up unused Docker resources..."
             docker system prune -f
 
