@@ -1,32 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Data } from "../../../lib/types";
 import axios from "../../../utils/axiosInstance";
-import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-interface Data {
-    _id: string;
-    sessionId: string;
-    from: string;
-    user: {
-        _id: string;
-        name: string;
-        nik: string;
-        address: string;
-        email: string;
-        jenis_kelamin: string;
-        reportHistory: string[];
-    };
-    location: {
-        latitude: number;
-        longitude: number;
-        description: string;
-    };
-    status: string;
-}
-
-export default function Profile({ sessionId, data: propData }: { sessionId: string; data?: any }) {
+export default function Profile({ sessionId, data: propData }: { sessionId: string; data?: Data }) {
     const [data, setData] = useState<Data | null>(propData || null);
 
     // Editable states and edit mode toggles
@@ -39,15 +18,20 @@ export default function Profile({ sessionId, data: propData }: { sessionId: stri
     const [isSavingName, setIsSavingName] = useState(false);
     const [isSavingSex, setIsSavingSex] = useState(false);
 
-    const [saveNameSuccess, setSaveNameSuccess] = useState(false);
-    const [saveSexSuccess, setSaveSexSuccess] = useState(false);
-
     const [saveError, setSaveError] = useState<string | null>(null);
 
     const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Teks berhasil disalin ke clipboard");
-        });
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Teks berhasil disalin ke clipboard");
+            }).catch(() => {
+                // Fallback for older browsers or when clipboard API fails
+                alert("Gagal menyalin ke clipboard");
+            });
+        } else {
+            // Fallback when clipboard API is not available
+            alert("Fitur copy tidak tersedia");
+        }
     };
 
     // Sync state jika propData berubah
@@ -72,12 +56,10 @@ export default function Profile({ sessionId, data: propData }: { sessionId: stri
                 name: editedName,
             });
             setData((prev) => prev ? { ...prev, name: editedName } : prev);
-            setSaveNameSuccess(true);
             setIsEditingName(false);
-            setTimeout(() => setSaveNameSuccess(false), 2000);
             // Reload halaman setelah berhasil menyimpan
             window.location.reload();
-        } catch (error) {
+        } catch {
             setSaveError("Gagal menyimpan Isi Laporan.");
         } finally {
             setIsSavingName(false);
@@ -95,12 +77,10 @@ export default function Profile({ sessionId, data: propData }: { sessionId: stri
                 jenis_kelamin: editedSex,
             });
             setData((prev) => prev ? { ...prev, jenis_kelamin: editedSex } : prev);
-            setSaveSexSuccess(true);
             setIsEditingSex(false);
-            setTimeout(() => setSaveSexSuccess(false), 2000);
             // Reload halaman setelah berhasil menyimpan
             window.location.reload();
-        } catch (error) {
+        } catch {
             setSaveError("Gagal menyimpan Isi Laporan.");
         } finally {
             setIsSavingSex(false);

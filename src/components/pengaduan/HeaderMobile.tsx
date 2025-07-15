@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Search, Filter, ChevronUp, ChevronDown } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
@@ -82,7 +82,7 @@ function ListBoxFilter({
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
     // Dynamic dropdown position (biar dropdown tetap di bawah button)
-    const updateDropdownPosition = () => {
+    const updateDropdownPosition = useCallback(() => {
         if (buttonRef.current && typeof window !== 'undefined') {
             const rect = buttonRef.current.getBoundingClientRect();
             setDropdownStyle({
@@ -93,7 +93,7 @@ function ListBoxFilter({
                 zIndex: zIndex + 1,
             });
         }
-    };
+    }, [zIndex]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -105,7 +105,7 @@ function ListBoxFilter({
             window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleResize);
         };
-    }, []);
+    }, [updateDropdownPosition]);
 
     return (
         <div className={`relative w-full ${className || ""}`} style={{ zIndex }}>
@@ -192,9 +192,9 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
     selectedSituasi,
     setSelectedSituasi,
     situasiList,
-    situasiTotal,
+    // Note: situasiTotal removed as it was unused
     opdList,
-    opdTotal,
+    // Note: opdTotal removed as it was unused
     selectedOpd,
     setSelectedOpd,
     isPinnedOnly,

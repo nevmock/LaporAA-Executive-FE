@@ -1,4 +1,4 @@
-import axios, {AxiosResponse} from 'axios';
+import axios, {AxiosResponse, InternalAxiosRequestConfig, AxiosRequestConfig} from 'axios';
 import Cookies from 'js-cookie';
 
 const request = axios.create({
@@ -13,13 +13,10 @@ const request = axios.create({
 });
 
 request.interceptors.request.use(
-	(config: any) => {
+	(config: InternalAxiosRequestConfig) => {
 		const token = Cookies.get('token');
-		if (token) {
-			config.headers = {
-				...config.headers,
-				Authorization: `Bearer ${token}`,
-			};
+		if (token && config.headers) {
+			config.headers.Authorization = `Bearer ${token}`;
 		}
 		return config;
 	},
@@ -57,18 +54,18 @@ request.interceptors.response.use(
 );
 
 
-export default {
-	get: <T = any>(url: string, params?: any, headers: Record<string, any> = {}) =>
-		request<T>({method: 'get', url, params, headers}),
+const requestExports = {
+	get: <T = unknown>(url: string, params?: unknown, headers: Record<string, string> = {}) =>
+		request<T>({method: 'get', url, params, headers} as AxiosRequestConfig),
 
-	post: <T = any>(url: string, data?: any, headers: Record<string, any> = {}) =>
-		request<T>({method: 'post', url, data, headers}),
+	post: <T = unknown>(url: string, data?: unknown, headers: Record<string, string> = {}) =>
+		request<T>({method: 'post', url, data, headers} as AxiosRequestConfig),
 
-	put: <T = any>(url: string, data?: any, headers: Record<string, any> = {}) =>
-		request<T>({method: 'put', url, data, headers}),
+	put: <T = unknown>(url: string, data?: unknown, headers: Record<string, string> = {}) =>
+		request<T>({method: 'put', url, data, headers} as AxiosRequestConfig),
 
-	delete: <T = any>(url: string, data?: any, headers: Record<string, any> = {}) =>
-		request<T>({method: 'delete', url, data, headers}),
+	delete: <T = unknown>(url: string, data?: unknown, headers: Record<string, string> = {}) =>
+		request<T>({method: 'delete', url, data, headers} as AxiosRequestConfig),
 
 	setToken: (token?: string) => {
 		if (token) {
@@ -80,3 +77,5 @@ export default {
 		}
 	}
 };
+
+export default requestExports;

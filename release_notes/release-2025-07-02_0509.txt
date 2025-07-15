@@ -1,0 +1,10 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/pengaduan/laporan.tsx, src/lib/types.ts
+📅 2025-07-02_0509
+
+📂 Perubahan file:
+src/components/pengaduan/laporan.tsx
+src/lib/types.ts
+
+🚀 Meluncur

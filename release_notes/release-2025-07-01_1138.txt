@@ -1,0 +1,9 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/components/pengaduan/tableSection.tsx
+📅 2025-07-01_1138
+
+📂 Perubahan file:
+src/components/pengaduan/tableSection.tsx
+
+🚀 Meluncur

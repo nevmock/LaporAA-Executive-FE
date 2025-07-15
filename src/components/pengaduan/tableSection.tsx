@@ -14,8 +14,11 @@ import axios from "../../utils/axiosInstance";
 import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
-import { Chat, SortKey } from "../../lib/types";
-import { usePhotoDownloader } from "./PhotoDownloader";
+import { Chat, SortKey, BackendSortKey } from "../../lib/types";
+// import { usePhotoDownloader } from "./PhotoDownloader"; // Unused import
+
+// Define type for tags
+type TagItem = string | { _id?: string; hash_tag: string };
 
 // Props interface untuk komponen TableSection
 interface Props {
@@ -73,6 +76,14 @@ const TableSection: React.FC<Props> = ({
     loading,
     setSearch,
 }) => {
+    // Backend supported sort keys - kolom yang bisa di-sort
+    const backendSortKeys: BackendSortKey[] = ["prioritas", "status", "situasi", "lokasi_kejadian", "opd", "date", "admin", "from"];
+    
+    // Helper function untuk cek apakah kolom bisa di-sort
+    const isSortable = (key: string): boolean => {
+        return backendSortKeys.includes(key as BackendSortKey);
+    };
+
     // State untuk modal OPD
     const [opdModalVisible, setOpdModalVisible] = React.useState(false);
     const [selectedOpds, setSelectedOpds] = React.useState<string[]>([]);
@@ -80,11 +91,16 @@ const TableSection: React.FC<Props> = ({
     const [pinnedReports, setPinnedReports] = React.useState<Record<string, boolean>>({});
     const [loadingPin, setLoadingPin] = React.useState<Record<string, boolean>>({});
     
-    // State untuk menyimpan informasi laporan untuk modal foto
-    const [photoModalInfo, setPhotoModalInfo] = React.useState<{
-        sessionId: string;
-        userName: string;
-    } | null>(null);
+    // State untuk modal tags
+    const [showTagModal, setShowTagModal] = React.useState(false);
+    const [selectedTags, setSelectedTags] = React.useState<TagItem[]>([]);
+    const [tagModalTitle, setTagModalTitle] = React.useState("");
+    
+    // State untuk menyimpan informasi laporan untuk modal foto (currently unused)
+    // const [photoModalInfo, setPhotoModalInfo] = React.useState<{
+    //     sessionId: string;
+    //     userName: string;
+    // } | null>(null);
 
     // Fungsi untuk download foto tunggal dengan nama yang benar
     const downloadSinglePhoto = async (photoUrl: string, sessionId: string, userName: string, photoPath: string) => {
@@ -190,6 +206,7 @@ const TableSection: React.FC<Props> = ({
                 } catch {
                     // Jika laporan memang tidak di-pin, API akan memberikan status 404
                     // Jadi tidak perlu menangani error dengan khusus
+                    // cukup log saja
                     console.log(`Report ${chat.sessionId} is not pinned`);
                 }
             }
@@ -217,7 +234,7 @@ const TableSection: React.FC<Props> = ({
                             {/* Loop untuk membuat header dari kolom */}
                             {[
                                 { key: 'prioritas', icon: <FaStar />, label: '' },
-                                { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontol' },
+                                { key: 'controls', icon: <IoSettingsSharp />, label: 'Kontrol' },
                                 { key: 'tag', icon: <FaHashtag />, label: 'Tag' },
                                 { key: 'admin', icon: <FaEye />, label: 'Detail' },
                                 { key: 'tracking_id', icon: <PiChatsBold />, label: 'Tracking' },
@@ -228,21 +245,29 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD' },
                                 { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
-                            ].map(({ key, icon, label }) => (
-                                <th
-                                    key={key}
-                                    onClick={() => toggleSort(key as SortKey)}
-                                    className="px-6 py-3 select-none bg-gray-800 text-white hover:bg-white/20 transition cursor-pointer"
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="w-6 flex justify-center">{icon}</div>
-                                        <div className="flex flex-col items-center text-[12px] leading-tight text-center">
-                                            {label.split(" ").map((word, i) => <span key={i}>{word}</span>)}
+                            ].map(({ key, icon, label }) => {
+                                const sortable = isSortable(key);
+                                return (
+                                    <th
+                                        key={key}
+                                        onClick={sortable ? () => toggleSort(key as SortKey) : undefined}
+                                        className={`px-6 py-3 select-none bg-gray-800 text-white transition ${
+                                            sortable 
+                                                ? 'hover:bg-white/20 cursor-pointer' 
+                                                : 'cursor-default opacity-75'
+                                        }`}
+                                        title={sortable ? `Klik untuk mengurutkan berdasarkan ${label || key}` : `${label || key} (tidak dapat diurutkan)`}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="w-6 flex justify-center">{icon}</div>
+                                            <div className="flex flex-col items-center text-[12px] leading-tight text-center">
+                                                {label.split(" ").map((word, i) => <span key={i}>{word}</span>)}
+                                            </div>
+                                            <div>{sortable ? renderSortArrow(key as SortKey) : null}</div>
                                         </div>
-                                        <div>{renderSortArrow(key as SortKey)}</div>
-                                    </div>
-                                </th>
-                            ))}
+                                    </th>
+                                );
+                            })}
                             {/* Kolom hapus jika SuperAdmin */}
                             {role === 'SuperAdmin' && (
                                 <th className="px-6 py-3 bg-gray-800 text-white text-center">
@@ -289,7 +314,7 @@ const TableSection: React.FC<Props> = ({
                                             {(role === "Bupati" || role === "SuperAdmin") ? (
                                                 <Switch
                                                     checked={isPrioritas}
-                                                    onChange={(e) => toggleMode(chat.tindakan?.report!, e)}
+                                                    onChange={(e) => toggleMode(chat.tindakan?.report || '', e)}
                                                     className={`${isPrioritas ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition`}
                                                 >
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${isPrioritas ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -375,14 +400,30 @@ const TableSection: React.FC<Props> = ({
 
                                         {/* Tag */}
                                         <td className="px-3 py-1.5">
-                                            {(
-                                                Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0
-                                                || Array.isArray(chat.tags) && chat.tags.length > 0
-                                            ) ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {/* Render tag dari tindakan.tag (bentuk baru) */}
-                                                    {Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0 &&
-                                                        chat.tindakan.tag.map((tagItem, index) => {
+                                            {(() => {
+                                                // Kombinasi semua tags dari berbagai sumber
+                                                const allTags: TagItem[] = [];
+                                                
+                                                // Tags dari tindakan.tag (bentuk baru)
+                                                if (Array.isArray(chat.tindakan?.tag) && chat.tindakan.tag.length > 0) {
+                                                    allTags.push(...chat.tindakan.tag);
+                                                }
+                                                // Tags dari root (legacy, jika tindakan.tag kosong)
+                                                else if (Array.isArray(chat.tags) && chat.tags.length > 0) {
+                                                    allTags.push(...chat.tags);
+                                                }
+
+                                                if (allTags.length === 0) {
+                                                    return "-";
+                                                }
+
+                                                // Tampilkan hanya 3 tag pertama
+                                                const displayTags = allTags.slice(0, 2);
+                                                const remainingCount = allTags.length - 2;
+
+                                                return (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {displayTags.map((tagItem, index) => {
                                                             // Jika object
                                                             if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
                                                                 return (
@@ -410,25 +451,25 @@ const TableSection: React.FC<Props> = ({
                                                                 );
                                                             }
                                                             return null;
-                                                        })
-                                                    }
-                                                    {/* Render tags dari root (legacy, jika tindakan.tag kosong) */}
-                                                    {(!chat.tindakan?.tag || chat.tindakan.tag.length === 0) && Array.isArray(chat.tags) && chat.tags.length > 0 &&
-                                                        chat.tags.map((tag, idx) => (
+                                                        })}
+                                                        
+                                                        {/* Tombol "See more" jika ada lebih dari 3 tags */}
+                                                        {remainingCount > 0 && (
                                                             <button
-                                                                key={`legacy-root-tag-${idx}`}
-                                                                className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
-                                                                onClick={() => setSearch(`${tag}`)}
-                                                                title={`Klik untuk mencari tag: #${tag}`}
+                                                                className="bg-gray-100 text-gray-600 text-xs font-medium px-1 py-0.5 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                                                                onClick={() => {
+                                                                    setSelectedTags(allTags);
+                                                                    setTagModalTitle(`Semua Tag - ${chat.sessionId}`);
+                                                                    setShowTagModal(true);
+                                                                }}
+                                                                title={`Lihat ${remainingCount} tag lainnya`}
                                                             >
-                                                                #{tag}
+                                                                +{remainingCount} more
                                                             </button>
-                                                        ))
-                                                    }
-                                                </div>
-                                            ) : (
-                                                "-"
-                                            )}
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Link ke halaman detail */}
@@ -475,7 +516,7 @@ const TableSection: React.FC<Props> = ({
                                                             window.open(chat.tindakan.url, '_blank', 'noopener,noreferrer');
                                                         }
                                                     }}
-                                                    title={`Klik untuk membuka link: ${chat.tindakan.url}`}
+                                                    title={`Klik untuk membuka laporan SP4N Lapor: ${chat?.tindakan?.trackingId}`}
                                                 >
                                                     <Image 
                                                         src="/Spanlapor-icon.png" 
@@ -695,7 +736,7 @@ const TableSection: React.FC<Props> = ({
                                                                     downloadSinglePhoto(photoUrl, chat.sessionId, chat.user || 'Unknown', firstPhoto);
                                                                 }
                                                             }}
-                                                            onError={(e) => {
+                                                            onError={() => {
                                                                 console.error('Error loading image:', photoUrl);
                                                                 console.error('Photo data:', chat.photos);
                                                                 // Instead of manipulating DOM, show alert directly
@@ -774,6 +815,85 @@ const TableSection: React.FC<Props> = ({
                             <div className="border-t px-6 py-4 flex justify-end">
                                 <button
                                     onClick={() => setOpdModalVisible(false)}
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal untuk menampilkan semua tags */}
+                {showTagModal && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-[50] flex items-center justify-center p-4"
+                        onClick={() => setShowTagModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-lg shadow-xl w-full max-w-md"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center border-b px-6 py-4">
+                                <h3 className="font-semibold text-lg text-black">{tagModalTitle}</h3>
+                                <button
+                                    onClick={() => setShowTagModal(false)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="p-6 max-h-96 overflow-auto text-black">
+                                {selectedTags.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedTags.map((tagItem, index) => {
+                                            // Handle object format
+                                            if (typeof tagItem === "object" && tagItem !== null && "hash_tag" in tagItem) {
+                                                return (
+                                                    <button
+                                                        key={tagItem._id || `modal-tag-obj-${index}`}
+                                                        className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                        onClick={() => {
+                                                            setSearch(`${tagItem.hash_tag}`);
+                                                            setShowTagModal(false);
+                                                        }}
+                                                        title={`Klik untuk mencari tag: #${tagItem.hash_tag}`}
+                                                    >
+                                                        #{tagItem.hash_tag}
+                                                    </button>
+                                                );
+                                            }
+                                            // Handle string format (legacy)
+                                            if (typeof tagItem === "string") {
+                                                return (
+                                                    <button
+                                                        key={`modal-tag-str-${index}`}
+                                                        className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                                        onClick={() => {
+                                                            setSearch(`${tagItem}`);
+                                                            setShowTagModal(false);
+                                                        }}
+                                                        title={`Klik untuk mencari tag: #${tagItem}`}
+                                                    >
+                                                        #{tagItem}
+                                                    </button>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 text-gray-600">
+                                        Tidak ada data tag untuk ditampilkan
+                                    </div>
+                                )}
+                                <div className="mt-4 text-sm text-gray-600">
+                                    Total: {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
+                                </div>
+                            </div>
+                            <div className="border-t px-6 py-4 flex justify-end">
+                                <button
+                                    onClick={() => setShowTagModal(false)}
                                     className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition"
                                 >
                                     Tutup

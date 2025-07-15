@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 import { TindakanData } from "../../../../lib/types";
 import { RiSave3Fill } from "react-icons/ri";
 
+interface SaveDataFunction {
+    (nextStatus?: string): Promise<unknown>;
+}
+
 export default function Verifikasi2({
     data,
     onChange,
@@ -12,10 +16,9 @@ export default function Verifikasi2({
     data: Partial<TindakanData>;
     onChange: React.Dispatch<React.SetStateAction<Partial<TindakanData>>>;
     onConfirmChange?: (val: boolean) => void;
-    saveData?: (nextStatus?: string) => Promise<any>;
+    saveData?: SaveDataFunction;
 }) {
     const [isConfirmed, setIsConfirmed] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccessModalVisible, setSaveSuccessModalVisible] = useState(false);
     const [saveMessage, setSaveMessage] = useState("Data berhasil disimpan");
@@ -174,7 +177,7 @@ export default function Verifikasi2({
                             
                             try {
                                 saveData()
-                                    .then((result) => {
+                                    .then(() => {
                                         console.log("Form save succeeded in", Date.now() - startTime, "ms");
                                         setSaveMessage("Perubahan berhasil disimpan");
                                         setSaveSuccessModalVisible(true);
@@ -182,7 +185,7 @@ export default function Verifikasi2({
                                         setInitialData({...data});
                                         setHasFormChanges(false);
                                     })
-                                    .catch((error: any) => {
+                                    .catch((error: Error) => {
                                         console.error("Error in form save operation:", error);
                                         alert(`Gagal menyimpan perubahan: ${error?.message || 'Terjadi kesalahan'}`);
                                     })
@@ -191,11 +194,12 @@ export default function Verifikasi2({
                                         setIsSaving(false);
                                         clearTimeout(timeoutId);
                                     });
-                            } catch (error: any) {
+                            } catch (error) {
                                 console.error("Unexpected error in save button handler:", error);
                                 setIsSaving(false);
                                 clearTimeout(timeoutId);
-                                alert(`Terjadi kesalahan tak terduga saat menyimpan: ${error?.message || ""}`);
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                                alert(`Terjadi kesalahan tak terduga saat menyimpan: ${errorMessage}`);
                             }
                         }}
                         disabled={isSaving || !hasFormChanges}

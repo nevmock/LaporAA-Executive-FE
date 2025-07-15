@@ -22,7 +22,7 @@ export class BotModeService {
     private modeCache = new Map<string, { mode: BotMode; timestamp: number }>();
     private forceModeCache = new Map<string, { force: boolean; timestamp: number }>();
     private readonly CACHE_TTL = 30000; // Increased to 30 seconds to reduce API calls
-    private pendingRequests = new Map<string, Promise<any>>(); // Debounce pending requests
+    private pendingRequests = new Map<string, Promise<BotMode | boolean>>(); // Debounce pending requests
     private requestTimeouts = new Map<string, NodeJS.Timeout>(); // Track request timeouts
     private readonly REQUEST_TIMEOUT = 10000; // 10 second timeout for all requests
     
@@ -37,13 +37,13 @@ export class BotModeService {
         this.setupBeforeUnloadHandler();
     }
 
-    private log(message: string, data?: any) {
+    private log(message: string, data?: unknown) {
         if (this.config.debug) {
             console.log(`[BotModeService] ${message}`, data || '');
         }
     }
 
-    private logError(message: string, error?: any) {
+    private logError(message: string, error?: unknown) {
         console.error(`[BotModeService] ${message}`, error || '');
         this.config.onError?.(message);
     }
@@ -90,7 +90,8 @@ export class BotModeService {
         const requestKey = `mode-${from}`;
         if (this.pendingRequests.has(requestKey)) {
             this.log(`Reusing pending mode request for ${from}`);
-            return this.pendingRequests.get(requestKey);
+            const existingRequest = this.pendingRequests.get(requestKey);
+            return existingRequest as Promise<BotMode>;
         }
 
         // Create request with timeout
@@ -128,17 +129,17 @@ export class BotModeService {
             });
             
             clearTimeout(timeoutId);
-            const mode: BotMode = response.data?.mode || 'bot';
+            const mode: BotMode = (response?.data as { mode?: BotMode })?.mode || 'bot';
 
             this.setCachedMode(from, mode);
             this.recordSuccess(endpoint); // Record success
             this.log(`Current mode for ${from}:`, mode);
             return mode;
-        } catch (error: any) {
+        } catch (error: unknown) {
             clearTimeout(timeoutId);
             this.recordFailure(endpoint); // Record failure
             
-            if (error.name === 'AbortError') {
+            if (error instanceof Error && error.name === 'AbortError') {
                 this.log(`Get mode request aborted for ${from}`);
             } else {
                 this.logError(`Failed to get current mode for ${from}`, error);
@@ -167,7 +168,8 @@ export class BotModeService {
         const requestKey = `change-${from}-${targetMode}`;
         if (this.pendingRequests.has(requestKey)) {
             this.log(`Reusing pending change mode request for ${from} to ${targetMode}`);
-            return this.pendingRequests.get(requestKey);
+            const existingRequest = this.pendingRequests.get(requestKey);
+            return existingRequest as Promise<BotMode>;
         }
 
         const requestPromise = this.executeChangeMode(from, targetMode);
@@ -211,9 +213,9 @@ export class BotModeService {
             this.log(`Successfully changed mode for ${from} to ${targetMode}`);
 
             return targetMode;
-        } catch (error: any) {
+        } catch (error: unknown) {
             clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
+            if (error instanceof Error && error.name === 'AbortError') {
                 this.log('Mode change request was cancelled');
                 // Return current cached mode
                 const cached = this.getCachedMode(from);
@@ -232,7 +234,6 @@ export class BotModeService {
      */
     async ensureMode(from: string, targetMode: BotMode, maxRetries = 1): Promise<BotMode> {
         // Reduced retry attempts to prevent loops
-        let lastError: Error | null = null;
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
@@ -246,13 +247,15 @@ export class BotModeService {
 
                 return await this.changeMode(from, targetMode);
             } catch (error) {
-                lastError = error as Error;
+                const currentError = error as Error;
 
                 if (attempt < maxRetries) {
                     const delay = Math.pow(2, attempt) * 2000; // Increased delay
                     this.log(`Waiting ${delay}ms before retry...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 } else {
+                    // Use the error for final attempt
+                    console.error('Max retries reached:', currentError.message);
                     // On final failure, return cached mode
                     const cached = this.getCachedMode(from);
                     if (cached) {
@@ -285,9 +288,9 @@ export class BotModeService {
             // Clear cache setelah force mode berubah
             this.clearCache(from);
             this.log(`Successfully set force mode for ${from} to ${force}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logError(`Failed to set force mode for ${from}`, error);
-            throw new Error(`Failed to set force mode: ${error.message}`);
+            throw new Error(`Failed to set force mode: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
     }
 
@@ -304,8 +307,9 @@ export class BotModeService {
                 this.log(`Force mode active for ${from}, cannot set manual mode`);
                 throw new Error('Cannot set manual mode when force mode is active');
             }
-        } catch (error: any) {
-            if (error.message.includes('force mode is active')) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            if (errorMessage.includes('force mode is active')) {
                 throw error; // Re-throw force mode error
             }
             this.log(`Could not check force mode for ${from}, proceeding with manual mode`);
@@ -322,9 +326,9 @@ export class BotModeService {
             // Update cache ke manual mode
             this.setCachedMode(from, 'manual');
             this.log(`Successfully set manual mode for ${from} with ${minutes} minutes timeout`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logError(`Failed to set manual mode for ${from}`, error);
-            throw new Error(`Failed to set manual mode: ${error.message}`);
+            throw new Error(`Failed to set manual mode: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
     }
 
@@ -342,7 +346,8 @@ export class BotModeService {
         const requestKey = `force-${from}`;
         if (this.pendingRequests.has(requestKey)) {
             this.log(`Reusing pending force mode request for ${from}`);
-            return this.pendingRequests.get(requestKey);
+            const existingRequest = this.pendingRequests.get(requestKey);
+            return existingRequest as Promise<boolean>;
         }
 
         // Create new request
@@ -372,17 +377,17 @@ export class BotModeService {
             });
             
             clearTimeout(timeoutId);
-            // Update field sesuai API response terbaru
-            const forceMode = response.data?.forceModeManual || response.data?.forceMode || response.data?.force || false;
+            const responseData = response?.data as { forceModeManual?: boolean; forceMode?: boolean; force?: boolean } || {};
+            const forceMode = responseData.forceModeManual || responseData.forceMode || responseData.force || false;
 
             // Cache the result
             this.setCachedForceMode(from, forceMode);
 
             this.log(`Force mode for ${from}:`, forceMode);
             return forceMode;
-        } catch (error: any) {
+        } catch (error: unknown) {
             clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
+            if (error instanceof Error && error.name === 'AbortError') {
                 this.log(`Force mode request aborted for ${from}`);
                 // Return cached value or default
                 const cached = this.forceModeCache.get(from);
@@ -404,12 +409,12 @@ export class BotModeService {
         try {
             this.log(`Checking manual mode status for ${from}`);
             const response = await axios.get(`${this.config.apiBaseUrl}/mode/${from}`);
-            const mode = response.data?.mode || 'bot';
+            const mode = (response?.data as { mode?: string })?.mode || 'bot';
             const isActive = mode === 'manual';
 
             this.log(`Manual mode active for ${from}:`, isActive);
             return isActive;
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logError(`Failed to check manual mode for ${from}`, error);
             // Return false as default if API call fails
             return false;
@@ -420,7 +425,7 @@ export class BotModeService {
      * Force mode to bot when leaving (SIMPLE - NO API CALLS TO PREVENT LOOPS)
      */
     forceModeToBotOnExit(from: string) {
-        if (!from) return;
+        if (!from || typeof navigator === 'undefined') return;
 
         try {
             // ULTRA SIMPLE: Just beacon, no checks, no promises, no async
@@ -440,17 +445,21 @@ export class BotModeService {
      * Setup beforeunload handler (MINIMAL - NO LOOPS)
      */
     private setupBeforeUnloadHandler() {
+        if (typeof window === 'undefined') return;
+
         const handleBeforeUnload = () => {
             // SIMPLEST APPROACH: Only send beacon for cleanup, no checks
             this.modeCache.forEach((cached, from) => {
                 if (cached.mode === 'manual') {
                     try {
                         // Simple beacon approach - no fetch, no promises, no async
-                        const formData = new FormData();
-                        formData.append('_method', 'PUT');
-                        formData.append('mode', 'bot');
-                        navigator.sendBeacon(`${this.config.apiBaseUrl}/mode/${from}`, formData);
-                    } catch (error) {
+                        if (typeof navigator !== 'undefined') {
+                            const formData = new FormData();
+                            formData.append('_method', 'PUT');
+                            formData.append('mode', 'bot');
+                            navigator.sendBeacon(`${this.config.apiBaseUrl}/mode/${from}`, formData);
+                        }
+                    } catch {
                         // Silent fail - nothing we can do in beforeunload
                     }
                 }

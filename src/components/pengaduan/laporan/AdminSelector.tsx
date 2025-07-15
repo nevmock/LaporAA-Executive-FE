@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { ProcessedBy } from "../../../lib/types";
 import axios from "../../../utils/axiosInstance";
 import { FaSave, FaUserCog } from "react-icons/fa";
 
@@ -9,11 +10,11 @@ interface AdminUser {
     _id: string;
     username: string;
     role: string;
-    nama_admin?: string;
+    nama_admin: string;
 }
 
 interface AdminSelectorProps {
-    currentAdmin: any;
+    currentAdmin: ProcessedBy | undefined;
     onSave: (admin: AdminUser) => void;
     API_URL: string;
 }
@@ -23,16 +24,13 @@ const AdminSelector = ({ currentAdmin, onSave, API_URL }: AdminSelectorProps) =>
     const [loading, setLoading] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
     const [currentAdminDisplay, setCurrentAdminDisplay] = useState<string>('-');
-    const [responseAdmin, setResponseAdmin] = useState<any>(null);
+    const [responseAdmin, setResponseAdmin] = useState<ProcessedBy | null>(null);
     const [error, setError] = useState<string>('');
 
     // Function to get admin display string - focus on nama_admin as shown in the API response
-    const getAdminDisplayString = useCallback((admin: any): string => {
+    const getAdminDisplayString = useCallback((admin: ProcessedBy | undefined): string => {
         if (!admin) return '-';
-        if (typeof admin === 'object') {
-            return admin.nama_admin || admin.username || '-';
-        }
-        return '-';
+        return admin.nama_admin || admin.username || '-';
     }, []);
     
     // Initialize currentAdminDisplay based on currentAdmin's nama_admin field

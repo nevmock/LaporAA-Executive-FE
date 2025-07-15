@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { FiLogOut, FiHome, FiInbox, FiUsers } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
+import MessageCounter from "./socket/MessageCounter";
+import NotificationDropdown from "./socket/NotificationDropdown";
 
 interface TopNavbarProps {
     title: string;
@@ -11,11 +13,11 @@ interface TopNavbarProps {
     role: string | null;
     onLogout: () => void;
     isMobile?: boolean;
-    countPending?: number;
+    // Note: countPending parameter removed as it's unused (replaced by real-time MessageCounter)
     namaAdmin?: string;
 }
 
-const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, countPending = 0, namaAdmin }) => {
+const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, isMobile = false, namaAdmin }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -73,8 +75,17 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                 )}
             </div>
 
-            {/* Right side - Navigation for Mobile, Avatar for Desktop */}
+            {/* Right side - Navigation for Mobile, Real-time indicators for Desktop */}
             <div className="flex items-center gap-4">
+                {/* Real-time components - visible on both mobile and desktop */}
+                <div className="flex items-center gap-2">
+                    {/* Connection Status */}
+                    {/* <ConnectionStatus showText={false} /> */}
+                    
+                    {/* Notifications Dropdown */}
+                    <NotificationDropdown />
+                </div>
+
                 {isMobile && (
                     <nav className="flex items-center gap-4 text-white text-sm">
                         <Link
@@ -89,11 +100,11 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                             className="relative flex items-center gap-1 hover:text-red-400 transition"
                         >
                             <FiInbox size={18} />
-                            {countPending > 0 && (
-                                <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow">
-                                    {countPending}
-                                </span>
-                            )}
+                            {/* Use real-time MessageCounter instead of static countPending */}
+                            <MessageCounter 
+                                className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow"
+                                showIcon={false}
+                            />
                         </Link>
                     </nav>
                 )}
@@ -102,7 +113,9 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ title, userName, role, onLogout, 
                 <div className="relative flex items-center gap-2" ref={dropdownRef}>
                     {/* Nama Admin - Desktop Only */}
                     {!isMobile && namaAdmin && (
-                        <span className="text-xs text-gray-600 font-medium">{namaAdmin}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600 font-medium">{namaAdmin}</span>
+                        </div>
                     )}
                     
                     {/* User Avatar - Clickable */}

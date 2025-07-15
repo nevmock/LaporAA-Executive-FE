@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useState } from 'react';
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { TindakanClientState } from "../../../lib/types";
 import axios from "../../../utils/axiosInstance";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import AdminSelector from './AdminSelector';
 
 interface AdminSectionProps {
-    formData: any;
-    setFormData: (data: any) => void;
+    formData: TindakanClientState;
+    setFormData: (data: TindakanClientState) => void;
     setNotif: (message: string) => void;
     setIsSaving: (value: boolean) => void;
-    router: any;
+    router: AppRouterInstance;
     API_URL: string;
 }
 

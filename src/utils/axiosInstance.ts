@@ -2,7 +2,7 @@ import axios from "axios";
 
 const instance = axios.create({
     baseURL: process.env.NEXT_PUBLIC_BE_BASE_URL,
-    timeout: 30000, // 30 seconds timeout
+    // timeout: 30000, // 30 seconds timeout
 });
 
 // Request interceptor: tambahkan token jika ada

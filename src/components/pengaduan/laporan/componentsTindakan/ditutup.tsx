@@ -2,13 +2,17 @@
 
 import { TindakanData } from "../../../../lib/types";
 
+interface SaveDataFunction {
+    (nextStatus?: string): Promise<unknown>;
+}
+
 export default function Ditutup({
     data,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     saveData
 }: {
     data: Partial<TindakanData> & { sessionId: string };
-    saveData?: (nextStatus?: string) => Promise<any>;
+    saveData?: SaveDataFunction;
 }) {
 
     return (

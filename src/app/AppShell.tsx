@@ -2,6 +2,7 @@
 
 import Sidebar from "../components/sidebar";
 import TopNavbar from "../components/TopNavbar";
+import GlobalNotificationSystem from "../components/socket/GlobalNotificationSystem";
 import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
@@ -21,6 +22,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     // Get page title based on pathname
     const getPageTitle = () => {
+        if (!pathname) return 'Laporan AA';
+        
         if (pathname.includes('/dashboard')) {
             return 'Dashboard';
         } else if (pathname.includes('/pengaduan')) {
@@ -77,6 +80,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen w-screen flex-col sm:flex-row">
+            {/* Global Notification System */}
+            <GlobalNotificationSystem />
+            
             {isMobile ? (
                 <>
                     <div className="flex flex-col h-screen overflow-hidden">
@@ -87,7 +93,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             role={role}
                             onLogout={handleLogout}
                             isMobile={true}
-                            countPending={countPending}
                             namaAdmin={namaAdmin || undefined}
                         />
 
@@ -108,7 +113,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             role={role}
                             onLogout={handleLogout}
                             isMobile={false}
-                            countPending={countPending}
                             namaAdmin={namaAdmin || undefined}
                         />
 

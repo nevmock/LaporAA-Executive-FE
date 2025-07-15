@@ -1,0 +1,9 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/app/(dashboard)/dashboard/buat-laporan/components/ReportPageWrapper.tsx
+📅 2025-07-10_1359
+
+📂 Perubahan file:
+src/app/(dashboard)/dashboard/buat-laporan/components/ReportPageWrapper.tsx
+
+🚀 Meluncur

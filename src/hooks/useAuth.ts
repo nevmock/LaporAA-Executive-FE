@@ -7,9 +7,12 @@ export const useAuth = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            router.replace("/login");
+        // Only check auth on client side
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                router.replace("/login");
+            }
         }
-    }, []);
+    }, [router]); // Added missing dependency
 };

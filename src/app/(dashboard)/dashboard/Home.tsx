@@ -3,35 +3,34 @@ import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
 
-const BarOpdChart = dynamic(() => import('../../../components/dashboard/BarOpdChart'), { 
+// Modern dashboard components - organized by type
+const SummaryTable = dynamic(() => import('../../../components/dashboard/tables/SummaryTable'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
 });
-const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/BarWilayahChartKecamatan'), { 
+const BarOpdChart = dynamic(() => import('../../../components/dashboard/charts/BarOpdChart'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
 });
-const FullScreen = dynamic(() => import('../../../components/dashboard/FullScreen'), { ssr: false });
-const LineChart = dynamic(() => import('../../../components/dashboard/LineChart'), { 
+const BarWilayahChartKecamatan = dynamic(() => import('../../../components/dashboard/charts/BarWilayahChartKecamatan'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
 });
-const MapPersebaran = dynamic(() => import('../../../components/dashboard/MapPersebaran'), { 
+const LineChart = dynamic(() => import('../../../components/dashboard/charts/LineChart'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
 });
-const SummaryPieChart = dynamic(() => import('../../../components/dashboard/SummaryPieChart'), { 
+const SummaryPieChart = dynamic(() => import('../../../components/dashboard/charts/SummaryPieChart'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
 });
-const SummaryTable = dynamic(() => import('../../../components/dashboard/SummaryTable'), { 
+const MapPersebaranCard = dynamic(() => import('../../../components/dashboard/maps/MapPersebaranCard'), { 
   ssr: false,
-  loading: () => <div>Loading...</div>
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96"></div>
 });
 
 export default function Home() {
   const router = useRouter();
-  // const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -43,42 +42,41 @@ export default function Home() {
     }
   }, [router]);
 
-  if (isCheckingAuth) return <div>Loading...</div>;
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-3">
-      {/* Section Header */}
-      
-      <div className="w-full min-h-screen overflow-y-auto bg-white px-3 pb-6 space-y-6">
+    <div className="min-h-screen bg-white">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* Summary Table */}
-        <div className="w-full bg-white border border-gray-200 rounded-lg shadow-md">
-          <SummaryTable/>
+        {/* Stats and Summary Section */}
+        <SummaryTable />
+
+        {/* Charts Grid - Top Row */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Summary Pie Chart */}
+          <SummaryPieChart />
+          
+          {/* Line Chart */}
+          <LineChart />
         </div>
 
-        {/* Ringkasan Pie & Line */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <FullScreen title="Ringkasan Status Laporan">
-            <SummaryPieChart />
-          </FullScreen>
-          <FullScreen title="Grafik Tren Laporan">
-            <LineChart />
-          </FullScreen>
-        </div>
+        {/* Map Section */}
+        <MapPersebaranCard />
 
-        {/* Peta Persebaran */}
-        <FullScreen title="Peta Persebaran">
-          <MapPersebaran />
-        </FullScreen>
-
-        {/* Bar Wilayah & OPD */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <FullScreen title="Laporan per Kecamatan">
-            <BarWilayahChartKecamatan />
-          </FullScreen>
-          <FullScreen title="Laporan per Perangkat Daerah">
-            <BarOpdChart />
-          </FullScreen>
+        {/* Charts Grid - Bottom Row */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Bar Chart Wilayah */}
+          <BarWilayahChartKecamatan />
+          
+          {/* Bar Chart OPD */}
+          <BarOpdChart />
         </div>
       </div>
     </div>

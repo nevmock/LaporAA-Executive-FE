@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FaWhatsapp, FaCheck, FaExclamationCircle, FaFileAlt, FaCog, FaClipboardCheck, FaCheckCircle, FaTimesCircle, FaRobot } from "react-icons/fa";
@@ -11,6 +11,17 @@ import ActionButtons from "../../../../components/pengaduan/laporan/ActionButton
 import { Tooltip } from "../../../../components/Tooltip";
 import { useBotModeWithTab } from "../../../../hooks/useBotMode";
 import { BotModeDebugPanel } from "../../../../components/BotModeIndicator";
+
+// Dynamic imports
+const EnhancedModeManagement = dynamic(() => import("../../../../components/EnhancedModeManagement"), { 
+  loading: () => <div>Loading...</div>, 
+  ssr: false 
+});
+
+const FileManager = dynamic(() => import("../../../../components/FileManager"), { 
+  loading: () => <div>Loading...</div>, 
+  ssr: false 
+});
 
 // Loading spinner (lazy)
 const LoadingPage = dynamic(() => import("../../../../components/LoadingPage"), { ssr: false });
@@ -39,6 +50,8 @@ export default function ChatPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [showEnhancedModeManagement, setShowEnhancedModeManagement] = useState(false);
+  const [showFileManager, setShowFileManager] = useState(false);
   
   // Force mode state - menggunakan pattern yang sama seperti di tableSection
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -61,9 +74,25 @@ export default function ChatPage() {
     }
   }, [botMode.error]);
   
-  // Manual mode change handler for Message component
+  // Manual mode change handler for Message component with debouncing
+  const modeChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [changingMode, setChangingMode] = useState(false);
+  
   const handleModeChange = async (newMode: "bot" | "manual") => {
     console.log(`Mode change requested: ${newMode}`);
+    
+    // Prevent multiple rapid calls
+    if (changingMode) {
+      console.log('Mode change already in progress, skipping...');
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (modeChangeTimeoutRef.current) {
+      clearTimeout(modeChangeTimeoutRef.current);
+    }
+    
+    setChangingMode(true);
     
     try {
       if (newMode === 'manual') {
@@ -75,9 +104,23 @@ export default function ChatPage() {
     } catch (error) {
       console.error('Failed to change mode:', error);
       alert('Failed to change mode. Please try again.');
+    } finally {
+      // Add small delay before allowing next mode change
+      modeChangeTimeoutRef.current = setTimeout(() => {
+        setChangingMode(false);
+      }, 1000);
     }
   };
   
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (modeChangeTimeoutRef.current) {
+        clearTimeout(modeChangeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Toggle force mode - menggunakan hook botMode untuk konsistensi
   const toggleForceMode = async (from: string, currentForceMode: boolean) => {
     if (!botMode || !botMode.setForceMode) {
@@ -482,6 +525,30 @@ export default function ChatPage() {
                       )}
                     </button>
                   )}
+                  
+                  {/* Enhanced Mode Management Button (for admin) */}
+                  {role === 'admin' && (
+                    <button
+                      onClick={() => setShowEnhancedModeManagement(true)}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm bg-purple-500 hover:bg-purple-600 text-white"
+                      title="Advanced Mode Management"
+                    >
+                      <FaCog className="inline mr-1" />
+                      Advanced
+                    </button>
+                  )}
+                  
+                  {/* File Manager Button */}
+                  {(role === "Bupati" || role === "SuperAdmin" || role === "Admin") && (
+                    <button
+                      onClick={() => setShowFileManager(true)}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      title="File Manager"
+                    >
+                      <FaFileAlt className="inline mr-1" />
+                      Files
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -521,7 +588,7 @@ export default function ChatPage() {
           isReady={botMode.isReady}
           isChanging={botMode.isChanging}
           error={botMode.error}
-          cacheStats={botMode.cacheStats}
+          cacheStats={null}
           onRefresh={botMode.refreshMode}
           onClearCache={() => {
             // Clear cache using the service
@@ -533,6 +600,25 @@ export default function ChatPage() {
             });
           }}
           onChangeMode={handleModeChange}
+        />
+      )}
+
+      {/* Enhanced Mode Management Modal */}
+      {showEnhancedModeManagement && (
+        <EnhancedModeManagement
+          userId={data?.from || ''}
+          currentMode={botMode.mode}
+          onModeChange={handleModeChange}
+          onClose={() => setShowEnhancedModeManagement(false)}
+        />
+      )}
+      
+      {/* File Manager Modal */}
+      {showFileManager && (
+        <FileManager
+          onClose={() => setShowFileManager(false)}
+          selectMode={false}
+          userId={data?.from}
         />
       )}
     </div>

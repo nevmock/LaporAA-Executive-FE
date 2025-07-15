@@ -1,0 +1,31 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/app/(dashboard)/dashboard/Home.tsx, src/components/dashboard/AdminPerformance.tsx, src/components/dashboard/BarOpdChart.tsx
+📅 2025-07-06_0526
+
+📂 Perubahan file:
+src/app/(dashboard)/dashboard/Home.tsx
+src/components/dashboard/AdminPerformance.tsx
+src/components/dashboard/BarOpdChart.tsx
+src/components/dashboard/BarWilayahChartKecamatan.tsx
+src/components/dashboard/BoundariesLegend.tsx
+src/components/dashboard/FullScreen.tsx
+src/components/dashboard/LineChart.tsx
+src/components/dashboard/LiveChartWrapper.tsx
+src/components/dashboard/LiveMapUpdates.tsx
+src/components/dashboard/LiveReportFeed.tsx
+src/components/dashboard/LiveStats.tsx
+src/components/dashboard/MapPersebaran.tsx
+src/components/dashboard/OnlineStatusWidget.tsx
+src/components/dashboard/SummaryPieChart.tsx
+src/components/dashboard/SummaryTable.tsx
+src/components/dashboard/bekasiBoundaries.ts
+src/components/dashboard/icons.ts
+src/components/dashboard/legend.tsx
+src/components/socket/ConnectionStatus.tsx
+src/contexts/SocketContext.tsx
+src/services/adminPerformanceService.ts
+src/services/socketService.ts
+src/types/socket.types.ts
+
+🚀 Meluncur

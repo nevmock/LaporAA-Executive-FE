@@ -140,7 +140,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
             } catch (error) {
                 clearTimeout(timeoutId);
                 
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                // Note: errorMessage variable removed as it was unused
                 const isAbortError = error instanceof Error && error.name === 'AbortError';
                 
                 if (isAbortError) {
