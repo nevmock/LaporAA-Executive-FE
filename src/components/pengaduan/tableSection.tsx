@@ -36,7 +36,7 @@ interface Props {
     forceModeStates: Record<string, boolean>; // Status force mode untuk setiap user
     loadingForceMode: Record<string, boolean>; // Loading state untuk force mode
     setSelectedLoc: (loc: { lat: number; lon: number; desa: string }) => void; // Pilih lokasi di peta
-    setPhotoModal: (photos: string[], reportInfo?: { sessionId: string; userName: string }) => void; // Tampilkan modal galeri foto
+    setPhotoModal: (photos: string[], reportInfo?: { sessionId: string; userName: string }) => void; // Tampilkan modal galeri media
     loading: boolean; // Status loading
     setSorts: (sorts: { key: SortKey; order: "asc" | "desc" }[]) => void; // Setter sorting (tidak dipakai langsung)
     setSearch: (search: string) => void; // Fungsi untuk set search box
@@ -102,7 +102,7 @@ const TableSection: React.FC<Props> = ({
     //     userName: string;
     // } | null>(null);
 
-    // Fungsi untuk download foto tunggal dengan nama yang benar
+    // Fungsi untuk download media tunggal dengan nama yang benar
     const downloadSinglePhoto = async (photoUrl: string, sessionId: string, userName: string, photoPath: string) => {
         try {
             // Fetch gambar sebagai blob
@@ -244,7 +244,7 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD' },
-                                { key: 'photo', icon: <FaPhotoVideo />, label: 'Foto' },
+                                { key: 'photo', icon: <FaPhotoVideo />, label: 'Media' },
                             ].map(({ key, icon, label }) => {
                                 const sortable = isSortable(key);
                                 return (
@@ -685,13 +685,13 @@ const TableSection: React.FC<Props> = ({
                                             ) : "-"}
                                         </td>
 
-                                        {/* Foto */}
+                                        {/* Media */}
                                         <td className="px-2 py-1.5">
                                             <div className="flex justify-center items-center">
                                                 {(() => {
-                                                    // Validasi data foto
+                                                    // Validasi data media
                                                     if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
-                                                        return <span className="text-gray-400 text-xs">No Photo</span>;
+                                                        return <span className="text-gray-400 text-xs">No Media</span>;
                                                     }
 
                                                     const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -700,53 +700,109 @@ const TableSection: React.FC<Props> = ({
                                                         return <span className="text-red-500 text-xs">Config Error</span>;
                                                     }
 
-                                                    const firstPhoto = chat.photos[0];
-                                                    if (!firstPhoto) {
-                                                        return <span className="text-gray-400 text-xs">No Photo</span>;
+                                                    const firstMedia = chat.photos[0];
+                                                    if (!firstMedia) {
+                                                        return <span className="text-gray-400 text-xs">No Media</span>;
+                                                    }
+
+                                                    // Handle both string (legacy) and object (new) format
+                                                    let mediaUrl: string;
+                                                    let mediaPath: string;
+                                                    
+                                                    if (typeof firstMedia === 'string') {
+                                                        // Legacy format: photos array contains strings
+                                                        mediaPath = firstMedia;
+                                                    } else if (typeof firstMedia === 'object' && firstMedia !== null) {
+                                                        // New format: photos array contains objects with url property
+                                                        const mediaObj = firstMedia as { url?: string; originalUrl?: string; [key: string]: any };
+                                                        mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                                                    } else {
+                                                        return <span className="text-gray-400 text-xs">Invalid Media</span>;
+                                                    }
+
+                                                    // Validasi mediaPath tidak kosong
+                                                    if (!mediaPath || mediaPath.trim() === '') {
+                                                        console.error('Empty media path:', firstMedia);
+                                                        return <span className="text-gray-400 text-xs">Empty Path</span>;
                                                     }
 
                                                     // Buat URL yang benar
-                                                    let photoUrl: string;
-                                                    if (firstPhoto.startsWith('http')) {
+                                                    if (mediaPath.startsWith('http')) {
                                                         // Jika sudah URL lengkap
-                                                        photoUrl = firstPhoto;
+                                                        mediaUrl = mediaPath;
                                                     } else {
                                                         // Jika path relatif, gabung dengan base URL
-                                                        const cleanPath = firstPhoto.startsWith('/') ? firstPhoto : `/${firstPhoto}`;
-                                                        photoUrl = `${baseUrl}${cleanPath}`;
+                                                        const cleanPath = mediaPath.startsWith('/') ? mediaPath : `/${mediaPath}`;
+                                                        mediaUrl = `${baseUrl}${cleanPath}`;
                                                     }
 
-                                                    console.log('Photo URL:', photoUrl);
+                                                    // Validasi URL final sebelum memberikan ke component
+                                                    try {
+                                                        new URL(mediaUrl);
+                                                    } catch (error) {
+                                                        console.error('Invalid URL constructed:', mediaUrl);
+                                                        console.error('From mediaPath:', mediaPath);
+                                                        console.error('Base URL:', baseUrl);
+                                                        return <span className="text-red-500 text-xs">Invalid URL</span>;
+                                                    }
 
-                                                    return (
-                                                        <Image
-                                                            src={photoUrl}
-                                                            alt="Foto pengaduan"
-                                                            className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
-                                                            width={40}
-                                                            height={40}
-                                                            onClick={() => {
-                                                                if (chat.photos.length > 1) {
-                                                                    setPhotoModal(chat.photos, {
-                                                                        sessionId: chat.sessionId,
-                                                                        userName: chat.user || 'Unknown'
-                                                                    });
-                                                                } else {
-                                                                    // Untuk foto tunggal, langsung download dengan nama yang benar
-                                                                    downloadSinglePhoto(photoUrl, chat.sessionId, chat.user || 'Unknown', firstPhoto);
-                                                                }
-                                                            }}
-                                                            onError={() => {
-                                                                console.error('Error loading image:', photoUrl);
-                                                                console.error('Photo data:', chat.photos);
-                                                                // Instead of manipulating DOM, show alert directly
-                                                                alert(`Gagal memuat gambar.\nURL: ${photoUrl}\nBase URL: ${baseUrl}\nPhoto Path: ${firstPhoto}\nFull Photos: ${JSON.stringify(chat.photos)}`);
-                                                            }}
-                                                            onLoad={() => {
-                                                                console.log('✅ Image loaded successfully:', photoUrl);
-                                                            }}
-                                                        />
-                                                    );
+                                                    console.log('Media URL:', mediaUrl);
+                                                    
+                                                    // Deteksi apakah ini video atau gambar
+                                                    const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+
+                                                    if (isVideo) {
+                                                        return (
+                                                            <div 
+                                                                className="relative h-10 w-10 bg-gray-100 rounded border border-gray-300 cursor-pointer flex items-center justify-center"
+                                                                onClick={() => {
+                                                                    if (chat.photos.length > 1) {
+                                                                        setPhotoModal(chat.photos, {
+                                                                            sessionId: chat.sessionId,
+                                                                            userName: chat.user || 'Unknown'
+                                                                        });
+                                                                    } else {
+                                                                        // Untuk video tunggal, buka di tab baru
+                                                                        window.open(mediaUrl, '_blank');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <FaPhotoVideo className="text-blue-600 text-sm" />
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <Image
+                                                                src={mediaUrl}
+                                                                alt="Media pengaduan"
+                                                                className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
+                                                                width={40}
+                                                                height={40}
+                                                                onClick={() => {
+                                                                    if (chat.photos.length > 1) {
+                                                                        setPhotoModal(chat.photos, {
+                                                                            sessionId: chat.sessionId,
+                                                                            userName: chat.user || 'Unknown'
+                                                                        });
+                                                                    } else {
+                                                                        // Untuk foto tunggal, langsung download dengan nama yang benar
+                                                                        downloadSinglePhoto(mediaUrl, chat.sessionId, chat.user || 'Unknown', mediaPath);
+                                                                    }
+                                                                }}
+                                                                onError={() => {
+                                                                    console.error('Error loading image:', mediaUrl);
+                                                                    console.error('Photo data:', chat.photos);
+                                                                    console.error('First media raw:', firstMedia);
+                                                                    console.error('Media path extracted:', mediaPath);
+                                                                    // Instead of manipulating DOM, show alert directly
+                                                                    alert(`Gagal memuat gambar.\nURL: ${mediaUrl}\nBase URL: ${baseUrl}\nMedia Path: ${mediaPath}\nFirst Media Type: ${typeof firstMedia}\nFull Photos: ${JSON.stringify(chat.photos)}`);
+                                                                }}
+                                                                onLoad={() => {
+                                                                    console.log('✅ Image loaded successfully:', mediaUrl);
+                                                                }}
+                                                            />
+                                                        );
+                                                    }
                                                 })()}
                                             </div>
                                         </td>

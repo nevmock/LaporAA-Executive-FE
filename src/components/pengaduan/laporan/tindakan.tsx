@@ -12,6 +12,7 @@ import { STATUS_LIST } from "./useTindakanState";
 import Modal from "./Modal";
 import LoadingModal from "./LoadingModal";
 import AdminSection from "./AdminSection";
+import { constructPhotoUrl, extractPhotoPath } from "../../../utils/urlUtils";
 
 // Icons
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -640,11 +641,24 @@ const TindakanComponent = function Tindakan({
                         <div className="bg-gray-50">
                             <Zoom>
                                 <Image
-                                    src={`${API_URL}${formData.photos[activePhotoIndex]}`}
+                                    src={(() => {
+                                        if (!formData.photos || formData.photos.length === 0 || activePhotoIndex >= formData.photos.length) {
+                                            return '/placeholder-image.svg';
+                                        }
+                                        
+                                        const currentPhoto = formData.photos[activePhotoIndex];
+                                        const photoPath = extractPhotoPath(currentPhoto);
+                                        return constructPhotoUrl(photoPath);
+                                    })()}
                                     className="w-full h-64 sm:h-96 object-contain cursor-zoom-in"
                                     alt={`Foto ${activePhotoIndex + 1}`}
                                     width={800}
                                     height={384}
+                                    onError={() => {
+                                        console.error('Failed to load photo in Tindakan modal at index:', activePhotoIndex);
+                                        console.error('Photo data:', formData.photos[activePhotoIndex]);
+                                        console.error('API_URL:', API_URL);
+                                    }}
                                 />
                             </Zoom>
                         </div>

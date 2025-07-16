@@ -10,6 +10,7 @@ import "dayjs/locale/id";
 import { usePhotoDownloader } from "../PhotoDownloader";
 import { RiCloseLine } from "react-icons/ri";
 import { Data } from "../../../lib/types";
+import { constructPhotoUrl, extractPhotoPath } from "../../../utils/urlUtils";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
@@ -773,43 +774,89 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             label: "Bukti Kejadian",
             value: data.photos.length > 0 ? (
                 <div className="flex gap-2 flex-wrap">
-                    {data.photos.map((photo, index) => (
-                        <div key={index} className="relative group">
-                            <Image
-                                src={`${API_URL}${photo}`}
-                                alt={`Photo ${index + 1}`}
-                                className="w-24 h-24 object-cover rounded-md cursor-pointer"
-                                width={96}
-                                height={96}
-                                onClick={() => {
-                                    setActivePhotoIndex(index);
-                                    setShowModal(true);
-                                }}
-                            />
-                            {/* Download button overlay */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDownloadSinglePhoto(photo, index);
-                                }}
-                                className="absolute top-1 right-1 bg-black bg-opacity-70 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                title={`Download foto ${index + 1}`}
-                            >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
+                    {data.photos.map((media, index) => {
+                        // Handle both string (legacy) and object (new) format
+                        const mediaPath = extractPhotoPath(media);
+
+                        // Skip if mediaPath is empty
+                        if (!mediaPath || mediaPath.trim() === '') {
+                            return null;
+                        }
+
+                        // Build media URL safely
+                        const mediaUrl = constructPhotoUrl(mediaPath);
+
+                        // Determine media type
+                        const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+                        const isImage = !isVideo; // Default to image if not video
+
+                        return (
+                            <div key={index} className="relative group">
+                                {isVideo ? (
+                                    <div className="relative">
+                                        <video
+                                            className="w-24 h-24 object-cover rounded-md cursor-pointer"
+                                            width={96}
+                                            height={96}
+                                            onClick={() => {
+                                                setActivePhotoIndex(index);
+                                                setShowModal(true);
+                                            }}
+                                            onError={() => {
+                                                console.error('Failed to load video:', mediaUrl);
+                                            }}
+                                        >
+                                            <source src={mediaUrl} />
+                                            Video tidak dapat dimuat
+                                        </video>
+                                        {/* Video play icon overlay */}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-md pointer-events-none">
+                                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Image
+                                        src={mediaUrl}
+                                        alt={`Media ${index + 1}`}
+                                        className="w-24 h-24 object-cover rounded-md cursor-pointer"
+                                        width={96}
+                                        height={96}
+                                        onClick={() => {
+                                            setActivePhotoIndex(index);
+                                            setShowModal(true);
+                                        }}
+                                        onError={() => {
+                                            console.error('Failed to load image:', mediaUrl);
+                                        }}
+                                    />
+                                )}
+                                {/* Download button overlay */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDownloadSinglePhoto(mediaPath, index);
+                                    }}
+                                    className="absolute top-1 right-1 bg-black bg-opacity-70 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                    title={`Download ${isVideo ? 'video' : 'foto'} ${index + 1}`}
+                                >
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             ) : (
-                <p className="text-gray-500">Tidak ada foto</p>
+                <p className="text-gray-500">Tidak ada media</p>
             ),
             action: data.photos.length > 1 ? (
                 <button
                     onClick={handleDownloadAllPhotos}
                     className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                    title="Download semua foto"
+                    title="Download semua media"
                 >
                     Download Semua
                 </button>
@@ -835,7 +882,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                 ))}
             </div>
             {/* Modal Foto dengan fitur download */}
-            {showModal && (
+            {showModal && data.photos.length > 0 && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center"
                     onClick={() => setShowModal(false)}
@@ -853,23 +900,66 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                         
                         {/* Download button for current photo */}
                         <button
-                            onClick={() => handleDownloadSinglePhoto(data.photos[activePhotoIndex], activePhotoIndex)}
+                            onClick={() => {
+                                const currentPhoto = data.photos[activePhotoIndex];
+                                let photoPath: string;
+                                if (typeof currentPhoto === 'string') {
+                                    photoPath = currentPhoto;
+                                } else if (typeof currentPhoto === 'object' && currentPhoto !== null) {
+                                    const photoObj = currentPhoto as { url?: string; originalUrl?: string; [key: string]: any };
+                                    photoPath = photoObj.url || photoObj.originalUrl || '';
+                                } else {
+                                    photoPath = '';
+                                }
+                                handleDownloadSinglePhoto(photoPath, activePhotoIndex);
+                            }}
                             className="absolute top-2 left-3 bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 transition-colors z-10"
-                            title={`Download foto ${activePhotoIndex + 1}`}
+                            title={`Download media ${activePhotoIndex + 1}`}
                         >
                             Download
                         </button>
                         
                         <div {...handlers}>
-                            <Zoom>
-                                <Image
-                                    src={`${API_URL}${data.photos[activePhotoIndex]}`}
-                                    className="w-full h-96 object-contain rounded-md cursor-zoom-in"
-                                    alt={`Foto ${activePhotoIndex + 1}`}
-                                    width={800}
-                                    height={384}
-                                />
-                            </Zoom>
+                            {(() => {
+                                const currentMedia = data.photos[activePhotoIndex];
+                                const mediaPath = extractPhotoPath(currentMedia);
+                                const mediaUrl = constructPhotoUrl(mediaPath);
+                                const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+
+                                if (isVideo) {
+                                    return (
+                                        <video
+                                            className="w-full h-96 object-contain rounded-md"
+                                            width={800}
+                                            height={384}
+                                            controls
+                                            onError={() => {
+                                                console.error('Failed to load video in modal at index:', activePhotoIndex);
+                                                console.error('API_URL:', API_URL);
+                                            }}
+                                        >
+                                            <source src={mediaUrl} />
+                                            Video tidak dapat dimuat
+                                        </video>
+                                    );
+                                } else {
+                                    return (
+                                        <Zoom>
+                                            <Image
+                                                src={mediaUrl}
+                                                className="w-full h-96 object-contain rounded-md cursor-zoom-in"
+                                                alt={`Media ${activePhotoIndex + 1}`}
+                                                width={800}
+                                                height={384}
+                                                onError={() => {
+                                                    console.error('Failed to load photo in modal at index:', activePhotoIndex);
+                                                    console.error('API_URL:', API_URL);
+                                                }}
+                                            />
+                                        </Zoom>
+                                    );
+                                }
+                            })()}
                         </div>
                         <div className="flex justify-between items-center mt-4 text-sm font-medium">
                             <button
@@ -884,7 +974,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                             </button>
                             <div className="flex flex-col items-center gap-2">
                                 <span>
-                                    Foto {activePhotoIndex + 1} dari {data.photos.length}
+                                    Media {activePhotoIndex + 1} dari {data.photos.length}
                                 </span>
                                 {data.photos.length > 1 && (
                                     <button

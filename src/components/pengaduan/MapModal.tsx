@@ -86,6 +86,22 @@ const MapModal: React.FC<Props> = ({ selectedLoc, onClose }) => {
                     {selectedLoc.desa}
                 </h2>
 
+                {/* Tombol buka Google Maps */}
+                <div className="mb-4">
+                    <button
+                        onClick={() => {
+                            const url = `https://www.google.com/maps?q=${selectedLoc.lat},${selectedLoc.lon}&z=17`;
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md"
+                    >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                        Buka di Google Maps
+                    </button>
+                </div>
+
                 {/* Container untuk peta dengan aspect ratio yang tetap */}
                 <div 
                     className="w-full overflow-hidden rounded-lg border border-gray-200"

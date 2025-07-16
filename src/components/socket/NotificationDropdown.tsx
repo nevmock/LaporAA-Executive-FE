@@ -20,16 +20,18 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const socket = useSocket({
-    autoJoinRooms: ['admin', 'system', 'dashboard'],
+    autoJoinRooms: ['admin', 'system', 'dashboard', 'admins'],
     eventHandlers: {
       'notificationNew': handleNewNotification,
       'systemAlert': handleSystemAlert,
       'alertCritical': handleCriticalAlert,
       'reportStatusUpdate': handleReportStatusUpdate,
       'newReport': handleNewReport,
+      'newReportCreated': handleNewReportCreated,
       'adminActivity': handleAdminActivity
     }
   });
@@ -49,6 +51,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     setNotifications(prev => [notificationData, ...prev].slice(0, 50));
     setUnreadCount(prev => prev + 1);
+    
+    // Trigger bell animation
+    setHasNewNotification(true);
+    setTimeout(() => setHasNewNotification(false), 3000); // Reset animation after 3 seconds
   }
 
   // Handle new notifications
@@ -129,6 +135,79 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     });
   }
 
+  // Handle new report created (from backend real-time service)
+  function handleNewReportCreated(...args: unknown[]) {
+    const data = args[0] as { 
+      reportId?: string; 
+      sessionId?: string; 
+      from?: string; 
+      userName?: string;
+      message?: string; 
+      location?: string; 
+      coordinates?: { lat: number; lng: number };
+      timestamp?: string;
+      [key: string]: unknown 
+    };
+    
+    console.log('🔔 New report notification received:', data);
+    
+    // Extract report details
+    const reporterName = data.userName || data.from || 'Anonim';
+    const reportMessage = data.message || 'Laporan baru masuk';
+    const location = data.location || '';
+    
+    // Truncate message if too long
+    const truncatedMessage = reportMessage.length > 80 
+      ? `${reportMessage.substring(0, 80)}...` 
+      : reportMessage;
+    
+    // Format location for display
+    const locationText = location ? ` dari ${location}` : '';
+    
+    // Format timestamp
+    const timeAgo = data.timestamp 
+      ? new Date(data.timestamp).toLocaleTimeString('id-ID', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      : new Date().toLocaleTimeString('id-ID', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+    
+    addNotificationInternal({
+      id: `new_report_${data.reportId || Date.now()}`,
+      title: '📋 Laporan Baru Masuk',
+      message: `**${reporterName}**${locationText}\n${truncatedMessage}`,
+      type: 'info',
+      timestamp: new Date(data.timestamp || new Date()),
+      priority: 'high',
+      actions: [{
+        id: 'view_report',
+        label: 'Lihat Chat',
+        type: 'button',
+        url: `/pengaduan/laporan/message?from=${data.sessionId}`,
+        variant: 'primary'
+      }, {
+        id: 'view_all_reports',
+        label: 'Semua Laporan',
+        type: 'button',
+        url: '/pengaduan',
+        variant: 'secondary'
+      }]
+    });
+    
+    // Show browser notification if supported and permission granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Laporan Baru Masuk', {
+        body: `${reporterName}${locationText}: ${truncatedMessage}`,
+        icon: '/LAPOR AA BUPATI.png',
+        tag: `report_${data.reportId}`,
+        requireInteraction: true
+      });
+    }
+  }
+
   // Handle admin activity
   function handleAdminActivity(...args: unknown[]) {
     const data = args[0] as { action?: string; adminName?: string; [key: string]: unknown };
@@ -147,6 +226,15 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     const unread = notifications.filter(n => !n.read).length;
     setUnreadCount(unread);
   }, [notifications]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('📱 Browser notification permission:', permission);
+      });
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -225,14 +313,23 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Notification Bell */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setHasNewNotification(false); // Stop animation when clicked
+        }}
+        className={`relative p-2 rounded-full hover:bg-gray-100 transition-colors ${
+          hasNewNotification ? 'animate-pulse' : ''
+        }`}
         title={`${unreadCount} notifikasi belum dibaca`}
       >
-        <FiBell className={`w-5 h-5 ${unreadCount > 0 ? 'text-blue-600' : 'text-gray-600'}`} />
+        <FiBell className={`w-5 h-5 transition-all duration-300 ${
+          unreadCount > 0 ? 'text-blue-600' : 'text-gray-600'
+        } ${hasNewNotification ? 'animate-bounce' : ''}`} />
         
         {unreadCount > 0 && (
-          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+          <div className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center ${
+            hasNewNotification ? 'animate-ping' : ''
+          }`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </div>
         )}

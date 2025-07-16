@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
+import { constructPhotoUrl, extractPhotoPath, getApiUrl } from "../../utils/urlUtils";
 
 interface PhotoDownloaderProps {
     sessionId: string;
     userName: string;
-    photos: string[];
+    photos: (string | { url: string; type?: string; caption?: string; originalUrl?: string })[];
     children: React.ReactNode;
     className?: string;
     onDownloadComplete?: () => void;
@@ -20,7 +21,7 @@ const PhotoDownloader: React.FC<PhotoDownloaderProps> = ({
     className = "",
     onDownloadComplete
 }) => {
-    const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
+    const baseUrl = getApiUrl();
 
     // Fungsi untuk membuat nama file sesuai format DDMMYY_Nama_(nomor)_sessionId
     const generateFileName = (index: number, photoPath: string): string => {
@@ -42,22 +43,35 @@ const PhotoDownloader: React.FC<PhotoDownloaderProps> = ({
     };
 
     // Fungsi untuk download foto tunggal
-    const downloadSinglePhoto = async (photoPath: string, index: number) => {
+    const downloadSinglePhoto = async (photo: string | { url: string; type?: string; caption?: string; originalUrl?: string }, index: number) => {
         if (!baseUrl) {
             console.error('NEXT_PUBLIC_BE_BASE_URL tidak ditemukan');
             alert('Konfigurasi base URL tidak ditemukan');
             return;
         }
 
+        // Extract photo path from both string and object format
+        let photoPath: string;
+        if (typeof photo === 'string') {
+            photoPath = photo;
+        } else if (typeof photo === 'object' && photo !== null) {
+            photoPath = photo.url || photo.originalUrl || '';
+        } else {
+            console.error('Invalid photo format:', photo);
+            alert('Format foto tidak valid');
+            return;
+        }
+
         try {
-            // Buat URL lengkap
-            let photoUrl: string;
-            if (photoPath.startsWith('http')) {
-                photoUrl = photoPath;
-            } else {
-                const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
-                photoUrl = `${baseUrl}${cleanPath}`;
+            // Extract photo path safely
+            const photoPath = extractPhotoPath(photo);
+            if (!photoPath || photoPath.trim() === '') {
+                console.warn('Empty photo path, skipping');
+                return;
             }
+
+            // Construct photo URL safely
+            const photoUrl = constructPhotoUrl(photoPath);
 
             // Create AbortController for timeout
             const controller = new AbortController();
@@ -113,13 +127,14 @@ const PhotoDownloader: React.FC<PhotoDownloaderProps> = ({
         } catch (error) {
             console.error('Error downloading photo:', error);
             
-            // Fallback: Try to open in new tab
-            const photoUrl = photoPath.startsWith('http') 
-                ? photoPath 
-                : `${baseUrl}${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`;
-            
-            console.log('Fallback: Opening photo in new tab');
-            window.open(photoUrl, '_blank');
+            // Fallback: Try to open in new tab with constructed URL
+            const fallbackUrl = constructPhotoUrl(photoPath);
+            if (fallbackUrl !== '/placeholder-image.svg') {
+                console.log('Fallback: Opening photo in new tab');
+                window.open(fallbackUrl, '_blank');
+            } else {
+                alert('Gagal download foto: URL tidak valid');
+            }
         }
     };
 
@@ -175,7 +190,7 @@ export default PhotoDownloader;
 
 // Hook untuk penggunaan yang lebih fleksibel
 export const usePhotoDownloader = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
+    const baseUrl = getApiUrl();
 
     const generateFileName = (sessionId: string, userName: string, index: number, photoPath: string): string => {
         const today = new Date();
@@ -192,18 +207,13 @@ export const usePhotoDownloader = () => {
     };
 
     const downloadPhoto = async (sessionId: string, userName: string, photoPath: string, index: number = 0) => {
-        if (!baseUrl) {
-            console.error('NEXT_PUBLIC_BE_BASE_URL tidak ditemukan');
-            throw new Error('Konfigurasi base URL tidak ditemukan');
-        }
-
         try {
-            let photoUrl: string;
-            if (photoPath.startsWith('http')) {
-                photoUrl = photoPath;
-            } else {
-                const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
-                photoUrl = `${baseUrl}${cleanPath}`;
+            // Construct photo URL safely
+            const photoUrl = constructPhotoUrl(photoPath);
+            
+            // Check if we got a valid URL (not fallback)
+            if (photoUrl === '/placeholder-image.svg') {
+                throw new Error('URL foto tidak valid');
             }
 
             // Create AbortController for timeout
