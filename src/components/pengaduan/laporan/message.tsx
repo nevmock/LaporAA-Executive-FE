@@ -201,7 +201,23 @@ export default function Message({
             const msg = args[0] as MessageItem;
             if (msg.from !== from) return;
             console.log("New message received:", msg);
-            setMessages(prev => [...prev, msg]);
+            
+            // Prevent duplicate messages
+            setMessages(prev => {
+                // Check if message already exists (by timestamp and content)
+                const isDuplicate = prev.some(existingMsg => 
+                    existingMsg.message === msg.message &&
+                    existingMsg.senderName === msg.senderName &&
+                    Math.abs(new Date(existingMsg.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 5000 // Within 5 seconds
+                );
+                
+                if (isDuplicate) {
+                    console.log("🔄 Duplicate message detected, skipping:", msg.message);
+                    return prev;
+                }
+                
+                return [...prev, msg];
+            });
             scrollToBottom();
         };
 
@@ -372,11 +388,11 @@ export default function Message({
     };
 
     const validateVideoFile = (file: File): boolean => {
-        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm'];
+        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-ms-wmv', 'video/x-flv', 'video/3gpp'];
         const maxSize = 50 * 1024 * 1024; // 50MB
         
         if (!allowedTypes.includes(file.type)) {
-            alert('Tipe video tidak didukung. Gunakan MP4, AVI, MOV, WMV, atau WebM.');
+            alert('Tipe video tidak didukung. Gunakan MP4, AVI, MOV, WMV, WebM, MKV, FLV, atau 3GP.');
             return false;
         }
         
@@ -389,11 +405,11 @@ export default function Message({
     };
 
     const validateAudioFile = (file: File): boolean => {
-        const allowedTypes = ['audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac'];
+        const allowedTypes = ['audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac', 'audio/mpeg', 'audio/wave', 'audio/x-wav', 'audio/mp4', 'audio/x-aac', 'audio/flac', 'audio/x-flac', 'audio/opus', 'audio/x-ms-wma'];
         const maxSize = 20 * 1024 * 1024; // 20MB
         
         if (!allowedTypes.includes(file.type)) {
-            alert('Tipe audio tidak didukung. Gunakan MP3, WAV, OGG, M4A, atau AAC.');
+            alert('Tipe audio tidak didukung. Gunakan MP3, WAV, OGG, M4A, AAC, FLAC, OPUS, atau WMA.');
             return false;
         }
         
@@ -414,12 +430,17 @@ export default function Message({
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-powerpoint',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'text/plain'
+            'text/plain',
+            'text/rtf',
+            'application/rtf',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet', 
+            'application/vnd.oasis.opendocument.presentation'
         ];
         const maxSize = 10 * 1024 * 1024; // 10MB
         
         if (!allowedTypes.includes(file.type)) {
-            alert('Tipe dokumen tidak didukung. Gunakan PDF, DOC, XLS, PPT, atau TXT.');
+            alert('Tipe dokumen tidak didukung. Gunakan PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, RTF, ODT, ODS, atau ODP.');
             return false;
         }
         
@@ -1065,31 +1086,22 @@ export default function Message({
         
         return (
             <div className="mb-2">
-                <div className="flex gap-2">
-                    {/* Preview button */}
-                    <div 
-                        className="bg-blue-100 rounded-lg p-3 cursor-pointer hover:bg-blue-200 transition-colors flex-1"
-                        onClick={() => openPreview(fullUrl, "document", filename)}
-                    >
-                        <div className="flex items-center gap-3">
-                            {getFileIcon(filename)}
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-800 truncate">
-                                    {filename}
-                                </p>
-                                <p className="text-xs text-gray-500 uppercase">
-                                    {ext} file - Click to preview
-                                </p>
-                            </div>
-                            <FaSearchPlus className="text-blue-500 text-sm" />
+                {/* File container */}
+                <div 
+                    className="bg-blue-100 rounded-lg p-3 cursor-pointer hover:bg-blue-200 transition-colors"
+                    onClick={() => openPreview(fullUrl, "document", filename)}
+                >
+                    <div className="flex items-center gap-3">
+                        {getFileIcon(filename)}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">
+                                {filename}
+                            </p>
+                            <p className="text-xs text-gray-500 uppercase">
+                                {ext} FILE - CLICK TO PREVIEW
+                            </p>
                         </div>
-                    </div>
-                    {/* Download button */}
-                    <div 
-                        className="bg-gray-100 rounded-lg p-3 cursor-pointer hover:bg-gray-200 transition-colors"
-                        onClick={() => downloadFile(fullUrl, filename)}
-                    >
-                        <FaDownload className="text-gray-500 text-lg" />
+                        <FaSearchPlus className="text-blue-500 text-sm" />
                     </div>
                 </div>
                 {message && message !== `[Document] ${filename}` && (
@@ -1233,9 +1245,9 @@ export default function Message({
                     messages.map((msg, index) => (
                         <div
                             key={msg._id || `${msg.sessionId}-${msg.senderName}-${index}`}
-                            className={`flex ${msg.senderName === "Bot" ? "justify-end" : "justify-start"}`}
+                            className={`flex ${msg.senderName === "Bot" || msg.senderName === "Admin" ? "justify-end" : "justify-start"}`}
                         >
-                            <div className={`max-w-xs md:max-w-sm p-3 rounded-lg ${msg.senderName === "Bot" ? "bg-[#128C7E] text-white" : "bg-white text-gray-800"}`}>
+                            <div className={`max-w-xs md:max-w-sm p-3 rounded-lg ${msg.senderName === "Bot" || msg.senderName === "Admin" ? "bg-[#128C7E] text-white" : "bg-white text-gray-800"}`}>
                                 {msg.type === "image" && msg.mediaUrl ? (
                                     <>
                                         {!imageLoaded && <div className="w-full h-48 bg-gray-200 rounded-md mb-2"></div>}
@@ -1294,12 +1306,12 @@ export default function Message({
                                     />
                                 )}
                                 <div className="flex items-center justify-between mt-1">
-                                    <p className={`text-xs ${msg.senderName === "Bot" ? "text-gray-300" : "text-gray-400"}`}>
+                                    <p className={`text-xs ${msg.senderName === "Bot" || msg.senderName === "Admin" ? "text-gray-300" : "text-gray-400"}`}>
                                         {formatDate(msg.timestamp)}
                                     </p>
                                     
                                     {/* Message Status Indicators (only for admin messages) */}
-                                    {msg.senderName === "Bot" && msg._id && (
+                                    {(msg.senderName === "Bot" || msg.senderName === "Admin") && msg._id && (
                                         <div className="flex items-center space-x-1">
                                             {messageStatuses[msg._id] === 'sending' && (
                                                 <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
@@ -1791,19 +1803,36 @@ export default function Message({
                                     />
                                 </div>
                             ) : previewType === "document" ? (
-                                <div className="bg-white p-8 rounded-lg max-w-md">
-                                    <div className="text-center">
-                                        <FaFileAlt size={48} className="mx-auto text-gray-400 mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-800 mb-2">{previewName}</h3>
-                                        <p className="text-gray-600 mb-4">Click download to view this document</p>
-                                        <button
-                                            onClick={handleDownload}
-                                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
-                                        >
-                                            <FaDownload className="inline mr-2" />
-                                            Download
-                                        </button>
-                                    </div>
+                                <div className="w-full h-full flex flex-col">
+                                    {previewName?.toLowerCase().endsWith('.pdf') ? (
+                                        // PDF Preview using iframe
+                                        <div className="flex-1 bg-white rounded-lg overflow-hidden">
+                                            <iframe 
+                                                src={`${previewUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+                                                className="w-full h-full min-h-[70vh]"
+                                                title={previewName}
+                                                onError={() => {
+                                                    console.log("PDF iframe failed, trying object embed");
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        // Other documents - show download option
+                                        <div className="bg-white p-8 rounded-lg max-w-md mx-auto">
+                                            <div className="text-center">
+                                                <FaFileAlt size={48} className="mx-auto text-gray-400 mb-4" />
+                                                <h3 className="text-lg font-medium text-gray-800 mb-2">{previewName}</h3>
+                                                <p className="text-gray-600 mb-4">This document type requires download to view</p>
+                                                <button
+                                                    onClick={handleDownload}
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                                >
+                                                    <FaDownload className="inline mr-2" />
+                                                    Download
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ) : null}
                         </div>
@@ -1814,7 +1843,7 @@ export default function Message({
                                 {previewType === "image" && "Use +/- to zoom, 0 to reset, F for fullscreen, D to download, Esc to close"}
                                 {previewType === "video" && "F for fullscreen, D to download, Esc to close"}
                                 {previewType === "audio" && "D to download, Esc to close"}
-                                {previewType === "document" && "D to download, Esc to close"}
+                                {previewType === "document" && (previewName?.toLowerCase().endsWith('.pdf') ? "Mouse wheel to zoom, D to download, Esc to close" : "D to download, Esc to close")}
                             </div>
                         </div>
                     </div>
