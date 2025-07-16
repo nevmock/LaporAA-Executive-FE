@@ -59,6 +59,110 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             });
     }, []);
 
+    // Real-time update untuk count pending
+    useEffect(() => {
+        // Setup Socket.IO connection untuk real-time updates
+        const setupSocketIO = async () => {
+            try {
+                const { io } = await import('socket.io-client');
+                const socketUrl = process.env.NEXT_PUBLIC_BE_BASE_URL || 'http://localhost:3001';
+                const socketIO = io(socketUrl, {
+                    transports: ['polling', 'websocket'],
+                    upgrade: true,
+                    rememberUpgrade: true,
+                    timeout: 20000,
+                    forceNew: true
+                });
+
+                socketIO.on('connect', () => {
+                    console.log('✅ Connected to real-time updates');
+                    
+                    // Authenticate and join admin room
+                    const token = localStorage.getItem("token");
+                    const userId = localStorage.getItem("username");
+                    const userRole = localStorage.getItem("role");
+                    
+                    if (token && userId && userRole) {
+                        socketIO.emit('authenticate', {
+                            token,
+                            userId,
+                            role: userRole
+                        });
+                    }
+                    
+                    // Fallback manual join untuk admin room
+                    socketIO.emit('join', 'admins');
+                });
+
+                // Listen untuk update count pending
+                socketIO.on('pendingCountUpdate', (newCount) => {
+                    console.log('📊 Pending count updated:', newCount);
+                    setCountPending(newCount);
+                });
+
+                // Listen untuk new report notifications
+                socketIO.on('newReportCreated', (data) => {
+                    console.log('📋 New report created:', data);
+                    // Refresh count ketika ada laporan baru
+                    axios.get(`${API_URL}/reportCount`)
+                        .then((res) => {
+                            const count = res.data?.count ?? 0;
+                            setCountPending(count);
+                        })
+                        .catch(() => {
+                            // Ignore error pada background update
+                        });
+                });
+
+                // Listen untuk status changes
+                socketIO.on('tindakanStatusUpdated', (data) => {
+                    console.log('🔄 Status updated:', data);
+                    // Auto refresh count when status changes
+                    axios.get(`${API_URL}/reportCount`)
+                        .then((res) => {
+                            const count = res.data?.count ?? 0;
+                            setCountPending(count);
+                        })
+                        .catch(() => {
+                            // Ignore error
+                        });
+                });
+
+                socketIO.on('connect_error', (error) => {
+                    console.warn('❌ Socket connection error:', error);
+                });
+
+                socketIO.on('disconnect', (reason) => {
+                    console.log('🔌 Socket disconnected:', reason);
+                });
+
+                return () => {
+                    socketIO.disconnect();
+                };
+            } catch (error) {
+                console.warn('⚠️ Socket.IO not available, using polling fallback:', error);
+                // Fallback: polling setiap 30 detik
+                const interval = setInterval(() => {
+                    axios.get(`${API_URL}/reportCount`)
+                        .then((res) => {
+                            const count = res.data?.count ?? 0;
+                            setCountPending(count);
+                        })
+                        .catch(() => {
+                            // Ignore error pada background polling
+                        });
+                }, 30000); // 30 seconds
+
+                return () => clearInterval(interval);
+            }
+        };
+
+        const cleanup = setupSocketIO();
+        return () => {
+            if (cleanup) cleanup.then(fn => fn && fn());
+        };
+    }, []);
+
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 1080);

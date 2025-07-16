@@ -181,9 +181,44 @@ export default function MapPersebaran({
     .slice(0, limitView);
 
   const validReports = sortedLimitedReports.filter(r => r.location?.latitude && r.location?.longitude);
-  const firstValid = validReports[0];
-  const mapCenter: [number, number] = firstValid
-    ? [firstValid.location.latitude, firstValid.location.longitude]
+  
+  // Hitung center dari data GeoJSON Kabupaten Bekasi jika tersedia
+  const calculateGeoJSONCenter = (geojsonData: GeoJSON.FeatureCollection): [number, number] => {
+    let minLat = Infinity, maxLat = -Infinity;
+    let minLng = Infinity, maxLng = -Infinity;
+    
+    geojsonData.features.forEach(feature => {
+      if (feature.geometry.type === 'Polygon') {
+        feature.geometry.coordinates[0].forEach((coord: number[]) => {
+          const [lng, lat] = coord;
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+        });
+      } else if (feature.geometry.type === 'MultiPolygon') {
+        feature.geometry.coordinates.forEach(polygon => {
+          polygon[0].forEach((coord: number[]) => {
+            const [lng, lat] = coord;
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+          });
+        });
+      }
+    });
+    
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    return [centerLat, centerLng];
+  };
+
+  // Tentukan center peta berdasarkan prioritas: GeoJSON center > laporan pertama > default
+  const mapCenter: [number, number] = boundariesData?.kecamatan 
+    ? calculateGeoJSONCenter(boundariesData.kecamatan)
+    : validReports[0]
+    ? [validReports[0].location.latitude, validReports[0].location.longitude]
     : [-6.2373, 107.1686]; // Default: Kabupaten Bekasi (sesuai dokumentasi API)
 
   // Styling untuk boundaries - Kecamatan dengan warna berbeda-beda
@@ -285,7 +320,7 @@ export default function MapPersebaran({
             key="map-container"
             center={mapCenter}
             zoom={10}
-            scrollWheelZoom={true}
+            scrollWheelZoom={false}
             style={{ height: '100%', width: '100%' }}
           >
             <Legend />
