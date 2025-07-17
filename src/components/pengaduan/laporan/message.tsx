@@ -4,9 +4,13 @@ import axios from "../../../utils/axiosInstance";
 import { FaPaperPlane, FaImage, FaTimes, FaDownload, FaFileAlt, FaMapMarkerAlt, FaVolumeUp, FaVideo, FaMusic, FaPlus, FaFolder, FaSearchPlus, FaSearchMinus, FaExpand, FaCompress } from "react-icons/fa";
 import FileManager from "../../FileManager";
 import Portal from "../../Portal";
+import dynamic from "next/dynamic";
 import { FileItem } from "../../../hooks/useFileManagement";
 import { useSocketChat } from "../../../hooks/useSocket";
 import { MessageData, QueuedMessage, FailedMessage } from "../../../lib/types";
+
+// Dynamic import untuk MapPopup
+const MapPopup = dynamic(() => import("../mapPopup"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL || "http://localhost:3001";
 
@@ -95,6 +99,19 @@ export default function Message({
     const [messageStatuses, setMessageStatuses] = useState<Record<string, 'sending' | 'delivered' | 'read' | 'failed'>>({});
     const [readReceipts, setReadReceipts] = useState<Record<string, boolean>>({});
     const [, setAdminOnlineStatus] = useState<'online' | 'offline' | 'away'>('offline'); // eslint-disable-line @typescript-eslint/no-unused-vars
+    
+    // Location popup states
+    const [locationPopup, setLocationPopup] = useState<{
+        isOpen: boolean;
+        lat: number;
+        lng: number;
+        locationText: string;
+    }>({
+        isOpen: false,
+        lat: 0,
+        lng: 0,
+        locationText: ''
+    });
     
     // Typing timeout ref
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -196,11 +213,16 @@ export default function Message({
         }
 
         console.log("✅ Setting up socket event handlers for chat:", from);
+        console.log("🔌 Socket connected:", socket.isConnected);
+        console.log("🏠 Auto-joining room: chat_" + from);
 
         const handleNewMessage = (...args: unknown[]) => {
             const msg = args[0] as MessageItem;
+            
+            // Only process messages for this chat session
             if (msg.from !== from) return;
-            console.log("New message received:", msg);
+            
+            console.log("📨 New message received for chat:", from, msg);
             
             // Prevent duplicate messages
             setMessages(prev => {
@@ -288,41 +310,48 @@ export default function Message({
     // Keyboard event handlers for preview modal
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!previewOpen) return;
+            if (!previewOpen && !locationPopup.isOpen) return;
             
             switch (e.key) {
                 case 'Escape':
-                    closePreview();
+                    if (previewOpen) {
+                        closePreview();
+                    } else if (locationPopup.isOpen) {
+                        setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' });
+                    }
                     break;
                 case '+':
                 case '=':
-                    e.preventDefault();
-                    setZoomLevel(prev => Math.min(prev * 1.2, 5));
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(prev => Math.min(prev * 1.2, 5));
+                    }
                     break;
                 case '-':
-                    e.preventDefault();
-                    setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+                    }
                     break;
                 case '0':
-                    e.preventDefault();
-                    setZoomLevel(1);
-                    setDragPosition({ x: 0, y: 0 });
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(1);
+                        setDragPosition({ x: 0, y: 0 });
+                    }
                     break;
                 case 'f':
                 case 'F':
-                    e.preventDefault();
-                    setIsFullscreen(prev => !prev);
+                    if (previewOpen) {
+                        e.preventDefault();
+                        setIsFullscreen(prev => !prev);
+                    }
                     break;
                 case 'd':
                 case 'D':
-                    e.preventDefault();
-                    if (previewUrl) {
-                        const link = document.createElement('a');
-                        link.href = previewUrl;
-                        link.download = previewName || 'download';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                    if (previewOpen) {
+                        e.preventDefault();
+                        handleDownload();
                     }
                     break;
             }
@@ -330,7 +359,7 @@ export default function Message({
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [previewOpen]); // Only depend on previewOpen - other values are accessed via closure
+    }, [previewOpen, locationPopup.isOpen, previewType]); // Depend on location popup state too
 
     const handleScroll = () => {
         if (!chatContainerRef.current) return;
@@ -956,14 +985,62 @@ export default function Message({
         setIsFullscreen(!isFullscreen);
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (previewUrl) {
-            const link = document.createElement('a');
-            link.href = previewUrl;
-            link.download = previewName || 'download';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Extract the media URL path and use download route
+            let mediaUrl = previewUrl;
+            if (previewUrl.startsWith(`${API_URL}/`)) {
+                mediaUrl = previewUrl.replace(API_URL, '');
+            }
+            
+            const downloadUrl = `${API_URL}/download${mediaUrl}`;
+            
+            try {
+                console.log('🔽 Starting download for:', previewName);
+                
+                // Use the download route that forces download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = previewName || 'download';
+                link.setAttribute('download', previewName || 'download');
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('✅ Download initiated:', previewName);
+            } catch (error) {
+                console.error('❌ Download failed:', error);
+                
+                // Fallback to blob method
+                try {
+                    const response = await fetch(previewUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = previewName || 'download';
+                    link.setAttribute('download', previewName || 'download');
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    window.URL.revokeObjectURL(blobUrl);
+                    
+                    console.log('✅ Download completed:', previewName);
+                } catch (fallbackError) {
+                    console.error('❌ Fallback download also failed:', fallbackError);
+                    alert('Download failed. Please try again.');
+                }
+            }
         }
     };
 
@@ -1012,14 +1089,54 @@ export default function Message({
         }));
     };
 
-    const downloadFile = (mediaUrl: string, filename?: string) => {
-        const link = document.createElement('a');
-        link.href = `${API_URL}${mediaUrl}`;
-        link.download = filename || 'download';
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const downloadFile = async (mediaUrl: string, filename?: string) => {
+        // Use the special download route that forces download
+        const downloadUrl = `${API_URL}/download${mediaUrl}`;
+        
+        try {
+            console.log('🔽 Starting download for:', filename);
+            
+            // Try the download route first (which sets proper headers)
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename || 'download';
+            link.setAttribute('download', filename || 'download');
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('✅ Download initiated:', filename);
+        } catch (error) {
+            console.error('❌ Download failed:', error);
+            
+            // Fallback to blob method
+            try {
+                const response = await fetch(`${API_URL}${mediaUrl}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename || 'download';
+                link.setAttribute('download', filename || 'download');
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (fallbackError) {
+                console.error('❌ Fallback download also failed:', fallbackError);
+                alert('Download failed. Please try again.');
+            }
+        }
     };
 
     // Media display components
@@ -1133,31 +1250,64 @@ export default function Message({
     );
 
     const renderLocationDisplay = (message: string) => {
-        // Parse location from message if it contains coordinates
-        const locationMatch = message.match(/Location.*?(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
-        const lat = locationMatch ? parseFloat(locationMatch[1]) : null;
-        const lng = locationMatch ? parseFloat(locationMatch[2]) : null;
+        // Parse location from message - support multiple formats
+        let lat: number | null = null;
+        let lng: number | null = null;
+        let locationText = message.replace(/^\[Location\]\s*/, '');
+        
+        // Try different location patterns
+        const patterns = [
+            /Location.*?(-?\d+\.\d+),\s*(-?\d+\.\d+)/, // "Location: lat, lng"
+            /(-?\d+\.\d+),\s*(-?\d+\.\d+)/, // "lat, lng"
+            /lat:\s*(-?\d+\.\d+).*?lng:\s*(-?\d+\.\d+)/i, // "lat: x lng: y"
+            /latitude:\s*(-?\d+\.\d+).*?longitude:\s*(-?\d+\.\d+)/i, // "latitude: x longitude: y"
+        ];
+        
+        for (const pattern of patterns) {
+            const match = message.match(pattern);
+            if (match) {
+                lat = parseFloat(match[1]);
+                lng = parseFloat(match[2]);
+                break;
+            }
+        }
+        
+        // Function to show location popup instead of directly opening Google Maps
+        const showLocationPopup = () => {
+            setLocationPopup({
+                isOpen: true,
+                lat: lat || 0,
+                lng: lng || 0,
+                locationText: locationText
+            });
+        };
         
         return (
             <div className="mb-2">
-                <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                <div 
+                    className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-3 max-w-xs cursor-pointer hover:shadow-md transition-all duration-200 hover:from-red-100 hover:to-orange-100"
+                    onClick={showLocationPopup}
+                    title="Klik untuk melihat lokasi"
+                >
                     <div className="flex items-start gap-3">
-                        <FaMapMarkerAlt className="text-red-500 text-lg mt-1" />
-                        <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-800">
+                        <FaMapMarkerAlt className="text-red-500 text-lg mt-1 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 flex items-center gap-1">
                                 📍 Lokasi
+                                <span className="text-xs text-blue-600 font-normal">(klik untuk lihat)</span>
                             </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                                {message.replace(/^\[Location\]\s*/, '')}
+                            <p className="text-xs text-gray-600 mt-1 break-words">
+                                {locationText}
                             </p>
                             {lat && lng && (
-                                <button
-                                    onClick={() => window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank')}
-                                    className="text-xs text-blue-500 hover:underline mt-1"
-                                >
-                                    Lihat di Google Maps
-                                </button>
+                                <p className="text-xs text-gray-500 mt-1 font-mono">
+                                    {lat.toFixed(6)}, {lng.toFixed(6)}
+                                </p>
                             )}
+                            <div className="flex items-center gap-1 mt-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-blue-600 font-medium">Tap to view location</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1844,6 +1994,79 @@ export default function Message({
                                 {previewType === "video" && "F for fullscreen, D to download, Esc to close"}
                                 {previewType === "audio" && "D to download, Esc to close"}
                                 {previewType === "document" && (previewName?.toLowerCase().endsWith('.pdf') ? "Mouse wheel to zoom, D to download, Esc to close" : "D to download, Esc to close")}
+                            </div>
+                        </div>
+                    </div>
+                </Portal>
+            )}
+
+            {/* Location Popup Modal */}
+            {locationPopup.isOpen && (
+                <Portal>
+                    <div 
+                        className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[1000000]"
+                        onClick={() => setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' })}
+                    >
+                        {/* Top Controls */}
+                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-[1000001]" style={{ pointerEvents: 'auto' }}>
+                            <div className="text-white font-medium max-w-md">
+                                📍 {locationPopup.locationText || "Detail Lokasi"}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {locationPopup.lat !== 0 && locationPopup.lng !== 0 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const url = `https://www.google.com/maps?q=${locationPopup.lat},${locationPopup.lng}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                        className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-2 rounded-full transition-colors text-sm"
+                                        title="Open in Google Maps"
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        🗺️ Google Maps
+                                    </button>
+                                )}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' });
+                                    }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                    title="Close (Esc)"
+                                    style={{ pointerEvents: 'auto' }}
+                                >
+                                    <FaTimes size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Map Content */}
+                        <div 
+                            className="relative w-full max-w-6xl h-[80vh] mx-4"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            <div className="w-full h-full rounded-lg overflow-hidden">
+                                <MapPopup 
+                                    lat={locationPopup.lat || -6.200000}
+                                    lon={locationPopup.lng || 106.816666}
+                                    description={locationPopup.locationText || "Lokasi Tidak Diketahui"}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Bottom Info */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center text-sm opacity-90" style={{ pointerEvents: 'none' }}>
+                            <div className="bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                                {locationPopup.lat !== 0 && locationPopup.lng !== 0 ? (
+                                    <div>
+                                        📍 {locationPopup.locationText}<br />
+                                        🧭 {locationPopup.lat.toFixed(6)}, {locationPopup.lng.toFixed(6)}
+                                    </div>
+                                ) : (
+                                    <div>📍 {locationPopup.locationText}</div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -20,9 +20,9 @@ const UserManagement: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState<UserLogin | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'users' | 'performance'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'performance' | 'individual'>('users');
     const [selectedAdminId, setSelectedAdminId] = useState<string | undefined>(undefined);
-    const [showAdminDetail, setShowAdminDetail] = useState(false);
+    const [selectedAdminName, setSelectedAdminName] = useState<string>('');
     const router = useRouter();
 
     // Form state
@@ -189,16 +189,17 @@ const UserManagement: React.FC = () => {
     };
 
     // Handle view admin performance
-    const viewAdminPerformance = (adminId: string) => {
+    const viewAdminPerformance = (adminId: string, adminName: string) => {
         setSelectedAdminId(adminId);
-        setActiveTab('performance');
-        setShowAdminDetail(true);
+        setSelectedAdminName(adminName);
+        setActiveTab('individual');
     };
 
-    // Handle back from admin detail
-    const handleBackFromDetail = () => {
-        setShowAdminDetail(false);
+    // Handle back from individual performance
+    const handleBackFromIndividual = () => {
+        setActiveTab('performance');
         setSelectedAdminId(undefined);
+        setSelectedAdminName('');
     };
 
     if (loading) {
@@ -227,14 +228,49 @@ const UserManagement: React.FC = () => {
     }
 
     return (
-        <div className="w-full h-full bg-gray-50">
+        <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
             <div className="max-w-7xl mx-auto p-4 space-y-6">
+                {/* Breadcrumb */}
+                {activeTab === 'individual' && (
+                    <nav className="flex items-center space-x-2 text-sm text-gray-500">
+                        <button 
+                            onClick={() => setActiveTab('users')}
+                            className="hover:text-blue-600 transition-colors"
+                        >
+                            User Management
+                        </button>
+                        <span>›</span>
+                        <button 
+                            onClick={() => setActiveTab('performance')}
+                            className="hover:text-blue-600 transition-colors"
+                        >
+                            Admin Performance
+                        </button>
+                        <span>›</span>
+                        <span className="text-gray-900 font-medium">{selectedAdminName}</span>
+                    </nav>
+                )}
+
                 {/* Header */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-                            <p className="text-gray-600 mt-1">Kelola akun pengguna dan monitor performa admin</p>
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {activeTab === 'individual' 
+                                    ? `Performance - ${selectedAdminName}` 
+                                    : activeTab === 'performance' 
+                                    ? 'Admin Performance Overview'
+                                    : 'User Management'
+                                }
+                            </h1>
+                            <p className="text-gray-600 mt-1">
+                                {activeTab === 'individual'
+                                    ? 'Detail performa dan aktivitas admin individual'
+                                    : activeTab === 'performance'
+                                    ? 'Overview performa semua admin secara keseluruhan'
+                                    : 'Kelola akun pengguna dan monitor performa admin'
+                                }
+                            </p>
                         </div>
                         {activeTab === 'users' && (
                             <button
@@ -243,6 +279,14 @@ const UserManagement: React.FC = () => {
                             >
                                 <FiPlus size={18} />
                                 Tambah User
+                            </button>
+                        )}
+                        {activeTab === 'individual' && (
+                            <button
+                                onClick={handleBackFromIndividual}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                            >
+                                ← Kembali ke Performance
                             </button>
                         )}
                     </div>
@@ -254,8 +298,8 @@ const UserManagement: React.FC = () => {
                         <button
                             onClick={() => {
                                 setActiveTab('users');
-                                setShowAdminDetail(false);
                                 setSelectedAdminId(undefined);
+                                setSelectedAdminName('');
                             }}
                             className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors border-b-2 ${
                                 activeTab === 'users' 
@@ -269,8 +313,8 @@ const UserManagement: React.FC = () => {
                         <button
                             onClick={() => {
                                 setActiveTab('performance');
-                                setShowAdminDetail(false);
                                 setSelectedAdminId(undefined);
+                                setSelectedAdminName('');
                             }}
                             className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors border-b-2 ${
                                 activeTab === 'performance' 
@@ -281,19 +325,77 @@ const UserManagement: React.FC = () => {
                             <FiActivity size={18} />
                             Admin Performance
                         </button>
+                        {activeTab === 'individual' && (
+                            <button
+                                className="flex items-center gap-2 px-6 py-4 font-medium text-sm border-b-2 border-blue-500 text-blue-600 bg-blue-50"
+                            >
+                                <FiActivity size={18} />
+                                {selectedAdminName} Performance
+                            </button>
+                        )}
                     </div>
                     
                     <div className="p-6">
                         {/* Tab Content */}
-                        {activeTab === 'performance' && showAdminDetail && selectedAdminId ? (
-                            <AdminDetailView 
-                                adminId={selectedAdminId} 
-                                onBack={handleBackFromDetail}
-                            />
+                        {activeTab === 'individual' && selectedAdminId ? (
+                            <div className="space-y-6">
+                                {/* Individual Performance Header */}
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-green-100 rounded-lg">
+                                            <FiActivity className="text-green-600" size={20} />
+                                        </div>
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            Individual Performance - {selectedAdminName}
+                                        </h2>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        Detail analisis performa dan aktivitas untuk admin individual.
+                                    </p>
+                                </div>
+                                <AdminDetailView 
+                                    adminId={selectedAdminId} 
+                                    onBack={handleBackFromIndividual}
+                                />
+                            </div>
                         ) : activeTab === 'performance' ? (
-                            <AdminPerformance selectedAdminId={selectedAdminId} />
+                            <div className="space-y-6">
+                                {/* Performance Overview Header */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                            <FiActivity className="text-blue-600" size={20} />
+                                        </div>
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            Performance Overview
+                                        </h2>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        Monitor dan analisis performa semua admin secara keseluruhan. 
+                                        Klik tombol <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"><FiActivity size={12}/> Performance</span> pada tabel user untuk melihat detail individual.
+                                    </p>
+                                </div>
+                                <AdminPerformance selectedAdminId={undefined} />
+                            </div>
                         ) : (
                             <>
+                                {/* User Management Header */}
+                                <div className="mb-6">
+                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100 mb-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-purple-100 rounded-lg">
+                                                <FiUsers className="text-purple-600" size={20} />
+                                            </div>
+                                            <h2 className="text-lg font-semibold text-gray-900">
+                                                User Management
+                                            </h2>
+                                        </div>
+                                        <p className="text-sm text-gray-600">
+                                            Kelola akun pengguna sistem. Klik tombol <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"><FiActivity size={12}/></span> untuk melihat performa admin individual.
+                                        </p>
+                                    </div>
+                                </div>
+
                                 {/* Search and Stats */}
                                 <div className="mb-6">
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -342,9 +444,6 @@ const UserManagement: React.FC = () => {
                                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Role
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                        Created At
-                                                    </th>
                                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Actions
                                                     </th>
@@ -353,7 +452,7 @@ const UserManagement: React.FC = () => {
                                             <tbody className="bg-white divide-y divide-gray-200">
                                                 {filteredUsers.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="px-6 py-16 text-center">
+                                                        <td colSpan={4} className="px-6 py-16 text-center">
                                                             <div className="text-gray-400 text-sm">
                                                                 {searchTerm ? '🔍 Tidak ada user yang ditemukan' : '👤 Belum ada user terdaftar'}
                                                             </div>
@@ -400,19 +499,12 @@ const UserManagement: React.FC = () => {
                                                                         {user.role}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID', {
-                                                                        day: '2-digit',
-                                                                        month: 'short',
-                                                                        year: 'numeric'
-                                                                    }) : '-'}
-                                                                </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                                     <div className="flex items-center justify-end gap-2">
                                                                         {/* View Performance Button - only for Admin and SuperAdmin */}
                                                                         {(user.role === 'Admin' || user.role === 'SuperAdmin') && (
                                                                             <button
-                                                                                onClick={() => viewAdminPerformance(user._id!)}
+                                                                                onClick={() => viewAdminPerformance(user._id!, user.nama_admin || user.username)}
                                                                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 hover:scale-105"
                                                                                 title="View Performance"
                                                                             >

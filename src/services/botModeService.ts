@@ -196,8 +196,18 @@ export class BotModeService {
         try {
             this.log(`Changing mode for ${from} to ${targetMode}`);
 
+            // Check for conflicts before making the change
+            const currentStatus = await axios.get(`${this.config.apiBaseUrl}/mode/${from}?debug=true`);
+            const conflicts = currentStatus.data?.conflicts || [];
+            
+            if (conflicts.length > 0) {
+                this.log(`Mode conflicts detected for ${from}:`, conflicts);
+                // Auto-fix conflicts
+                await axios.post(`${this.config.apiBaseUrl}/mode/debug/fix/${from}`, currentStatus.data);
+            }
+
             // Make the mode change request using new API
-            await axios.put(
+            const response = await axios.put(
                 `${this.config.apiBaseUrl}/mode/${from}`,
                 { mode: targetMode },
                 { 
@@ -207,6 +217,11 @@ export class BotModeService {
             );
 
             clearTimeout(timeoutId);
+
+            // Check if the change was successful
+            if (!response.data?.success) {
+                throw new Error(response.data?.message || 'Mode change failed');
+            }
 
             // Update cache
             this.setCachedMode(from, targetMode);
@@ -223,9 +238,17 @@ export class BotModeService {
             }
 
             this.logError(`Failed to change mode for ${from} to ${targetMode}`, error);
-            // Return current cached mode instead of throwing
-            const cached = this.getCachedMode(from);
-            return cached || 'bot';
+            
+            // Check if it's a force mode conflict
+            if (error instanceof Error && error.message.includes('Force mode aktif')) {
+                this.log(`Force mode is active for ${from}, cannot change mode`);
+                // Return current mode from cache or fetch fresh
+                const cached = this.getCachedMode(from);
+                return cached || 'manual'; // Force mode usually means manual
+            }
+            
+            // For other errors, throw to let caller handle
+            throw new Error(`Failed to change mode: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 

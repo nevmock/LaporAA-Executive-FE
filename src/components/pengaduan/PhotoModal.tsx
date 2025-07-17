@@ -2,23 +2,26 @@
 
 import React from "react";
 import { FaDownload } from "react-icons/fa";
-import SafeImage from "../common/SafeImage";
+import Image from "next/image";
+import Zoom from "react-medium-image-zoom";
+import { PhotoDisplay, VideoDisplay } from "./PhotoDisplay";
+import { constructPhotoUrl, extractPhotoPath } from "../../utils/urlUtils";
 
 interface Props {
-    photoModal: string[];     // Daftar path foto relatif dari backend
-    onClose: () => void;      // Fungsi untuk menutup modal
-    reportInfo?: {            // Info tambahan untuk penamaan file
+    photoModal: string[] | any[];  // Support both string and object formats from backend
+    onClose: () => void;           // Function to close modal
+    reportInfo?: {                 // Additional info for file naming
         sessionId?: string;
         userName?: string;
     };
 }
 
-// Komponen modal untuk menampilkan galeri foto laporan
+// Modal component for displaying media gallery of reports
 const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
-    const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
     const [downloadingAll, setDownloadingAll] = React.useState(false);
     const [downloadingIndex, setDownloadingIndex] = React.useState<number | null>(null);
     const [abortController, setAbortController] = React.useState<AbortController | null>(null);
+    const [previewMedia, setPreviewMedia] = React.useState<{ mediaPath: string; mediaUrl: string; isVideo: boolean; index: number } | null>(null);
 
     // Cleanup function untuk membersihkan ongoing downloads saat komponen unmount
     React.useEffect(() => {
@@ -33,7 +36,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
     const generateFileName = (index: number, extension: string = 'jpg'): string => {
         const sessionId = reportInfo?.sessionId || 'Unknown';
         const userName = reportInfo?.userName || 'Unknown';
-        const photoNumber = index + 1;
+        const mediaNumber = index + 1;
         
         // Buat format tanggal DDMMYY dari hari ini
         const today = new Date();
@@ -45,7 +48,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
         // Bersihkan nama user dari karakter yang tidak valid untuk nama file
         const cleanUserName = userName.replace(/[<>:"/\\|?*]/g, '_');
         
-        return `${dateString}_${cleanUserName}_(${photoNumber})_${sessionId}.${extension}`;
+        return `${dateString}_${cleanUserName}_(${mediaNumber})_${sessionId}.${extension}`;
     };
 
     // Fungsi untuk mengekstrak ekstensi file dari URL
@@ -61,10 +64,41 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
         }
     };
 
-    // Fungsi untuk download semua foto satu per satu
+    // Handler untuk menutup preview modal
+    const handlePreviewClose = () => {
+        setPreviewMedia(null);
+    };
+
+    // Handler untuk navigasi preview (previous/next)
+    const handlePreviewNavigation = (direction: 'prev' | 'next') => {
+        if (!previewMedia) return;
+        
+        const currentIndex = previewMedia.index;
+        let newIndex: number;
+        
+        if (direction === 'prev') {
+            newIndex = currentIndex > 0 ? currentIndex - 1 : photoModal.length - 1;
+        } else {
+            newIndex = currentIndex < photoModal.length - 1 ? currentIndex + 1 : 0;
+        }
+        
+        const newMedia = photoModal[newIndex];
+        const newMediaPath = extractPhotoPath(newMedia);
+        const newMediaUrl = constructPhotoUrl(newMediaPath);
+        const newIsVideo = newMediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+        
+        setPreviewMedia({
+            mediaPath: newMediaPath,
+            mediaUrl: newMediaUrl,
+            isVideo: !!newIsVideo,
+            index: newIndex
+        });
+    };
+
+    // Fungsi untuk download semua media satu per satu
     const downloadAllPhotos = async () => {
         if (!photoModal || photoModal.length === 0) {
-            alert('Tidak ada foto untuk didownload');
+            alert('Tidak ada media untuk didownload');
             return;
         }
 
@@ -81,7 +115,18 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
             }
             
             setDownloadingIndex(i);
-            const photoUrl = `${baseUrl}${photoModal[i]}`;
+            
+            // Extract media path safely
+            const mediaPath = extractPhotoPath(photoModal[i]);
+            
+            // Skip media if path is empty
+            if (!mediaPath || mediaPath.trim() === '') {
+                console.warn(`Download skipped for invalid media path at index ${i}:`, photoModal[i]);
+                continue;
+            }
+            
+            // Build media URL safely
+            const mediaUrl = constructPhotoUrl(mediaPath);
             
             // Create individual AbortController for timeout management
             const controller = new AbortController();
@@ -91,8 +136,8 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
             }, 10000); // Reduced to 10 seconds timeout
             
             try {
-                // Fetch gambar sebagai blob dengan timeout
-                const response = await fetch(photoUrl, {
+                // Fetch media as blob with timeout
+                const response = await fetch(mediaUrl, {
                     signal: controller.signal,
                     headers: {
                         'Cache-Control': 'no-cache',
@@ -106,8 +151,8 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                 
                 if (!response.ok) {
                     // Try direct download fallback
-                    console.warn(`HTTP ${response.status} for photo ${i + 1}, trying direct download`);
-                    window.open(photoUrl, '_blank');
+                    console.warn(`HTTP ${response.status} for media ${i + 1}, trying direct download`);
+                    window.open(mediaUrl, '_blank');
                     continue;
                 }
                 
@@ -117,7 +162,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                 const blobUrl = window.URL.createObjectURL(blob);
                 
                 // Generate nama file sesuai format yang diminta
-                const fileExtension = getFileExtension(photoModal[i]);
+                const fileExtension = getFileExtension(mediaPath);
                 const fileName = generateFileName(i, fileExtension);
                 
                 // Buat elemen anchor untuk download
@@ -144,14 +189,14 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                 const isAbortError = error instanceof Error && error.name === 'AbortError';
                 
                 if (isAbortError) {
-                    console.warn(`Download timeout for photo ${i + 1} after 10 seconds`);
-                    // Just continue to next photo silently
+                    console.warn(`Download timeout for media ${i + 1} after 10 seconds`);
+                    // Just continue to next media silently
                 } else {
-                    console.error(`Error downloading photo ${i + 1}:`, error);
+                    console.error(`Error downloading media ${i + 1}:`, error);
                     // Don't show alert to user to prevent disruption
                 }
                 
-                // Continue to next photo even if one fails
+                // Continue to next media even if one fails
                 continue;
             }
         }
@@ -220,7 +265,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                 {/* Header dengan judul dan tombol download */}
                 <div className="flex justify-between items-center mb-6 pr-10">
                     <h2 className="text-xl font-semibold text-gray-800">
-                        Foto Laporan ({photoModal.length} foto)
+                        Media Laporan ({photoModal.length} media)
                     </h2>
                     
                     {/* Tombol Download All */}
@@ -250,7 +295,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                     ? 'bg-gray-400 cursor-not-allowed' 
                                     : 'bg-blue-600 hover:bg-blue-700'
                             }`}
-                            title={downloadingAll ? "Sedang mendownload..." : "Download semua foto satu per satu"}
+                            title={downloadingAll ? "Sedang mendownload..." : "Download semua media satu per satu"}
                         >
                             {downloadingAll ? (
                                 <>
@@ -267,7 +312,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                     </div>
                 </div>
 
-                {/* Galeri gambar dengan grid yang responsif */}
+                {/* Galeri media dengan grid yang responsif */}
                 <div 
                     className="grid gap-4"
                     style={{
@@ -276,22 +321,36 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
                     }}
                 >
-                    {photoModal.map((url, index) => {
-                        const fullUrl = `${baseUrl}${url}`;
+                    {photoModal.map((media, index) => {
+                        // Extract media path safely - handle both string and object formats
+                        const mediaPath = extractPhotoPath(media);
                         
-                        // Fungsi download untuk foto individual
+                        // Skip media if path is empty
+                        if (!mediaPath || mediaPath.trim() === '') {
+                            console.warn(`PhotoModal: Invalid media path at index ${index}:`, media);
+                            return null;
+                        }
+                        
+                        // Build media URL safely
+                        const mediaUrl = constructPhotoUrl(mediaPath);
+                        
+                        // Determine media type
+                        const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+                        const isImage = !isVideo; // Default to image if not video
+                        
+                        // Fungsi download untuk media individual
                         const downloadSinglePhoto = async () => {
                             // Create AbortController for timeout management
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
                             
                             try {
-                                // Fetch gambar sebagai blob dengan timeout
-                                const response = await fetch(fullUrl, {
+                                // Fetch media as blob with timeout
+                                const response = await fetch(mediaUrl, {
                                     signal: controller.signal,
                                     headers: {
                                         'Cache-Control': 'no-cache',
-                                        'Accept': 'image/*,*/*;q=0.8',
+                                        'Accept': 'image/*,video/*,*/*;q=0.8',
                                         'User-Agent': 'Mozilla/5.0 (compatible; LaporAA-App/1.0)',
                                     },
                                     mode: 'cors',
@@ -301,8 +360,8 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                 
                                 if (!response.ok) {
                                     // Fallback: open in new tab if fetch fails
-                                    console.warn(`HTTP ${response.status} for photo download, opening in new tab`);
-                                    window.open(fullUrl, '_blank');
+                                    console.warn(`HTTP ${response.status} for media download, opening in new tab`);
+                                    window.open(mediaUrl, '_blank');
                                     return;
                                 }
                                 
@@ -312,7 +371,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                 const blobUrl = window.URL.createObjectURL(blob);
                                 
                                 // Generate nama file sesuai format yang diminta
-                                const fileExtension = getFileExtension(url);
+                                const fileExtension = getFileExtension(mediaPath);
                                 const fileName = generateFileName(index, fileExtension);
                                 
                                 // Buat elemen anchor untuk download
@@ -334,11 +393,11 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                 const isAbortError = error instanceof Error && error.name === 'AbortError';
                                 
                                 if (isAbortError) {
-                                    console.error(`Download timeout for photo:`, error);
-                                    alert(`Download foto timeout setelah 30 detik. Silakan coba lagi.`);
+                                    console.error(`Download timeout for media:`, error);
+                                    alert(`Download media timeout setelah 30 detik. Silakan coba lagi.`);
                                 } else {
-                                    console.error(`Error downloading photo:`, error);
-                                    alert(`Gagal mendownload foto: ${errorMessage}`);
+                                    console.error(`Error downloading media:`, error);
+                                    alert(`Gagal mendownload media: ${errorMessage}`);
                                 }
                             }
                         };
@@ -356,43 +415,137 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                     backgroundColor: '#f9fafb'
                                 }}
                             >
-                                <SafeImage
-                                    src={fullUrl}
-                                    alt={`Foto ${index + 1}`}
-                                    className="h-full w-full object-cover cursor-pointer transition-transform hover:scale-105"
-                                    width={300}
-                                    height={225}
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover',
-                                        cursor: 'pointer',
-                                        transition: 'transform 0.2s ease-in-out'
-                                    }}
-                                    onClick={() => window.open(fullUrl, "_blank")}
-                                    fallbackText="Foto tidak dapat dimuat"
-                                    showDirectLink={true}
-                                />
-                                
-                                {/* Overlay dengan tombol download individual */}
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                                    <button
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            await downloadSinglePhoto();
-                                        }}
-                                        className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 px-3 py-2 bg-white text-gray-800 text-xs font-medium rounded-lg shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        title="Download foto ini"
+                                {isVideo ? (
+                                    <div 
+                                        className="relative w-full h-full cursor-pointer"
+                                        onClick={() => setPreviewMedia({ mediaPath, mediaUrl, isVideo: true, index })}
                                     >
-                                        <FaDownload className="w-3 h-3 inline mr-1" />
-                                        Download
-                                    </button>
-                                </div>
+                                        <VideoDisplay
+                                            photoPath={mediaPath}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {/* Video play icon overlay */}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg pointer-events-none">
+                                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div 
+                                        className="w-full h-full cursor-pointer"
+                                        onClick={() => setPreviewMedia({ mediaPath, mediaUrl, isVideo: false, index })}
+                                    >
+                                        <PhotoDisplay
+                                            photoPath={mediaPath}
+                                            alt={`Media ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={() => {
+                                                console.error('Failed to load media:', mediaPath);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                
+                                {/* Download button di pojok kanan atas */}
+                                <button
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await downloadSinglePhoto();
+                                    }}
+                                    className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black z-10"
+                                    title={`Download ${isVideo ? 'video' : 'media'} ini`}
+                                >
+                                    <FaDownload className="w-3 h-3" />
+                                </button>
                             </div>
                         );
                     })}
                 </div>
             </div>
+
+            {/* Modal Preview Media */}
+            {previewMedia && (
+                <div 
+                    className="fixed inset-0 z-[20000] flex items-center justify-center bg-black bg-opacity-90 p-4"
+                    onClick={handlePreviewClose}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 20000,
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)'
+                    }}
+                >
+                    <div 
+                        className="relative max-w-7xl max-h-[95vh] w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Close button */}
+                        <button
+                            onClick={handlePreviewClose}
+                            className="absolute top-4 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
+                        >
+                            ✕
+                        </button>
+
+                        {/* Navigation buttons */}
+                        {photoModal.length > 1 && (
+                            <>
+                                <button
+                                    onClick={() => handlePreviewNavigation('prev')}
+                                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
+                                >
+                                    ←
+                                </button>
+                                <button
+                                    onClick={() => handlePreviewNavigation('next')}
+                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
+                                >
+                                    →
+                                </button>
+                            </>
+                        )}
+
+                        {/* Media content */}
+                        <div className="flex items-center justify-center w-full h-full">
+                            {previewMedia.isVideo ? (
+                                <video
+                                    src={previewMedia.mediaUrl}
+                                    controls
+                                    autoPlay
+                                    className="max-w-full max-h-[95vh] object-contain rounded-lg"
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '95vh',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            ) : (
+                                <Zoom>
+                                    <img
+                                        src={previewMedia.mediaUrl}
+                                        alt={`Media ${previewMedia.index + 1}`}
+                                        className="max-w-full max-h-[95vh] object-contain rounded-lg cursor-zoom-in"
+                                        style={{
+                                            maxWidth: '100%',
+                                            maxHeight: '95vh',
+                                            objectFit: 'contain'
+                                        }}
+                                    />
+                                </Zoom>
+                            )}
+                        </div>
+
+                        {/* Media info */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg">
+                            {previewMedia.index + 1} dari {photoModal.length}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

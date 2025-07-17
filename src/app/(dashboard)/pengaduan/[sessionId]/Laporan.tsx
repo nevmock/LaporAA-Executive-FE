@@ -11,6 +11,7 @@ import ActionButtons from "../../../../components/pengaduan/laporan/ActionButton
 import { Tooltip } from "../../../../components/Tooltip";
 import { useBotModeWithTab } from "../../../../hooks/useBotMode";
 import { BotModeDebugPanel } from "../../../../components/BotModeIndicator";
+import EnvironmentDebug from "../../../../components/EnvironmentDebug";
 
 // Dynamic imports
 const EnhancedModeManagement = dynamic(() => import("../../../../components/EnhancedModeManagement"), { 
@@ -621,6 +622,9 @@ export default function ChatPage() {
           userId={data?.from}
         />
       )}
+      
+      {/* Environment Debug - Development only */}
+      <EnvironmentDebug />
     </div>
   );
 }

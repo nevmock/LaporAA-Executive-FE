@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { 
-  FiActivity, 
-  FiUsers, 
-  FiFileText, 
+import {
+  FiActivity,
+  FiUsers,
+  FiFileText,
   FiTrendingUp,
   FiCalendar,
   FiEye,
@@ -20,9 +20,9 @@ import { adminPerformanceService, AdminPerformanceDashboard } from '@/services/a
 
 // Type definitions for better type safety
 interface StatusModalState {
-  isOpen: boolean; 
-  status: string; 
-  adminName: string; 
+  isOpen: boolean;
+  status: string;
+  adminName: string;
   reports: ReportDetails[];
 }
 
@@ -76,6 +76,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
   });
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  const [showAllAdmins, setShowAllAdmins] = useState(false);
   const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({
     isOpen: false,
     title: '',
@@ -150,7 +151,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
   const showStatusReports = async (status: string, adminName: string, adminId: string) => {
     try {
       console.log('Fetching reports for:', { status, adminName, adminId, dateRange });
-      
+
       // Fetch reports for this specific status and admin
       const reports = await adminPerformanceService.getReportsByStatus({
         adminId,
@@ -158,9 +159,9 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
         startDate: dateRange.startDate,
         endDate: dateRange.endDate
       });
-      
+
       console.log('Received reports:', reports);
-      
+
       setStatusModal({
         isOpen: true,
         status,
@@ -261,32 +262,30 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
           <h2 className="text-xl font-bold text-gray-900">Admin Performance Dashboard</h2>
           <p className="text-gray-600 mt-1">Monitor admin activities and performance metrics</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* View Mode Toggle */}
           <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('overview')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'overview'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'overview'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Overview
             </button>
             <button
               onClick={() => setViewMode('detailed')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'detailed'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'detailed'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Detailed
             </button>
           </div>
-          
+
           {/* Date Range Picker */}
           <div className="flex items-center gap-2">
             <FiCalendar className="text-gray-400" size={16} />
@@ -304,7 +303,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors"
             />
           </div>
-          
+
           {/* Refresh Button */}
           <button
             onClick={refreshData}
@@ -317,74 +316,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FiUsers className="text-blue-600" size={20} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardData.reportStats.length}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => showInfo('Total Admins', infoContent.totalAdmins)}
-                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                title="Info"
-              >
-                <FiInfo size={16} />
-              </button>
-              <button
-                onClick={() => downloadData({ totalAdmins: dashboardData.reportStats.length }, 'total-admins')}
-                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                title="Download"
-              >
-                <FiDownload size={16} />
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Total number of administrators in the system</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <FiActivity className="text-green-600" size={20} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Active Admins</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {dashboardData.reportStats.filter(stat => stat.totalProcessed > 0).length}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => showInfo('Active Admins', 'Number of administrators who have processed at least one report in the selected date range. An active admin is one who has handled reports and contributed to the system.')}
-                className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                title="Info"
-              >
-                <FiInfo size={16} />
-              </button>
-              <button
-                onClick={() => downloadData({ 
-                  activeAdmins: dashboardData.reportStats.filter(stat => stat.totalProcessed > 0).length,
-                  activeAdminsList: dashboardData.reportStats.filter(stat => stat.totalProcessed > 0).map(s => s.adminName)
-                }, 'active-admins')}
-                className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                title="Download"
-              >
-                <FiDownload size={16} />
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Admins who have processed at least one report</p>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -407,7 +339,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 <FiInfo size={16} />
               </button>
               <button
-                onClick={() => downloadData({ 
+                onClick={() => downloadData({
                   totalReportsProcessed: dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0),
                   reportsByAdmin: dashboardData.reportStats.map(stat => ({ adminName: stat.adminName, processed: stat.totalProcessed }))
                 }, 'reports-processed')}
@@ -430,7 +362,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
               <div>
                 <p className="text-sm text-gray-600">Avg Per Admin</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {dashboardData.reportStats.length > 0 
+                  {dashboardData.reportStats.length > 0
                     ? Math.round(dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0) / dashboardData.reportStats.length)
                     : 0
                   }
@@ -446,8 +378,8 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 <FiInfo size={16} />
               </button>
               <button
-                onClick={() => downloadData({ 
-                  averagePerAdmin: dashboardData.reportStats.length > 0 
+                onClick={() => downloadData({
+                  averagePerAdmin: dashboardData.reportStats.length > 0
                     ? Math.round(dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0) / dashboardData.reportStats.length)
                     : 0,
                   totalAdmins: dashboardData.reportStats.length,
@@ -462,32 +394,6 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
           </div>
           <p className="text-xs text-gray-500 mt-2">Average workload distribution per administrator</p>
         </div>
-      </div>
-
-      {/* View Mode Toggle */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => setViewMode('overview')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-            viewMode === 'overview' 
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-          }`}
-        >
-          <FiEye className="w-5 h-5" />
-          Overview
-        </button>
-        <button
-          onClick={() => setViewMode('detailed')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-            viewMode === 'detailed' 
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-          }`}
-        >
-          <FiFileText className="w-5 h-5" />
-          Detailed View
-        </button>
       </div>
 
       {/* Performance Summary */}
@@ -507,12 +413,12 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
             </button>
             <button
               onClick={() => {
-                const topPerformer = dashboardData.reportStats.length > 0 
-                  ? dashboardData.reportStats.reduce((top, admin) => 
-                      admin.totalProcessed > top.totalProcessed ? admin : top
-                    )
+                const topPerformer = dashboardData.reportStats.length > 0
+                  ? dashboardData.reportStats.reduce((top, admin) =>
+                    admin.totalProcessed > top.totalProcessed ? admin : top
+                  )
                   : null;
-                const avgPerAdmin = dashboardData.reportStats.length > 0 
+                const avgPerAdmin = dashboardData.reportStats.length > 0
                   ? Math.round(dashboardData.reportStats.reduce((sum, admin) => sum + admin.totalProcessed, 0) / dashboardData.reportStats.length)
                   : 0;
                 const statusMap: { [key: string]: number } = {};
@@ -522,7 +428,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                   });
                 });
                 const mostCommonStatus = Object.entries(statusMap).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
-                
+
                 downloadData({
                   topPerformer: {
                     name: topPerformer?.adminName || 'N/A',
@@ -543,235 +449,356 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
           </div>
         </div>
         <p className="text-sm text-gray-600 mb-6">Key performance metrics and team overview</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Top Performer */}
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {dashboardData.reportStats.length > 0 
-                ? dashboardData.reportStats.reduce((top, admin) => 
-                    admin.totalProcessed > top.totalProcessed ? admin : top
-                  ).adminName || 'N/A'
-                : 'N/A'
-              }
-            </div>
-            <div className="text-sm text-gray-600">Top Performer</div>
-            <div className="text-lg font-semibold text-gray-900 mt-1">
-              {dashboardData.reportStats.length > 0 
-                ? Math.max(...dashboardData.reportStats.map(s => s.totalProcessed))
-                : 0
-              } reports
-            </div>
-          </div>
-          
-          {/* Average Performance */}
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {dashboardData.reportStats.length > 0 
-                ? Math.round(dashboardData.reportStats.reduce((sum, admin) => sum + admin.totalProcessed, 0) / dashboardData.reportStats.length)
-                : 0
-              }
-            </div>
-            <div className="text-sm text-gray-600">Average per Admin</div>
-            <div className="text-lg font-semibold text-gray-900 mt-1">reports processed</div>
-          </div>
-          
-          {/* Most Common Status */}
-          <div className="text-center">
-            <div className="text-3xl font-bold text-orange-600 mb-2">
-              {(() => {
-                const statusMap: { [key: string]: number } = {};
-                dashboardData.reportStats.forEach(admin => {
-                  admin.statusBreakdown.forEach(status => {
-                    statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
-                  });
-                });
-                const topStatus = Object.entries(statusMap).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
-                return topStatus[0] || 'N/A';
-              })()}
-            </div>
-            <div className="text-sm text-gray-600">Most Common Status</div>
-            <div className="text-lg font-semibold text-gray-900 mt-1">
-              {(() => {
-                const statusMap: { [key: string]: number } = {};
-                dashboardData.reportStats.forEach(admin => {
-                  admin.statusBreakdown.forEach(status => {
-                    statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
-                  });
-                });
-                const topStatus = Object.entries(statusMap).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
-                return topStatus[1] || 0;
-              })()} occurrences
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Charts Section - Overview */}
-      {viewMode === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">            {/* Admin Performance Bar Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Top Performer (Admin only) */}
+          <div className="group relative overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-green-50 opacity-60"></div>
+            <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FiBarChart className="text-blue-600" size={20} />
-                  <h3 className="text-lg font-semibold text-gray-900">Admin Performance Comparison</h3>
+                <div className="p-3 bg-emerald-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                 </div>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">Top Performer</p>
+                  <h3 className="text-xl font-bold text-gray-800 leading-tight">
+                    {(() => {
+                      const admins = dashboardData.reportStats.filter(a => a.role === 'Admin');
+                      if (admins.length === 0) return 'N/A';
+                      const top = admins.reduce((top, admin) => admin.totalProcessed > top.totalProcessed ? admin : top);
+                      return top.adminName || 'N/A';
+                    })()}
+                  </h3>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-emerald-800">
+                    {(() => {
+                      const admins = dashboardData.reportStats.filter(a => a.role === 'Admin');
+                      if (admins.length === 0) return 0;
+                      const top = admins.reduce((top, admin) => admin.totalProcessed > top.totalProcessed ? admin : top);
+                      return top.totalProcessed;
+                    })()}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">reports</span>
+                </div>
+
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => showInfo('Admin Performance Comparison', 'Bar chart showing the number of reports processed by each administrator. This helps compare individual performance and workload distribution across the team.')}
-                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Chart Information"
-                  >
-                    <FiInfo size={16} />
-                  </button>
-                  <button
-                    onClick={() => downloadData(
-                      dashboardData.reportStats.map(stat => ({
-                        adminName: stat.adminName,
-                        reportsProcessed: stat.totalProcessed,
-                        role: stat.role
-                      })), 
-                      'admin-performance-comparison'
-                    )}
-                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Download Chart Data"
-                  >
-                    <FiDownload size={16} />
-                  </button>
+                  <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">Admin</span>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Compare individual administrator performance by reports processed</p>
-              
-              <ReactECharts
-                option={{
-                  tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                      type: 'shadow'
-                    }
-                  },
-                  grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
-                    containLabel: true
-                  },
-                  xAxis: {
-                    type: 'category',
-                    data: dashboardData.reportStats.map(stat => stat.adminName || 'Unknown'),
-                    axisLabel: {
-                      interval: 0,
-                      rotate: 45,
-                      fontSize: 12
-                    }
-                  },
-                  yAxis: {
-                    type: 'value',
-                    name: 'Number of Reports'
-                  },
-                  series: [{
-                    name: 'Reports Processed',
-                    type: 'bar',
-                    data: dashboardData.reportStats.map(stat => ({
-                      value: stat.totalProcessed,
-                      itemStyle: {
-                        color: '#3B82F6'
-                      }
-                    })),
-                    barWidth: '60%',
-                    itemStyle: {
-                      borderRadius: [4, 4, 0, 0]
-                    }
-                  }]
-                }}
-                style={{ height: '300px' }}
-              />
             </div>
+          </div>
 
-            {/* Status Distribution Pie Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {/* Worst Performer (Admin only) */}
+          <div className="group relative overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-white to-red-50 opacity-60"></div>
+            <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FiPieChart className="text-green-600" size={20} />
-                  <h3 className="text-lg font-semibold text-gray-900">Overall Status Distribution</h3>
+                <div className="p-3 bg-red-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1L13.5 2.5L16.17 5.33L10.5 11L15.5 16H6V18H20V16H17.5L21 9Z" />
+                  </svg>
                 </div>
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1">Needs Improvement</p>
+                  <h3 className="text-xl font-bold text-gray-800 leading-tight">
+                    {(() => {
+                      const admins = dashboardData.reportStats.filter(a => a.role === 'Admin');
+                      if (admins.length === 0) return 'N/A';
+                      const worst = admins.reduce((worst, admin) => admin.totalProcessed < worst.totalProcessed ? admin : worst);
+                      return worst.adminName || 'N/A';
+                    })()}
+                  </h3>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-red-700">
+                    {(() => {
+                      const admins = dashboardData.reportStats.filter(a => a.role === 'Admin');
+                      if (admins.length === 0) return 0;
+                      const worst = admins.reduce((worst, admin) => admin.totalProcessed < worst.totalProcessed ? admin : worst);
+                      return worst.totalProcessed;
+                    })()}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">reports</span>
+                </div>
+
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => showInfo('Overall Status Distribution', 'Pie chart showing the distribution of report statuses across all processed reports. This helps understand the current state of reports and processing patterns.')}
-                    className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                    title="Chart Information"
-                  >
-                    <FiInfo size={16} />
-                  </button>
-                  <button
-                    onClick={() => {
+                  <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-900 rounded-full">Admin</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Average Performance (Admin only) */}
+          <div className="group relative overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50 opacity-60"></div>
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-blue-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Team Average</p>
+                  <h3 className="text-xl font-bold text-gray-800 leading-tight">Admin Performance</h3>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-blue-800">
+                    {(() => {
+                      const admins = dashboardData.reportStats.filter(a => a.role === 'Admin');
+                      return admins.length > 0 ? Math.round(admins.reduce((sum, admin) => sum + admin.totalProcessed, 0) / admins.length) : 0;
+                    })()}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">avg reports</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-900 rounded-full">Admin</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Most Common Status (all roles) */}
+          <div className="group relative overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 via-white to-yellow-100 opacity-60"></div>
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-yellow-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M7,13H17V11H7" />
+                  </svg>
+                </div>
+                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-1">Most Common</p>
+                  <h3 className="text-lg font-bold text-gray-800 leading-tight">
+                    {(() => {
                       const statusMap: { [key: string]: number } = {};
                       dashboardData.reportStats.forEach(admin => {
                         admin.statusBreakdown.forEach(status => {
                           statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
                         });
                       });
-                      downloadData(
-                        Object.entries(statusMap).map(([status, count]) => ({ status, count })), 
-                        'status-distribution'
-                      );
-                    }}
-                    className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                    title="Download Chart Data"
-                  >
-                    <FiDownload size={16} />
-                  </button>
+                      const topStatus = Object.entries(statusMap).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
+                      return topStatus[0] || 'N/A';
+                    })()}
+                  </h3>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-yellow-800">
+                    {(() => {
+                      const statusMap: { [key: string]: number } = {};
+                      dashboardData.reportStats.forEach(admin => {
+                        admin.statusBreakdown.forEach(status => {
+                          statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
+                        });
+                      });
+                      const topStatus = Object.entries(statusMap).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
+                      return topStatus[1] || 0;
+                    })()}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">cases</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="inline-block px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-900 rounded-full">Status</span>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Distribution of all report statuses across the system</p>
-              
-              <ReactECharts
-                option={(() => {
-                  // Calculate overall status distribution
-                  const statusMap: { [key: string]: number } = {};
-                  dashboardData.reportStats.forEach(admin => {
-                    admin.statusBreakdown.forEach(status => {
-                      statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
-                    });
-                  });
-                  
-                  const statusData = Object.entries(statusMap).map(([name, value]) => ({ 
-                    name, 
-                    value,
-                    itemStyle: {
-                      color: STATUS_COLORS[name] || '#6b7280'
-                    }
-                  }));
-                  
-                  return {
-                    tooltip: {
-                      trigger: 'item',
-                      formatter: '{a} <br/>{b}: {c} ({d}%)'
-                    },
-                    legend: {
-                      bottom: '0%',
-                      left: 'center'
-                    },
-                    series: [{
-                      name: 'Status',
-                      type: 'pie',
-                      radius: '70%',
-                      center: ['50%', '45%'],
-                      data: statusData,
-                      emphasis: {
-                        itemStyle: {
-                          shadowBlur: 10,
-                          shadowOffsetX: 0,
-                          shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                      },
-                      color: statusData.map(item => item.itemStyle.color)
-                    }]
-                  };
-                })()}
-                style={{ height: '300px' }}
-              />
             </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Charts Section - Overview */}
+      {viewMode === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Admin Performance Bar Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FiBarChart className="text-blue-600" size={20} />
+                <h3 className="text-lg font-semibold text-gray-900">Admin Performance Comparison</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => showInfo('Admin Performance Comparison', 'Bar chart showing the number of reports processed by each administrator. This helps compare individual performance and workload distribution across the team.')}
+                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Chart Information"
+                >
+                  <FiInfo size={16} />
+                </button>
+                <button
+                  onClick={() => downloadData(
+                    dashboardData.reportStats.map(stat => ({
+                      adminName: stat.adminName,
+                      reportsProcessed: stat.totalProcessed,
+                      role: stat.role
+                    })),
+                    'admin-performance-comparison'
+                  )}
+                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Download Chart Data"
+                >
+                  <FiDownload size={16} />
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Compare individual administrator performance by reports processed</p>
+
+            <ReactECharts
+              option={{
+                tooltip: {
+                  trigger: 'axis',
+                  axisPointer: {
+                    type: 'shadow'
+                  }
+                },
+                grid: {
+                  left: '3%',
+                  right: '4%',
+                  bottom: '3%',
+                  containLabel: true
+                },
+                xAxis: {
+                  type: 'category',
+                  data: dashboardData.reportStats.map(stat => stat.adminName || 'Unknown'),
+                  axisLabel: {
+                    interval: 0,
+                    rotate: 45,
+                    fontSize: 12
+                  }
+                },
+                yAxis: {
+                  type: 'value',
+                  name: 'Number of Reports'
+                },
+                series: [{
+                  name: 'Reports Processed',
+                  type: 'bar',
+                  data: dashboardData.reportStats.map(stat => ({
+                    value: stat.totalProcessed,
+                    itemStyle: {
+                      color: '#3B82F6'
+                    }
+                  })),
+                  barWidth: '60%',
+                  itemStyle: {
+                    borderRadius: [4, 4, 0, 0]
+                  }
+                }]
+              }}
+              style={{ height: '300px' }}
+            />
+          </div>
+
+          {/* Status Distribution Pie Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FiPieChart className="text-green-600" size={20} />
+                <h3 className="text-lg font-semibold text-gray-900">Overall Status Distribution</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => showInfo('Overall Status Distribution', 'Pie chart showing the distribution of report statuses across all processed reports. This helps understand the current state of reports and processing patterns.')}
+                  className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                  title="Chart Information"
+                >
+                  <FiInfo size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    const statusMap: { [key: string]: number } = {};
+                    dashboardData.reportStats.forEach(admin => {
+                      admin.statusBreakdown.forEach(status => {
+                        statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
+                      });
+                    });
+                    downloadData(
+                      Object.entries(statusMap).map(([status, count]) => ({ status, count })),
+                      'status-distribution'
+                    );
+                  }}
+                  className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                  title="Download Chart Data"
+                >
+                  <FiDownload size={16} />
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Distribution of all report statuses across the system</p>
+
+            <ReactECharts
+              option={(() => {
+                // Calculate overall status distribution
+                const statusMap: { [key: string]: number } = {};
+                dashboardData.reportStats.forEach(admin => {
+                  admin.statusBreakdown.forEach(status => {
+                    statusMap[status.status] = (statusMap[status.status] || 0) + status.count;
+                  });
+                });
+
+                const statusData = Object.entries(statusMap).map(([name, value]) => ({
+                  name,
+                  value,
+                  itemStyle: {
+                    color: STATUS_COLORS[name] || '#6b7280'
+                  }
+                }));
+
+                return {
+                  tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                  },
+                  legend: {
+                    bottom: '0%',
+                    left: 'center'
+                  },
+                  series: [{
+                    name: 'Status',
+                    type: 'pie',
+                    radius: '70%',
+                    center: ['50%', '40%'],
+                    data: statusData,
+                    emphasis: {
+                      itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                      }
+                    },
+                    color: statusData.map(item => item.itemStyle.color)
+                  }]
+                };
+              })()}
+              style={{ height: '300px' }}
+            />
+          </div>
         </div>
       )}
 
@@ -814,13 +841,13 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
             </div>
           </div>
           <p className="text-sm text-gray-600 mb-4">Trend analysis of report statuses across different administrators</p>
-          
+
           <ReactECharts
             option={(() => {
               // Create mock trend data based on status breakdown
               const statusCategories = ['Ditutup', 'Selesai Penanganan', 'Proses OPD Terkait', 'Perlu Verifikasi', 'Selesai Pengaduan'];
               const adminNames = dashboardData.reportStats.map(admin => admin.adminName || 'Unknown');
-              
+
               return {
                 tooltip: {
                   trigger: 'axis'
@@ -886,7 +913,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 onClick={() => downloadData({
                   totalProcessedReports: dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0),
                   totalActiveAdmins: dashboardData.reportStats.filter(stat => stat.totalProcessed > 0).length,
-                  avgReportsPerAdmin: dashboardData.reportStats.length > 0 
+                  avgReportsPerAdmin: dashboardData.reportStats.length > 0
                     ? Math.round(dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0) / dashboardData.reportStats.length)
                     : 0,
                   totalAdmins: dashboardData.reportStats.length,
@@ -902,7 +929,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
               {formatDate(dateRange.startDate)} - {formatDate(dateRange.endDate)}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Total Processed Reports */}
             <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
@@ -924,7 +951,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
             <div className="bg-purple-50 p-4 rounded-lg shadow-sm">
               <div className="text-xs font-semibold text-purple-600 uppercase">Avg Reports Per Admin</div>
               <div className="text-2xl font-bold text-gray-900">
-                {dashboardData.reportStats.length > 0 
+                {dashboardData.reportStats.length > 0
                   ? Math.round(dashboardData.reportStats.reduce((total, stat) => total + stat.totalProcessed, 0) / dashboardData.reportStats.length)
                   : 0
                 }
@@ -978,7 +1005,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
           </div>
           <p className="text-sm text-gray-600 mt-2">Complete performance breakdown for each administrator</p>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -1004,7 +1031,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
               {dashboardData.reportStats.map((admin) => {
                 const totalReports = dashboardData.reportStats.reduce((sum, a) => sum + a.totalProcessed, 0);
                 const percentage = totalReports > 0 ? Math.round((admin.totalProcessed / totalReports) * 100) : 0;
-                
+
                 return (
                   <tr key={admin.adminId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -1023,13 +1050,12 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        admin.role === 'SuperAdmin' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : admin.role === 'Bupati'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${admin.role === 'SuperAdmin'
+                        ? 'bg-purple-100 text-purple-800'
+                        : admin.role === 'Bupati'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-blue-100 text-blue-800'
-                      }`}>
+                        }`}>
                         {admin.role}
                       </span>
                     </td>
@@ -1060,8 +1086,8 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                       <div className="flex items-center">
                         <div className="flex-grow">
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
+                            <div
+                              className="bg-blue-600 h-2 rounded-full"
                               style={{ width: `${Math.min(percentage, 100)}%` }}
                             ></div>
                           </div>
@@ -1078,95 +1104,120 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
       </div>
 
       {/* Individual Admin Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {dashboardData.reportStats.slice(0, 4).map((admin) => (
-          <div key={admin.adminId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium text-sm">
-                    {(admin.adminName || 'Unknown').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">{admin.adminName || 'Unknown Admin'}</h4>
-                  <p className="text-xs text-gray-500">{admin.role} - {admin.totalProcessed} reports</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => showInfo(`${admin.adminName} Performance`, `Individual performance breakdown for ${admin.adminName}. This donut chart shows the distribution of report statuses handled by this administrator, providing insights into their work patterns and specializations.`)}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  title="Admin Chart Information"
-                >
-                  <FiInfo size={14} />
-                </button>
-                <button
-                  onClick={() => downloadData({
-                    adminName: admin.adminName,
-                    role: admin.role,
-                    totalProcessed: admin.totalProcessed,
-                    statusBreakdown: admin.statusBreakdown
-                  }, `admin-${admin.adminName?.replace(/\s+/g, '-').toLowerCase()}-performance`)}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  title="Download Admin Data"
-                >
-                  <FiDownload size={14} />
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-600 mb-4">Status distribution for {admin.adminName}</p>
-            
-            <ReactECharts
-              option={{
-                tooltip: {
-                  trigger: 'item',
-                  formatter: '{a} <br/>{b}: {c} ({d}%)'
-                },
-                series: [{
-                  name: 'Status',
-                  type: 'pie',
-                  radius: ['40%', '70%'],
-                  center: ['50%', '50%'],
-                  data: admin.statusBreakdown.map(s => ({
-                    value: s.count,
-                    name: s.status,
-                    itemStyle: {
-                      color: STATUS_COLORS[s.status] || '#6b7280'
-                    }
-                  })),
-                  emphasis: {
-                    itemStyle: {
-                      shadowBlur: 10,
-                      shadowOffsetX: 0,
-                      shadowColor: 'rgba(0, 0, 0, 0.5)'
-                    }
-                  },
-                  label: {
-                    show: true,
-                    formatter: '{d}%'
-                  }
-                }]
-              }}
-              style={{ height: '200px' }}
-            />
-            
-            <div className="mt-4 space-y-2">
-              {admin.statusBreakdown.map((status, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: STATUS_COLORS[status.status] || '#6b7280' }}
-                    ></div>
-                    <span className="text-gray-600">{status.status}</span>
-                  </div>
-                  <span className="font-medium text-gray-900">{status.count}</span>
-                </div>
-              ))}
-            </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <FiUsers className="text-purple-600" size={20} />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {showAllAdmins ? 'All Admin Performance' : 'Top 4 Admin Performance'}
+            </h3>
           </div>
-        ))}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              {showAllAdmins ? 'Showing all admins' : 'Showing top 4 performers'}
+            </span>
+            <button
+              onClick={() => setShowAllAdmins(!showAllAdmins)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${showAllAdmins
+                ? 'bg-purple-100 text-purple-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              {showAllAdmins ? 'Show Top 4' : 'Show All'}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {(showAllAdmins ? dashboardData.reportStats : dashboardData.reportStats.slice(0, 4)).map((admin) => (
+            <div key={admin.adminId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-medium text-sm">
+                      {(admin.adminName || 'Unknown').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900">{admin.adminName || 'Unknown Admin'}</h4>
+                    <p className="text-xs text-gray-500">{admin.role} - {admin.totalProcessed} reports</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => showInfo(`${admin.adminName} Performance`, `Individual performance breakdown for ${admin.adminName}. This donut chart shows the distribution of report statuses handled by this administrator, providing insights into their work patterns and specializations.`)}
+                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Admin Chart Information"
+                  >
+                    <FiInfo size={14} />
+                  </button>
+                  <button
+                    onClick={() => downloadData({
+                      adminName: admin.adminName,
+                      role: admin.role,
+                      totalProcessed: admin.totalProcessed,
+                      statusBreakdown: admin.statusBreakdown
+                    }, `admin-${admin.adminName?.replace(/\s+/g, '-').toLowerCase()}-performance`)}
+                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Download Admin Data"
+                  >
+                    <FiDownload size={14} />
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 mb-4">Status distribution for {admin.adminName}</p>
+
+              <ReactECharts
+                option={{
+                  tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                  },
+                  series: [{
+                    name: 'Status',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '50%'],
+                    data: admin.statusBreakdown.map(s => ({
+                      value: s.count,
+                      name: s.status,
+                      itemStyle: {
+                        color: STATUS_COLORS[s.status] || '#6b7280'
+                      }
+                    })),
+                    emphasis: {
+                      itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                      }
+                    },
+                    label: {
+                      show: true,
+                      formatter: '{d}%'
+                    }
+                  }]
+                }}
+                style={{ height: '200px' }}
+              />
+
+              <div className="mt-4 space-y-2">
+                {admin.statusBreakdown.map((status, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: STATUS_COLORS[status.status] || '#6b7280' }}
+                      ></div>
+                      <span className="text-gray-600">{status.status}</span>
+                    </div>
+                    <span className="font-medium text-gray-900">{status.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Info Modal */}
@@ -1215,7 +1266,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 <FiX size={24} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
               {statusModal.reports.length > 0 ? (
                 <div className="space-y-4">
@@ -1227,16 +1278,16 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                             #{report.sessionId || `Report-${idx + 1}`}
                           </h4>
                           <p className="text-sm text-gray-600 mt-1">
-                            {report.message ? 
-                              (report.message.length > 100 ? 
-                                `${report.message.substring(0, 100)}...` : 
+                            {report.message ?
+                              (report.message.length > 100 ?
+                                `${report.message.substring(0, 100)}...` :
                                 report.message
-                              ) : 
+                              ) :
                               'No message available'
                             }
                           </p>
                         </div>
-                        <span 
+                        <span
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                           style={{
                             backgroundColor: `${STATUS_COLORS[statusModal.status] || '#6b7280'}20`,
@@ -1281,7 +1332,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                 </div>
               )}
             </div>
-            
+
             <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end">
               <button
                 onClick={closeStatusModal}

@@ -373,7 +373,7 @@ export default function Laporan() {
     }
   };
 
-  // Wrapper function untuk setPhotoModal dengan info tambahan
+  // Wrapper function untuk setPhotoModal dengan info tambahan untuk modal media
   const handleSetPhotoModal = (photos: string[], reportInfo?: { sessionId: string; userName: string }) => {
     setPhotoModal(photos);
     setPhotoModalInfo(reportInfo || null);
