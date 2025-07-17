@@ -336,7 +336,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
             showDownload={true}
             showFullscreen={true}
             showInfo={true}
-            height={chartHeight}
+            height={400}
             className="h-full"
             filters={filterControls}
             useInternalFullscreen={true}

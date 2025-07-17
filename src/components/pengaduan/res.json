@@ -1,0 +1,1067 @@
+{
+  "page": 1,
+  "limit": 100,
+  "totalPages": 1,
+  "totalReports": 11,
+  "data": [
+    {
+      "_id": "68778e9efb025cb205a475b1",
+      "sessionId": "875449600011",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.2733813905924,
+        "longitude": 107.18094114214,
+        "description": "Jl. Citarum Blok A. 13 No.174, RT.2/RW.7, Simpangan, Kec. Cikarang Utara, Kabupaten Bekasi, Jawa Barat 17530, Indonesia",
+        "desa": "SIMPANGAN",
+        "kecamatan": "CIKARANG UTARA",
+        "kabupaten": "BEKASI"
+      },
+      "message": "mau buat laporan, mau buat laporan, mau buat laporan, mau buat laporan, mau buat laporan, test",
+      "photos": [
+        {
+          "url": "/uploads/08194e2d-e6e4-4bc9-82be-990fda3db871.jpg",
+          "type": "image",
+          "caption": "",
+          "originalUrl": "/uploads/08194e2d-e6e4-4bc9-82be-990fda3db871.jpg"
+        },
+        {
+          "url": "/uploads/videos/eff3dc96-2bd1-434d-988d-f4179b56ca27.mp4",
+          "type": "video",
+          "caption": "",
+          "originalUrl": "/uploads/videos/eff3dc96-2bd1-434d-988d-f4179b56ca27.mp4"
+        },
+        {
+          "url": "/uploads/videos/52201483-e699-42dd-b3f2-56d57a4dabc9.mp4",
+          "type": "video",
+          "caption": "",
+          "originalUrl": "/uploads/videos/52201483-e699-42dd-b3f2-56d57a4dabc9.mp4"
+        }
+      ],
+      "is_pinned": false,
+      "createdAt": "2025-07-16T11:35:58.427Z",
+      "updatedAt": "2025-07-16T15:01:18.706Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68778e9efb025cb205a475b6",
+        "report": "68778e9efb025cb205a475b1",
+        "hasil": "",
+        "kesimpulan": [
+          {
+            "text": "halo",
+            "timestamp": "2025-07-16T15:07:42.817Z",
+            "_id": "6877c03e728d462fc7e1b5ee"
+          }
+        ],
+        "trackingId": 12345,
+        "prioritas": null,
+        "situasi": "Berpengawasan",
+        "status": "Selesai Pengaduan",
+        "opd": [
+          "Dinas Pendidikan Kabupaten Bekasi",
+          "Dinas Komunikasi, Informatika, Persandian dan Statistik"
+        ],
+        "photos": [
+          {
+            "url": "/uploadsTindakan/22b0c78d-54db-4945-95c9-12f731994b7b.png",
+            "type": "image",
+            "caption": "",
+            "originalUrl": "/uploadsTindakan/22b0c78d-54db-4945-95c9-12f731994b7b.png"
+          },
+          {
+            "url": "/uploadsTindakan/d06f883d-37aa-4cc2-899c-24025a9e44d4.pdf",
+            "type": "pdf",
+            "caption": "",
+            "originalUrl": "/uploadsTindakan/d06f883d-37aa-4cc2-899c-24025a9e44d4.pdf"
+          }
+        ],
+        "feedbackStatus": "Sudah Jawab Beres",
+        "rating": 5,
+        "url": "https://www.google.com",
+        "keterangan": "",
+        "status_laporan": "Telah Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "tag": [
+          {
+            "hash_tag": "masuk",
+            "_id": "6878a419a43289095b93bc20"
+          }
+        ],
+        "createdAt": "2025-07-16T11:35:58.476Z",
+        "updatedAt": "2025-07-17T07:19:53.564Z",
+        "__v": 9
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68776ae773cdd6d4870d23a9",
+      "sessionId": "875430180010",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3274203907251,
+        "longitude": 107.13725533336,
+        "description": "Jl. Deli No.3, Sukaresmi, Cikarang Selatan, Bekasi Regency, West Java 17530, Indonesia",
+        "desa": "SUKARESMI",
+        "kecamatan": "CIKARANG SELATAN",
+        "kabupaten": "BEKASI"
+      },
+      "message": "hahaha",
+      "photos": [],
+      "is_pinned": false,
+      "createdAt": "2025-07-16T09:03:35.692Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68776ae773cdd6d4870d23ab",
+        "report": "68776ae773cdd6d4870d23a9",
+        "hasil": "",
+        "kesimpulan": [],
+        "trackingId": null,
+        "prioritas": null,
+        "situasi": null,
+        "status": "Perlu Verifikasi",
+        "opd": [],
+        "photos": [],
+        "feedbackStatus": null,
+        "rating": null,
+        "url": "",
+        "keterangan": "",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "tag": [],
+        "createdAt": "2025-07-16T09:03:35.723Z",
+        "updatedAt": "2025-07-16T09:03:35.723Z",
+        "__v": 0
+      },
+      "prioritasScore": 0,
+      "statusScore": 0
+    },
+    {
+      "_id": "68776a4e73cdd6d4870d2270",
+      "sessionId": "875481460009",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3253250127588,
+        "longitude": 107.17678640038,
+        "description": "M5GG+262, Jayamukti, Central Cikarang, Bekasi Regency, West Java 17530, Indonesia",
+        "desa": "JAYAMUKTI",
+        "kecamatan": "CIKARANG PUSAT",
+        "kabupaten": "BEKASI"
+      },
+      "message": "test, [File tidak didukung]",
+      "photos": [],
+      "is_pinned": false,
+      "createdAt": "2025-07-16T09:01:02.261Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68776a4e73cdd6d4870d2272",
+        "report": "68776a4e73cdd6d4870d2270",
+        "hasil": "",
+        "kesimpulan": [],
+        "trackingId": null,
+        "prioritas": null,
+        "situasi": null,
+        "status": "Perlu Verifikasi",
+        "opd": [],
+        "photos": [],
+        "feedbackStatus": null,
+        "rating": null,
+        "url": "",
+        "keterangan": "",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "tag": [
+          {
+            "hash_tag": "por",
+            "_id": "68777133036c3fae7cf23acc"
+          },
+          {
+            "hash_tag": "sad",
+            "_id": "68777136036c3fae7cf23ad1"
+          },
+          {
+            "hash_tag": "asdw",
+            "_id": "68777139036c3fae7cf23ad7"
+          },
+          {
+            "hash_tag": "gei",
+            "_id": "6877713c036c3fae7cf23ade"
+          },
+          {
+            "hash_tag": "damn",
+            "_id": "68777142036c3fae7cf23ae7"
+          }
+        ],
+        "createdAt": "2025-07-16T09:01:02.298Z",
+        "updatedAt": "2025-07-16T09:30:42.068Z",
+        "__v": 5
+      },
+      "prioritasScore": 0,
+      "statusScore": 0
+    },
+    {
+      "_id": "687768c673cdd6d4870d1d45",
+      "sessionId": "875432150008",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3302641995825,
+        "longitude": 107.17767421156,
+        "description": "M59H+M76, Jayamukti, Central Cikarang, Bekasi Regency, West Java 17530, Indonesia",
+        "desa": "JAYAMUKTI",
+        "kecamatan": "CIKARANG PUSAT",
+        "kabupaten": "BEKASI"
+      },
+      "message": "jadi gini, test",
+      "photos": [],
+      "is_pinned": false,
+      "createdAt": "2025-07-16T08:54:30.031Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "687768c673cdd6d4870d1d47",
+        "report": "687768c673cdd6d4870d1d45",
+        "hasil": "",
+        "kesimpulan": [
+          {
+            "text": "Status Darurat",
+            "_id": "6877691673cdd6d4870d1f1f",
+            "timestamp": "2025-07-16T08:55:50.155Z"
+          }
+        ],
+        "trackingId": null,
+        "prioritas": null,
+        "situasi": "Darurat",
+        "status": "Selesai Pengaduan",
+        "opd": [],
+        "photos": [],
+        "feedbackStatus": null,
+        "rating": 5,
+        "url": "",
+        "keterangan": "Status Darurat",
+        "status_laporan": "Telah Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "tag": [
+          {
+            "hash_tag": "darurat",
+            "_id": "6877692773cdd6d4870d1f75"
+          }
+        ],
+        "createdAt": "2025-07-16T08:54:30.073Z",
+        "updatedAt": "2025-07-16T08:56:07.804Z",
+        "__v": 2
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68498c5c40c42f18b5edef1e",
+      "sessionId": "87548050",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3058837126692,
+        "longitude": 107.1735952422,
+        "description": "Jl. Cikarang Baru Raya No.18, Sertajaya, Kec. Cikarang Tim., Kabupaten Bekasi, Jawa Barat 17530, Indonesia",
+        "desa": "SERTAJAYA",
+        "kecamatan": "CIKARANG TIMUR",
+        "kabupaten": "BEKASI"
+      },
+      "message": "hdhdd, ueheehee, heheehehhe, heehehehe, yyyuueh hahaha\n\nhai kamu",
+      "photos": [],
+      "createdAt": "2025-06-11T14:02:04.180Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68498c5c40c42f18b5edef20",
+        "report": "68498c5c40c42f18b5edef1e",
+        "kesimpulan": [
+          {
+            "text": "hai",
+            "timestamp": "2025-06-25T07:34:04.273Z",
+            "_id": "685ba66c3bd0dd5e562acb83"
+          }
+        ],
+        "trackingId": 123,
+        "situasi": "Berpengawasan",
+        "status": "Selesai Pengaduan",
+        "opd": ["Dinas Pariwisata Kabupaten Bekasi"],
+        "feedbackStatus": "Sudah Jawab Beres",
+        "rating": 5,
+        "keterangan": "mantap",
+        "status_laporan": "Telah Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-11T14:02:04.216Z",
+        "updatedAt": "2025-07-16T08:56:22.156Z",
+        "__v": 66,
+        "tag": [
+          {
+            "hash_tag": "berlubang",
+            "_id": "685bbb0b3bd0dd5e562addb0"
+          },
+          {
+            "hash_tag": "kuburan",
+            "_id": "685bbb0b3bd0dd5e562addb1"
+          },
+          {
+            "hash_tag": "tagar",
+            "_id": "686c9ba0884c3a244eb30a6b"
+          },
+          {
+            "hash_tag": "asd",
+            "_id": "6877279c6a4993e9363bdcc3"
+          },
+          {
+            "hash_tag": "asdasd",
+            "_id": "687727a06a4993e9363bdccc"
+          },
+          {
+            "hash_tag": "asdad",
+            "_id": "687727a26a4993e9363bdcd6"
+          },
+          {
+            "hash_tag": "asdadd",
+            "_id": "687727a66a4993e9363bdce3"
+          }
+        ],
+        "hasil": "",
+        "photos": []
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "is_pinned": true,
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68498afa40c42f18b5edee57",
+      "sessionId": "87541401",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.1229101440256,
+        "longitude": 107.18292664737,
+        "description": "Jalan Tanpa Nama, Kabupaten Bekasi, Jawa Barat, Indonesia",
+        "desa": "SUKAKERSA",
+        "kecamatan": "SUKAKARYA",
+        "kabupaten": "BEKASI"
+      },
+      "message": "heheheeheehe, hehehehehehe, hehehehehe, apasish? mau buat laporan dong! ini gimana ya macet terus!",
+      "photos": [],
+      "createdAt": "2025-06-11T13:56:10.221Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68498afa40c42f18b5edee59",
+        "report": "68498afa40c42f18b5edee57",
+        "hasil": "",
+        "kesimpulan": [],
+        "trackingId": null,
+        "prioritas": null,
+        "situasi": "Permintaan Informasi",
+        "status": "Selesai Pengaduan",
+        "opd": [
+          "Dinas Pemadam Kebakaran Kabupaten Bekasi",
+          "Dinas Lingkungan Hidup Kabupaten Bekasi"
+        ],
+        "photos": [],
+        "feedbackStatus": "Sudah Jawab Beres",
+        "rating": 5,
+        "url": "",
+        "keterangan": "selesai weh",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-11T13:56:10.271Z",
+        "updatedAt": "2025-07-10T08:00:52.661Z",
+        "__v": 17,
+        "tag": [
+          {
+            "hash_tag": "berlubang",
+            "_id": "68586178ce04fbfde1289b5f"
+          },
+          {
+            "hash_tag": "macet",
+            "_id": "6858617fce04fbfde1289b66"
+          },
+          {
+            "hash_tag": "mampus",
+            "_id": "686f7061c5791cef68a1e768"
+          },
+          {
+            "hash_tag": "mapmus",
+            "_id": "686f70bfc3cc3ca10ec86f00"
+          },
+          {
+            "hash_tag": "mantap",
+            "_id": "686f722a4eb5680402bc5135"
+          },
+          {
+            "hash_tag": "sumpah",
+            "_id": "686f722e4eb5680402bc513f"
+          },
+          {
+            "hash_tag": "serapah",
+            "_id": "686f72314eb5680402bc5148"
+          },
+          {
+            "hash_tag": "hasehum",
+            "_id": "686f73174eb5680402bc519e"
+          },
+          {
+            "hash_tag": "haseum",
+            "_id": "686f731e4eb5680402bc51ae"
+          },
+          {
+            "hash_tag": "masa",
+            "_id": "686f73264eb5680402bc51bc"
+          },
+          {
+            "hash_tag": "masalah",
+            "_id": "686f73344eb5680402bc51cf"
+          }
+        ]
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "is_pinned": true,
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68498558463a947b3373554a",
+      "sessionId": "87548221",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.2920067638137,
+        "longitude": 107.21497233957,
+        "description": "P658+87F, Cipayung, Cikarang Timur, Bekasi Regency, West Java 17530, Indonesia",
+        "desa": "CIPAYUNG",
+        "kecamatan": "CIKARANG TIMUR",
+        "kabupaten": "BEKASI"
+      },
+      "message": "heb, jehewh, jsk, hbah, udhdhj",
+      "photos": [],
+      "createdAt": "2025-06-11T13:32:08.742Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68498558463a947b3373554c",
+        "report": "68498558463a947b3373554a",
+        "kesimpulan": [],
+        "trackingId": 90219021,
+        "situasi": "Permintaan Informasi",
+        "status": "Selesai Pengaduan",
+        "opd": [
+          "Dinas Lingkungan Hidup Kabupaten Bekasi",
+          "Dinas Kesehatan Kabupaten Bekasi"
+        ],
+        "feedbackStatus": "Sudah Jawab Beres",
+        "rating": 5,
+        "keterangan": "good",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-11T13:32:08.774Z",
+        "updatedAt": "2025-07-16T08:56:57.628Z",
+        "__v": 4,
+        "tag": [],
+        "hasil": "",
+        "photos": []
+      },
+      "processed_by": {
+        "_id": "684cec88272df89959c18200",
+        "username": "boro",
+        "password": "$2b$10$yFFnyak6yXn9vxMOK3SNuebdepZlbeR3d59OiVIK6bxUoBaNv7Fcu",
+        "role": "Bupati",
+        "__v": 0,
+        "nama_admin": "Boro Ganteng"
+      },
+      "is_pinned": false,
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68498335a8049ac33877af2c",
+      "sessionId": "87544648",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3546072151005,
+        "longitude": 107.17339273542,
+        "description": "Blok G-6 No, Jl. Ramin Raya No.15A, Jayamukti, Kec. Cikarang Pusat, Kabupaten Bekasi, Jawa Barat 17530, Indonesia",
+        "desa": "SUKAMAHI",
+        "kecamatan": "CIKARANG PUSAT",
+        "kabupaten": "BEKASI"
+      },
+      "message": "yfg, yfd, ygff, yrf, gss, ydg, rf, ehkkc,nknkn",
+      "photos": [],
+      "createdAt": "2025-06-11T13:23:01.245Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68498335a8049ac33877af2e",
+        "report": "68498335a8049ac33877af2c",
+        "hasil": "",
+        "kesimpulan": [],
+        "trackingId": 12345,
+        "prioritas": "-",
+        "situasi": "Permintaan Informasi",
+        "status": "Selesai Pengaduan",
+        "opd": [
+          "Dinas Pemberdayaan Perempuan dan Perlindungan Anak Kabupaten Bekasi",
+          "Dinas Komunikasi, Informatika, Persandian dan Statistik"
+        ],
+        "photos": [],
+        "feedbackStatus": "Sudah Jawab Beres",
+        "rating": 5,
+        "url": "google.com",
+        "keterangan": "selesai",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-11T13:23:01.296Z",
+        "updatedAt": "2025-06-22T17:54:40.688Z",
+        "__v": 4,
+        "tag": []
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "is_pinned": false,
+      "prioritasScore": 0,
+      "statusScore": 5
+    },
+    {
+      "_id": "68495465ef445f7e25215607",
+      "sessionId": "LPRAA-87549274",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.2873948065268,
+        "longitude": 107.1966991201,
+        "description": "Jl. Jati Reja-Citarik Blok Binong No.20, RT.5/RW.3, Jatireja, Kec. Cikarang Tim., Kabupaten Bekasi, Jawa Barat 17530, Indonesia",
+        "desa": "JATIREJA",
+        "kecamatan": "CIKARANG TIMUR",
+        "kabupaten": "BEKASI"
+      },
+      "message": "jadi ada masalah",
+      "photos": [],
+      "createdAt": "2025-06-11T10:03:17.308Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "68495465ef445f7e25215609",
+        "report": "68495465ef445f7e25215607",
+        "kesimpulan": [],
+        "trackingId": 902190213,
+        "situasi": "Berpengawasan",
+        "status": "Proses OPD Terkait",
+        "opd": ["Dinas Komunikasi, Informatika, Persandian dan Statistik"],
+        "feedbackStatus": "Sudah Ditanya",
+        "rating": null,
+        "keterangan": "ngaco",
+        "status_laporan": "Sedang Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-11T10:03:17.373Z",
+        "updatedAt": "2025-07-15T11:51:55.653Z",
+        "__v": 10,
+        "tag": [
+          {
+            "hash_tag": "jadi",
+            "_id": "68642b869131f831939e228d"
+          },
+          {
+            "hash_tag": "ada",
+            "_id": "68642b8a9131f831939e2292"
+          },
+          {
+            "hash_tag": "masalah",
+            "_id": "68642b8e9131f831939e2298"
+          }
+        ],
+        "hasil": "",
+        "photos": [],
+        "url": "https://google.com",
+        "prioritas": "-"
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "is_pinned": true,
+      "prioritasScore": 0,
+      "statusScore": 3
+    },
+    {
+      "_id": "684497915a439a7b4cdc0ba3",
+      "sessionId": "LPRAA-87543480",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.3767122999226,
+        "longitude": 107.16078065336,
+        "description": "J5F6+M79, Sukamahi, Central Cikarang, Bekasi Regency, West Java 17530, Indonesia",
+        "desa": "SUKAMAHI",
+        "kecamatan": "CIKARANG PUSAT",
+        "kabupaten": "BEKASI"
+      },
+      "message": "macet",
+      "photos": [],
+      "createdAt": "2025-06-07T19:48:33.135Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "684497915a439a7b4cdc0ba5",
+        "report": "684497915a439a7b4cdc0ba3",
+        "hasil": "",
+        "kesimpulan": [],
+        "trackingId": null,
+        "prioritas": null,
+        "situasi": null,
+        "status": "Ditutup",
+        "opd": [],
+        "photos": [],
+        "feedbackStatus": null,
+        "rating": null,
+        "url": "",
+        "keterangan": "Pengaduan ditolak karena: Gambar Kurang Jelas",
+        "status_laporan": "Menunggu Diproses OPD Terkait",
+        "hasBeenReprocessed": false,
+        "createdAt": "2025-06-07T19:48:33.299Z",
+        "updatedAt": "2025-06-19T10:45:33.557Z",
+        "__v": 1,
+        "tag": []
+      },
+      "processed_by": {
+        "_id": "684ffeb267fb45515f4ecb87",
+        "username": "superadmin",
+        "password": "$2b$10$hsKfBibs2kXtBgfFEst47.8IG2u79aK4H/Z7vYGNL2/7.G59qyanK",
+        "role": "SuperAdmin",
+        "__v": 0,
+        "nama_admin": "Super Admin Aja"
+      },
+      "prioritasScore": 0,
+      "statusScore": 6
+    },
+    {
+      "_id": "684492aa1aac8e3be996bf1b",
+      "sessionId": "LPRAA-87548581",
+      "from": "6281385138754",
+      "user": {
+        "_id": "684491ea1aac8e3be996be8a",
+        "from": "6281385138754",
+        "name": "Ismail Anugrah",
+        "jenis_kelamin": "pria",
+        "reportHistory": [
+          "LPRAA-87548581",
+          "LPRAA-87543480",
+          "LPRAA-87549274",
+          "87544648",
+          "87548221",
+          "87541401",
+          "87548050",
+          "875432150008",
+          "875481460009",
+          "875430180010",
+          "875449600011"
+        ],
+        "createdAt": "2025-06-07T19:24:26.974Z",
+        "updatedAt": "2025-07-16T11:35:58.760Z",
+        "__v": 0
+      },
+      "location": {
+        "type": "map",
+        "latitude": -6.4333191552938,
+        "longitude": 107.13678896427,
+        "description": "H47P+V34, Ridomanah, Cibarusah, Bekasi Regency, West Java 17340, Indonesia",
+        "desa": "RIDOMANAH",
+        "kecamatan": "CIBARUSAH",
+        "kabupaten": "BEKASI"
+      },
+      "message": "ya gitu weh, macet dimana mana, macet mah macet wehh",
+      "photos": [],
+      "createdAt": "2025-06-07T19:27:38.735Z",
+      "updatedAt": "2025-07-16T10:56:05.535Z",
+      "__v": 0,
+      "tindakan": {
+        "_id": "684492aa1aac8e3be996bf1d",
+        "report": "684492aa1aac8e3be996bf1b",
+        "hasil": "",
+        "kesimpulan": [
+          {
+            "text": "jadi gini",
+            "timestamp": "2025-06-07T20:15:46.660Z",
+            "_id": "68449df2b5ad6905c2bbb335"
+          },
+          {
+            "text": "haloo",
+            "timestamp": "2025-06-07T20:17:03.803Z",
+            "_id": "68449e3fb5ad6905c2bbb343"
+          },
+          {
+            "text": "apa kabar",
+            "timestamp": "2025-06-07T20:33:01.285Z",
+            "_id": "6844a1fdb5ad6905c2bbb3bc"
+          },
+          {
+            "text": "siapa kamu",
+            "timestamp": "2025-06-07T20:39:29.088Z",
+            "_id": "6844a3816ce3dcec12ec1121"
+          },
+          {
+            "text": "sedang kami usahakan",
+            "timestamp": "2025-06-07T20:41:09.641Z",
+            "_id": "6844a3e5fa46a63116498110"
+          },
+          {
+            "text": "gimana coy",
+            "timestamp": "2025-06-07T21:09:33.467Z",
+            "_id": "6844aa8d167639000b543464"
+          }
+        ],
+        "trackingId": 1234,
+        "prioritas": null,
+        "situasi": "Tidak Berpengawasan",
+        "status": "Selesai Pengaduan",
+        "opd": [
+          "Dinas Pemadam Kebakaran Kabupaten Bekasi",
+          "Dinas Pemberdayaan Perempuan dan Perlindungan Anak Kabupaten Bekasi"
+        ],
+        "photos": [
+          {
+            "url": "/uploadsTindakan/9b2f7f58-112f-468f-95a1-44e4f1c74857.jpg",
+            "type": "image",
+            "caption": "",
+            "originalUrl": "/uploadsTindakan/9b2f7f58-112f-468f-95a1-44e4f1c74857.jpg"
+          },
+          {
+            "url": "/uploadsTindakan/382a0eba-cb3c-45e4-a371-d778b512cf8b.jpg",
+            "type": "image",
+            "caption": "",
+            "originalUrl": "/uploadsTindakan/382a0eba-cb3c-45e4-a371-d778b512cf8b.jpg"
+          }
+        ],
+        "feedbackStatus": "Auto Rated",
+        "rating": 5,
+        "url": "https://www.lapor.go.id/laporan/detil/global-warming-202505121932351747053155499",
+        "keterangan": "",
+        "status_laporan": "Telah Diproses OPD Terkait",
+        "hasBeenReprocessed": true,
+        "createdAt": "2025-06-07T19:27:38.790Z",
+        "updatedAt": "2025-07-10T07:51:01.813Z",
+        "__v": 27,
+        "tag": [
+          {
+            "hash_tag": "test-tag",
+            "_id": "686f70e5c61ffa059a265f11"
+          }
+        ]
+      },
+      "processed_by": {
+        "_id": "684cec88272df89959c18200",
+        "username": "boro",
+        "password": "$2b$10$yFFnyak6yXn9vxMOK3SNuebdepZlbeR3d59OiVIK6bxUoBaNv7Fcu",
+        "role": "Bupati",
+        "__v": 0,
+        "nama_admin": "Boro Ganteng"
+      },
+      "prioritasScore": 0,
+      "statusScore": 5
+    }
+  ],
+  "summary": {
+    "status": {
+      "Proses OPD Terkait": 1,
+      "Ditutup": 1,
+      "Selesai Pengaduan": 7,
+      "Perlu Verifikasi": 2
+    },
+    "opd": {
+      "Dinas Pemberdayaan Perempuan dan Perlindungan Anak Kabupaten Bekasi": 2,
+      "Dinas Lingkungan Hidup Kabupaten Bekasi": 2,
+      "Dinas Pendidikan Kabupaten Bekasi": 1,
+      "Dinas Kesehatan Kabupaten Bekasi": 1,
+      "Dinas Komunikasi, Informatika, Persandian dan Statistik": 3,
+      "Dinas Pariwisata Kabupaten Bekasi": 1,
+      "Dinas Pemadam Kebakaran Kabupaten Bekasi": 2
+    },
+    "situasi": {
+      "Tidak Berpengawasan": 1,
+      "Berpengawasan": 3,
+      "Permintaan Informasi": 3,
+      "Darurat": 1
+    }
+  },
+  "breakdownTotals": {
+    "status": 11,
+    "opd": 12,
+    "situasi": 8
+  },
+  "activeFilters": {
+    "search": null,
+    "status": null,
+    "opd": null,
+    "situasi": null,
+    "is_pinned": null
+  }
+}

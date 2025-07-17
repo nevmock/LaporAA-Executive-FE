@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Image from "next/image";
 import {
     FaStar, FaUser,
     FaExclamationCircle, FaCheckCircle, FaBuilding, FaClock, FaPhotoVideo,
-    FaHashtag, FaEye, FaRegStar, FaRobot, FaWhatsapp
+    FaHashtag, FaEye, FaRegStar, FaRobot, FaWhatsapp, FaFileAlt, FaFilePdf, 
+    FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileArchive, FaMusic, FaFileImage, FaVideo
 } from "react-icons/fa";
 import { IoTrashBin, IoWarning, IoSettingsSharp } from "react-icons/io5";
 import { IoIosPin } from "react-icons/io";
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
 import { Chat, SortKey, BackendSortKey } from "../../lib/types";
+import { PhotoDisplay } from "./PhotoDisplay";
 // import { usePhotoDownloader } from "./PhotoDownloader"; // Unused import
 
 // Define type for tags
@@ -84,6 +86,58 @@ const TableSection: React.FC<Props> = ({
         return backendSortKeys.includes(key as BackendSortKey);
     };
 
+    // Helper function untuk mendapatkan ikon file berdasarkan ekstensi
+    const getFileIcon = (filePath: string) => {
+        if (!filePath || typeof filePath !== 'string') {
+            return <FaFileAlt className="text-gray-400 text-lg" />;
+        }
+
+        const extension = filePath.toLowerCase().split('.').pop() || '';
+        
+        // Image files
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+            return <FaFileImage className="text-green-600 text-lg" />;
+        }
+        
+        // Video files
+        if (['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension)) {
+            return <FaVideo className="text-blue-600 text-lg" />;
+        }
+        
+        // Audio files
+        if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(extension)) {
+            return <FaMusic className="text-purple-600 text-lg" />;
+        }
+        
+        // PDF files
+        if (extension === 'pdf') {
+            return <FaFilePdf className="text-red-600 text-lg" />;
+        }
+        
+        // Word documents
+        if (['doc', 'docx'].includes(extension)) {
+            return <FaFileWord className="text-blue-700 text-lg" />;
+        }
+        
+        // Excel files
+        if (['xls', 'xlsx', 'csv'].includes(extension)) {
+            return <FaFileExcel className="text-green-700 text-lg" />;
+        }
+        
+        // PowerPoint files
+        if (['ppt', 'pptx'].includes(extension)) {
+            return <FaFilePowerpoint className="text-orange-600 text-lg" />;
+        }
+        
+        // Archive files
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+            return <FaFileArchive className="text-yellow-600 text-lg" />;
+        }
+        
+        // Default for unknown files
+        return <FaFileAlt className="text-gray-600 text-lg" />;
+    };
+
     // State untuk modal OPD
     const [opdModalVisible, setOpdModalVisible] = React.useState(false);
     const [selectedOpds, setSelectedOpds] = React.useState<string[]>([]);
@@ -96,7 +150,7 @@ const TableSection: React.FC<Props> = ({
     const [selectedTags, setSelectedTags] = React.useState<TagItem[]>([]);
     const [tagModalTitle, setTagModalTitle] = React.useState("");
     
-    // State untuk menyimpan informasi laporan untuk modal foto (currently unused)
+    // State untuk menyimpan informasi laporan untuk modal media (currently unused)
     // const [photoModalInfo, setPhotoModalInfo] = React.useState<{
     //     sessionId: string;
     //     userName: string;
@@ -177,41 +231,81 @@ const TableSection: React.FC<Props> = ({
         }
     };
 
-    // Load initial pin status for all reports
+    // Load initial pin status for all reports - OPTIMIZED to prevent conflicts
     useEffect(() => {
+        // Only run if we have data and prevent infinite loops
+        if (!filteredData || filteredData.length === 0) return;
+
         // Initialize pin status from data first
         const initialPinnedState: Record<string, boolean> = {};
+        const sessionIds = new Set<string>();
 
         filteredData.forEach(chat => {
+            sessionIds.add(chat.sessionId);
             if (chat.is_pinned) {
                 initialPinnedState[chat.sessionId] = true;
             }
         });
 
-        setPinnedReports(initialPinnedState);
+        // Only update if state actually changed to prevent re-renders
+        setPinnedReports(prev => {
+            const hasChanges = Object.keys(prev).length !== Object.keys(initialPinnedState).length ||
+                Object.keys(initialPinnedState).some(key => prev[key] !== initialPinnedState[key]);
+            
+            return hasChanges ? initialPinnedState : prev;
+        });
 
-        // Then check pin status from API for each report that's not pinned in the initial data
+        // Batch API calls and use AbortController for cleanup
+        const controller = new AbortController();
         const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
-        filteredData.forEach(async chat => {
-            if (!chat.is_pinned) {
-                try {
-                    const response = await axios.get(`${API_URL}/reports/pinned/${chat.sessionId}`);
-                    if (response && response.data && response.data.is_pinned) {
-                        setPinnedReports(prev => ({
-                            ...prev,
-                            [chat.sessionId]: true
-                        }));
+        const checkUnpinnedReports = async () => {
+            const unpinnedReports = filteredData.filter(chat => !chat.is_pinned);
+            
+            if (unpinnedReports.length === 0) return;
+
+            try {
+                // Process in smaller batches to prevent overwhelming
+                const batchSize = 5;
+                for (let i = 0; i < unpinnedReports.length; i += batchSize) {
+                    if (controller.signal.aborted) break;
+                    
+                    const batch = unpinnedReports.slice(i, i + batchSize);
+                    const promises = batch.map(chat => 
+                        axios.get(`${API_URL}/reports/pinned/${chat.sessionId}`, {
+                            signal: controller.signal
+                        }).then(response => ({ sessionId: chat.sessionId, isPinned: response?.data?.is_pinned || false }))
+                        .catch(() => ({ sessionId: chat.sessionId, isPinned: false }))
+                    );
+
+                    const results = await Promise.all(promises);
+                    
+                    // Batch update state
+                    const updates: Record<string, boolean> = {};
+                    results.forEach(result => {
+                        if (result.isPinned) {
+                            updates[result.sessionId] = true;
+                        }
+                    });
+
+                    if (Object.keys(updates).length > 0 && !controller.signal.aborted) {
+                        setPinnedReports(prev => ({ ...prev, ...updates }));
                     }
-                } catch {
-                    // Jika laporan memang tidak di-pin, API akan memberikan status 404
-                    // Jadi tidak perlu menangani error dengan khusus
-                    // cukup log saja
-                    console.log(`Report ${chat.sessionId} is not pinned`);
+                }
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    console.log('Pin status check cancelled or failed:', error);
                 }
             }
-        });
-    }, [filteredData]);
+        };
+
+        checkUnpinnedReports();
+
+        // Cleanup function
+        return () => {
+            controller.abort();
+        };
+    }, [filteredData.length, filteredData.map(chat => chat.sessionId).join(',')]); // Optimized dependencies
 
     // Menampilkan panah naik/turun jika kolom sedang di-sort
     const renderSortArrow = (key: SortKey) => {
@@ -244,7 +338,7 @@ const TableSection: React.FC<Props> = ({
                                 { key: 'status', icon: <FaCheckCircle />, label: 'Status' },
                                 { key: 'situasi', icon: <FaExclamationCircle />, label: 'Situasi' },
                                 { key: 'opd', icon: <FaBuilding />, label: 'OPD' },
-                                { key: 'photo', icon: <FaPhotoVideo />, label: 'Media' },
+                                { key: 'photo', icon: <FaFileAlt />, label: 'Media' },
                             ].map(({ key, icon, label }) => {
                                 const sortable = isSortable(key);
                                 return (
@@ -685,124 +779,104 @@ const TableSection: React.FC<Props> = ({
                                             ) : "-"}
                                         </td>
 
-                                        {/* Media */}
+                                        {/* Media - OPTIMIZED to prevent infinite loops */}
                                         <td className="px-2 py-1.5">
                                             <div className="flex justify-center items-center">
                                                 {(() => {
-                                                    // Validasi data media
-                                                    if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
-                                                        return <span className="text-gray-400 text-xs">No Media</span>;
-                                                    }
+                                                    // ENHANCED media processing for all file types
+                                                    const mediaData = useMemo(() => {
+                                                        // Check if photos exist
+                                                        if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
+                                                            return { hasMedia: false, fileCount: 0, mediaPath: '', fileType: 'none' };
+                                                        }
 
-                                                    const baseUrl = process.env.NEXT_PUBLIC_BE_BASE_URL;
-                                                    if (!baseUrl) {
-                                                        console.error('NEXT_PUBLIC_BE_BASE_URL tidak ditemukan');
-                                                        return <span className="text-red-500 text-xs">Config Error</span>;
-                                                    }
+                                                        const firstMedia = chat.photos[0];
+                                                        const fileCount = chat.photos.length;
 
-                                                    const firstMedia = chat.photos[0];
-                                                    if (!firstMedia) {
-                                                        return <span className="text-gray-400 text-xs">No Media</span>;
-                                                    }
+                                                        // Extract first media path
+                                                        let mediaPath: string = '';
+                                                        
+                                                        if (typeof firstMedia === 'string') {
+                                                            mediaPath = firstMedia;
+                                                        } else if (typeof firstMedia === 'object' && firstMedia !== null) {
+                                                            const mediaObj = firstMedia as { url?: string; originalUrl?: string; [key: string]: any };
+                                                            mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                                                        }
 
-                                                    // Handle both string (legacy) and object (new) format
-                                                    let mediaUrl: string;
-                                                    let mediaPath: string;
-                                                    
-                                                    if (typeof firstMedia === 'string') {
-                                                        // Legacy format: photos array contains strings
-                                                        mediaPath = firstMedia;
-                                                    } else if (typeof firstMedia === 'object' && firstMedia !== null) {
-                                                        // New format: photos array contains objects with url property
-                                                        const mediaObj = firstMedia as { url?: string; originalUrl?: string; [key: string]: any };
-                                                        mediaPath = mediaObj.url || mediaObj.originalUrl || '';
-                                                    } else {
-                                                        return <span className="text-gray-400 text-xs">Invalid Media</span>;
-                                                    }
+                                                        // Detect file type based on extension
+                                                        let fileType = 'unknown';
+                                                        if (mediaPath) {
+                                                            const extension = mediaPath.toLowerCase().split('.').pop() || '';
+                                                            
+                                                            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+                                                                fileType = 'image';
+                                                            } else if (['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension)) {
+                                                                fileType = 'video';
+                                                            } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(extension)) {
+                                                                fileType = 'audio';
+                                                            } else if (extension === 'pdf') {
+                                                                fileType = 'pdf';
+                                                            } else if (['doc', 'docx'].includes(extension)) {
+                                                                fileType = 'word';
+                                                            } else if (['xls', 'xlsx', 'csv'].includes(extension)) {
+                                                                fileType = 'excel';
+                                                            } else if (['ppt', 'pptx'].includes(extension)) {
+                                                                fileType = 'powerpoint';
+                                                            } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+                                                                fileType = 'archive';
+                                                            } else if (extension) {
+                                                                fileType = 'document';
+                                                            }
+                                                        }
 
-                                                    // Validasi mediaPath tidak kosong
-                                                    if (!mediaPath || mediaPath.trim() === '') {
-                                                        console.error('Empty media path:', firstMedia);
-                                                        return <span className="text-gray-400 text-xs">Empty Path</span>;
-                                                    }
+                                                        return {
+                                                            hasMedia: !!(mediaPath && mediaPath.trim() !== ''),
+                                                            fileCount,
+                                                            mediaPath: mediaPath || '',
+                                                            fileType
+                                                        };
+                                                    }, [chat.photos, chat.sessionId]); // Stable dependencies
 
-                                                    // Buat URL yang benar
-                                                    if (mediaPath.startsWith('http')) {
-                                                        // Jika sudah URL lengkap
-                                                        mediaUrl = mediaPath;
-                                                    } else {
-                                                        // Jika path relatif, gabung dengan base URL
-                                                        const cleanPath = mediaPath.startsWith('/') ? mediaPath : `/${mediaPath}`;
-                                                        mediaUrl = `${baseUrl}${cleanPath}`;
-                                                    }
-
-                                                    // Validasi URL final sebelum memberikan ke component
-                                                    try {
-                                                        new URL(mediaUrl);
-                                                    } catch (error) {
-                                                        console.error('Invalid URL constructed:', mediaUrl);
-                                                        console.error('From mediaPath:', mediaPath);
-                                                        console.error('Base URL:', baseUrl);
-                                                        return <span className="text-red-500 text-xs">Invalid URL</span>;
-                                                    }
-
-                                                    console.log('Media URL:', mediaUrl);
-                                                    
-                                                    // Deteksi apakah ini video atau gambar
-                                                    const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
-
-                                                    if (isVideo) {
+                                                    // No media case
+                                                    if (!mediaData.hasMedia) {
                                                         return (
-                                                            <div 
-                                                                className="relative h-10 w-10 bg-gray-100 rounded border border-gray-300 cursor-pointer flex items-center justify-center"
-                                                                onClick={() => {
-                                                                    if (chat.photos.length > 1) {
-                                                                        setPhotoModal(chat.photos, {
-                                                                            sessionId: chat.sessionId,
-                                                                            userName: chat.user || 'Unknown'
-                                                                        });
-                                                                    } else {
-                                                                        // Untuk video tunggal, buka di tab baru
-                                                                        window.open(mediaUrl, '_blank');
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <FaPhotoVideo className="text-blue-600 text-sm" />
+                                                            <div className="relative h-10 w-10 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                                                                <FaFileAlt className="text-gray-400 text-lg" />
                                                             </div>
                                                         );
-                                                    } else {
-                                                        return (
-                                                            <Image
-                                                                src={mediaUrl}
-                                                                alt="Media pengaduan"
-                                                                className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
-                                                                width={40}
-                                                                height={40}
-                                                                onClick={() => {
-                                                                    if (chat.photos.length > 1) {
-                                                                        setPhotoModal(chat.photos, {
-                                                                            sessionId: chat.sessionId,
-                                                                            userName: chat.user || 'Unknown'
-                                                                        });
-                                                                    } else {
-                                                                        // Untuk foto tunggal, langsung download dengan nama yang benar
-                                                                        downloadSinglePhoto(mediaUrl, chat.sessionId, chat.user || 'Unknown', mediaPath);
-                                                                    }
-                                                                }}
-                                                                onError={() => {
-                                                                    console.error('Error loading image:', mediaUrl);
-                                                                    console.error('Photo data:', chat.photos);
-                                                                    console.error('First media raw:', firstMedia);
-                                                                    console.error('Media path extracted:', mediaPath);
-                                                                    // Instead of manipulating DOM, show alert directly
-                                                                    alert(`Gagal memuat gambar.\nURL: ${mediaUrl}\nBase URL: ${baseUrl}\nMedia Path: ${mediaPath}\nFirst Media Type: ${typeof firstMedia}\nFull Photos: ${JSON.stringify(chat.photos)}`);
-                                                                }}
-                                                                onLoad={() => {
-                                                                    console.log('✅ Image loaded successfully:', mediaUrl);
-                                                                }}
-                                                            />
-                                                        );
                                                     }
+
+                                                    // Media exists case with appropriate icon
+                                                    return (
+                                                        <div 
+                                                            className="relative cursor-pointer hover:opacity-80 transition-opacity"
+                                                            onClick={() => {
+                                                                setPhotoModal(chat.photos, {
+                                                                    sessionId: chat.sessionId,
+                                                                    userName: chat.user || 'Unknown'
+                                                                });
+                                                            }}
+                                                            title={`${mediaData.fileCount} file(s) - Klik untuk lihat semua`}
+                                                        >
+                                                            {mediaData.fileType === 'image' ? (
+                                                                <PhotoDisplay
+                                                                    photoPath={mediaData.mediaPath}
+                                                                    alt="Media pengaduan"
+                                                                    className="h-10 w-10 object-cover rounded border border-gray-300"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-10 w-10 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                                                                    {getFileIcon(mediaData.mediaPath)}
+                                                                </div>
+                                                            )}
+                                                            {/* File count badge */}
+                                                            {mediaData.fileCount > 1 && (
+                                                                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                                                    {mediaData.fileCount > 9 ? '9+' : mediaData.fileCount}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
                                                 })()}
                                             </div>
                                         </td>

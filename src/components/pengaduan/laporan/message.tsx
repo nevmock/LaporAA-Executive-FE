@@ -310,42 +310,56 @@ export default function Message({
     // Keyboard event handlers for preview modal
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!previewOpen) return;
+            if (!previewOpen && !locationPopup.isOpen) return;
             
             switch (e.key) {
                 case 'Escape':
-                    closePreview();
+                    if (previewOpen) {
+                        closePreview();
+                    } else if (locationPopup.isOpen) {
+                        setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' });
+                    }
                     break;
                 case '+':
                 case '=':
-                    e.preventDefault();
-                    setZoomLevel(prev => Math.min(prev * 1.2, 5));
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(prev => Math.min(prev * 1.2, 5));
+                    }
                     break;
                 case '-':
-                    e.preventDefault();
-                    setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(prev => Math.max(prev / 1.2, 0.1));
+                    }
                     break;
                 case '0':
-                    e.preventDefault();
-                    setZoomLevel(1);
-                    setDragPosition({ x: 0, y: 0 });
+                    if (previewOpen && previewType === "image") {
+                        e.preventDefault();
+                        setZoomLevel(1);
+                        setDragPosition({ x: 0, y: 0 });
+                    }
                     break;
                 case 'f':
                 case 'F':
-                    e.preventDefault();
-                    setIsFullscreen(prev => !prev);
+                    if (previewOpen) {
+                        e.preventDefault();
+                        setIsFullscreen(prev => !prev);
+                    }
                     break;
                 case 'd':
                 case 'D':
-                    e.preventDefault();
-                    handleDownload();
+                    if (previewOpen) {
+                        e.preventDefault();
+                        handleDownload();
+                    }
                     break;
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [previewOpen]); // Only depend on previewOpen - other values are accessed via closure
+    }, [previewOpen, locationPopup.isOpen, previewType]); // Depend on location popup state too
 
     const handleScroll = () => {
         if (!chatContainerRef.current) return;
@@ -1989,42 +2003,70 @@ export default function Message({
             {/* Location Popup Modal */}
             {locationPopup.isOpen && (
                 <Portal>
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden">
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    📍 Detail Lokasi
-                                </h3>
+                    <div 
+                        className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[1000000]"
+                        onClick={() => setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' })}
+                    >
+                        {/* Top Controls */}
+                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-[1000001]" style={{ pointerEvents: 'auto' }}>
+                            <div className="text-white font-medium max-w-md">
+                                📍 {locationPopup.locationText || "Detail Lokasi"}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {locationPopup.lat !== 0 && locationPopup.lng !== 0 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const url = `https://www.google.com/maps?q=${locationPopup.lat},${locationPopup.lng}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                        className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-2 rounded-full transition-colors text-sm"
+                                        title="Open in Google Maps"
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        🗺️ Google Maps
+                                    </button>
+                                )}
                                 <button
-                                    onClick={() => setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' })}
-                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLocationPopup({ isOpen: false, lat: 0, lng: 0, locationText: '' });
+                                    }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-colors"
+                                    title="Close (Esc)"
+                                    style={{ pointerEvents: 'auto' }}
                                 >
-                                    <FaTimes size={20} />
+                                    <FaTimes size={16} />
                                 </button>
                             </div>
-                            
-                            <div className="p-4">
-                                <div className="mb-4">
-                                    <p className="text-sm text-gray-600 mb-2">Alamat:</p>
-                                    <p className="font-medium text-gray-800">{locationPopup.locationText}</p>
-                                </div>
-                                
-                                {locationPopup.lat !== 0 && locationPopup.lng !== 0 && (
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600 mb-2">Koordinat:</p>
-                                        <p className="font-mono text-sm text-gray-700">
-                                            {locationPopup.lat.toFixed(6)}, {locationPopup.lng.toFixed(6)}
-                                        </p>
+                        </div>
+
+                        {/* Map Content */}
+                        <div 
+                            className="relative w-full max-w-6xl h-[80vh] mx-4"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            <div className="w-full h-full rounded-lg overflow-hidden">
+                                <MapPopup 
+                                    lat={locationPopup.lat || -6.200000}
+                                    lon={locationPopup.lng || 106.816666}
+                                    description={locationPopup.locationText || "Lokasi Tidak Diketahui"}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Bottom Info */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center text-sm opacity-90" style={{ pointerEvents: 'none' }}>
+                            <div className="bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                                {locationPopup.lat !== 0 && locationPopup.lng !== 0 ? (
+                                    <div>
+                                        📍 {locationPopup.locationText}<br />
+                                        🧭 {locationPopup.lat.toFixed(6)}, {locationPopup.lng.toFixed(6)}
                                     </div>
+                                ) : (
+                                    <div>📍 {locationPopup.locationText}</div>
                                 )}
-                                
-                                <div className="h-96 border rounded-lg overflow-hidden">
-                                    <MapPopup 
-                                        lat={locationPopup.lat || -6.200000}
-                                        lon={locationPopup.lng || 106.816666}
-                                        description={locationPopup.locationText || "Lokasi Tidak Diketahui"}
-                                    />
-                                </div>
                             </div>
                         </div>
                     </div>

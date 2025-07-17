@@ -11,6 +11,7 @@ import { usePhotoDownloader } from "../PhotoDownloader";
 import { RiCloseLine } from "react-icons/ri";
 import { Data } from "../../../lib/types";
 import { constructPhotoUrl, extractPhotoPath } from "../../../utils/urlUtils";
+import { PhotoDisplay, VideoDisplay } from "../PhotoDisplay";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 
@@ -601,7 +602,7 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Masukkan tag/hashtag... (contoh: penting, urgensi, dll)"
+                            placeholder="Tag... (Enter untuk tambah)"
                             value={tagInput}
                             onChange={(e) => setTagInput(e.target.value)}
                             onKeyDown={handleTagKeyDown}
@@ -699,11 +700,6 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                         )}
                     </div>
                 </div>
-            ),
-            action: (
-                <div className="text-xs text-gray-500">
-                    Tekan Enter untuk menambahkan
-                </div>
             )
         },
         {
@@ -794,21 +790,14 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                             <div key={index} className="relative group">
                                 {isVideo ? (
                                     <div className="relative">
-                                        <video
+                                        <VideoDisplay
+                                            photoPath={mediaPath}
                                             className="w-24 h-24 object-cover rounded-md cursor-pointer"
-                                            width={96}
-                                            height={96}
                                             onClick={() => {
                                                 setActivePhotoIndex(index);
                                                 setShowModal(true);
                                             }}
-                                            onError={() => {
-                                                console.error('Failed to load video:', mediaUrl);
-                                            }}
-                                        >
-                                            <source src={mediaUrl} />
-                                            Video tidak dapat dimuat
-                                        </video>
+                                        />
                                         {/* Video play icon overlay */}
                                         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-md pointer-events-none">
                                             <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -817,18 +806,16 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                                         </div>
                                     </div>
                                 ) : (
-                                    <Image
-                                        src={mediaUrl}
+                                    <PhotoDisplay
+                                        photoPath={mediaPath}
                                         alt={`Media ${index + 1}`}
                                         className="w-24 h-24 object-cover rounded-md cursor-pointer"
-                                        width={96}
-                                        height={96}
                                         onClick={() => {
                                             setActivePhotoIndex(index);
                                             setShowModal(true);
                                         }}
                                         onError={() => {
-                                            console.error('Failed to load image:', mediaUrl);
+                                            console.error('Failed to load media:', mediaPath);
                                         }}
                                     />
                                 )}
@@ -945,15 +932,12 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                                 } else {
                                     return (
                                         <Zoom>
-                                            <Image
-                                                src={mediaUrl}
+                                            <PhotoDisplay
+                                                photoPath={mediaPath}
                                                 className="w-full h-96 object-contain rounded-md cursor-zoom-in"
                                                 alt={`Media ${activePhotoIndex + 1}`}
-                                                width={800}
-                                                height={384}
                                                 onError={() => {
                                                     console.error('Failed to load photo in modal at index:', activePhotoIndex);
-                                                    console.error('API_URL:', API_URL);
                                                 }}
                                             />
                                         </Zoom>

@@ -45,9 +45,25 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
   }, [loadAdminDetail]);
 
   const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    // Handle invalid or extreme values
+    if (!minutes || minutes < 0) return '0h 0m';
+    if (minutes > 10080) return '> 1 week'; // More than a week seems unrealistic for a session
+    
+    // Round to avoid decimal places
+    const totalMinutes = Math.round(minutes);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    
+    // Format based on duration
+    if (hours === 0) {
+      return `${mins}m`;
+    } else if (hours < 24) {
+      return `${hours}h ${mins}m`;
+    } else {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return `${days}d ${remainingHours}h`;
+    }
   };
 
   const formatDateTime = (dateString: string) => {
@@ -111,7 +127,7 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 hover:text-gray-900 border border-gray-300"
         >
           <FiArrowLeft size={20} />
         </button>
@@ -129,14 +145,14 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
             type="date"
             value={dateRange.startDate}
             onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <span className="text-gray-500">to</span>
           <input
             type="date"
             value={dateRange.endDate}
             onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
@@ -188,10 +204,11 @@ const AdminDetailView: React.FC<AdminDetailViewProps> = ({ adminId, onBack }) =>
               <p className="text-sm text-gray-600">Avg Session Duration</p>
               <p className="text-2xl font-bold text-gray-900">
                 {adminDetail.sessions.length > 0 
-                  ? formatDuration(
-                      adminDetail.sessions.reduce((total, session) => total + session.sessionDuration, 0) / 
-                      adminDetail.sessions.length
-                    )
+                  ? (() => {
+                      const totalDuration = adminDetail.sessions.reduce((total, session) => total + (session.sessionDuration || 0), 0);
+                      const avgDuration = totalDuration / adminDetail.sessions.length;
+                      return formatDuration(avgDuration);
+                    })()
                   : '0h 0m'
                 }
               </p>

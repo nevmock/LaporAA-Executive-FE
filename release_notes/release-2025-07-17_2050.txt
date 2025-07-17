@@ -1,0 +1,20 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update src/app/(dashboard)/user-management/page.tsx, src/components/dashboard/AdminDetailView.tsx, src/components/dashboard/AdminPerformance.tsx
+📅 2025-07-17_2050
+
+📂 Perubahan file:
+src/app/(dashboard)/user-management/page.tsx
+src/components/dashboard/AdminDetailView.tsx
+src/components/dashboard/AdminPerformance.tsx
+src/components/dashboard/charts/BarOpdChart.tsx
+src/components/dashboard/tables/SummaryTable.tsx
+src/components/pengaduan/PhotoModal.tsx
+src/components/pengaduan/laporan.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/tableSection.tsx
+src/services/botModeService.ts
+src/utils/urlUtils.ts
+
+🚀 Meluncur
