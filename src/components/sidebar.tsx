@@ -116,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending, role }) => {
                     </Link>
 
                     {/* User Management - SuperAdmin only */}
-                    {role === 'SuperAdmin' && (
+                    {/* {role === 'SuperAdmin' && (
                         <Link href="/user-management" className={navItemClass(isActive("/user-management"))}>
                             {isCollapsed ? (
                                 <Tooltip text="Pengaturan" position="right">
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending, role }) => {
                                 </>
                             )}
                         </Link>
-                    )}
+                    )} */}
                 </nav>
             </div>
         </div>
