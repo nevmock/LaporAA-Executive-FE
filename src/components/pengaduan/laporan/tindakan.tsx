@@ -263,6 +263,13 @@ const TindakanComponent = function Tindakan({
     const memoizedReportData = useMemo(() => {
         if (!reportData) return null;
 
+        console.log("🔄 [Tindakan] Memoizing reportData:", {
+            photos: reportData.photos,
+            photosLength: reportData.photos?.length,
+            photosType: typeof reportData.photos,
+            isArray: Array.isArray(reportData.photos)
+        });
+
         // Return just the necessary fields to avoid deep comparisons on the entire reportData
         return {
             _id: reportData._id,
@@ -284,7 +291,7 @@ const TindakanComponent = function Tindakan({
         reportData?.user?.name,
         reportData?.location?.latitude,
         reportData?.location?.longitude,
-        reportData?.photos?.length,
+        reportData?.photos, // Changed from photos?.length to photos to detect any changes in photos array
         reportData?.createdAt,
         reportData?.tindakan
     ]);
@@ -457,9 +464,10 @@ const TindakanComponent = function Tindakan({
                     </div>
                 </div>
 
-                {/* Previous Steps (show with toggle) */}
-                <div className="max-w-6xl mx-auto mt-4 sm:mt-6 space-y-3 sm:space-y-4">
-                    {Array.from({ length: currentStepIndex }).map((_, idx) => (
+                {/* Previous Steps (show with toggle) - Hidden for Bupati */}
+                {role !== "Bupati" && (
+                    <div className="max-w-6xl mx-auto mt-4 sm:mt-6 space-y-3 sm:space-y-4">
+                        {Array.from({ length: currentStepIndex }).map((_, idx) => (
                         <div key={`prev-step-${idx}`} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
                                 <div className="flex items-center justify-between">
@@ -536,8 +544,10 @@ const TindakanComponent = function Tindakan({
                         </div>
                     ))}
                 </div>
+                )}
 
-                {/* Current Active Step (always shown) */}
+                {/* Current Active Step (always shown) - Hidden for Bupati */}
+                {role !== "Bupati" && (
                 <div ref={currentStepRef} className="max-w-6xl mx-auto mt-4 sm:mt-6">
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-blue-200 overflow-hidden">
                         <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
@@ -623,6 +633,7 @@ const TindakanComponent = function Tindakan({
                         </div>
                     </div>
                 </div>
+                )}
             </div>
             {/* Modal Zoom Foto */}
             <Modal open={showModal && !!formData.photos} onClose={() => setShowModal(false)} maxWidth="max-w-4xl">

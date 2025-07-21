@@ -129,19 +129,7 @@ export function PhotoDisplay({ photoPath, alt = "Photo", className, onClick, onE
         // REMOVED: Aggressive timeout that was forcing error state after 10 seconds
         // The image onLoad/onError handlers will manage the loading state properly
         
-    }, [possibleUrls.length, possibleUrls[0]]); // Stable dependencies
-
-    // Early return for invalid paths after hooks
-    if (!photoPath || photoPath.trim() === '') {
-        return (
-            <div className={`flex items-center justify-center bg-gray-100 text-gray-500 ${className || ''}`}>
-                <div className="text-center">
-                    <div className="text-2xl mb-2">📷</div>
-                    <div className="text-xs">No Media</div>
-                </div>
-            </div>
-        );
-    }
+    }, [possibleUrls]);
 
     // CONSERVATIVE error handler - only try alternatives if really needed
     const handleImageError = useCallback(() => {
@@ -173,6 +161,18 @@ export function PhotoDisplay({ photoPath, alt = "Photo", className, onClick, onE
         setIsLoading(false);
         setHasError(false);
     }, []);
+
+    // Early return for invalid paths after hooks
+    if (!photoPath || photoPath.trim() === '') {
+        return (
+            <div className={`flex items-center justify-center bg-gray-100 text-gray-500 ${className || ''}`}>
+                <div className="text-center">
+                    <div className="text-2xl mb-2">📷</div>
+                    <div className="text-xs">No Media</div>
+                </div>
+            </div>
+        );
+    }
 
     // IMPROVED rendering logic - only show error when truly failed
     if (hasError && !currentSrc) {

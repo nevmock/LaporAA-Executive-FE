@@ -4,12 +4,12 @@ import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { TindakanClientState } from "../../../../lib/types";
 import axios from "../../../../utils/axiosInstance";
-import { Plus } from "lucide-react";
+import { Plus, FileText, Video, Download } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import OPDSelect from "./opdSelect"
 import { RiSave3Fill } from "react-icons/ri";
 
-const MAX_PHOTOS = 5;
+const MAX_MEDIA = 5;
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 interface SaveDataFunction {
@@ -80,6 +80,102 @@ export default function Proses({
         };
     }, [isSaving, isFormSaving]);
 
+    // Helper function to get file type and extension
+    const getFileInfo = (filePath: string) => {
+        const extension = filePath.toLowerCase().split('.').pop() || '';
+        const fileName = filePath.split('/').pop() || '';
+        
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension)) {
+            return { type: 'image', extension, fileName };
+        } else if (['mp4', 'avi', 'mov', 'mkv', 'webm', '3gp'].includes(extension)) {
+            return { type: 'video', extension, fileName };
+        } else if (extension === 'pdf') {
+            return { type: 'pdf', extension, fileName };
+        } else {
+            return { type: 'other', extension, fileName };
+        }
+    };
+
+    // Media preview component
+    const MediaPreview = ({ mediaPath, index }: { mediaPath: string; index: number }) => {
+        const fileInfo = getFileInfo(mediaPath);
+        const fullUrl = `${API_URL}${mediaPath}`;
+
+        const handleDownload = () => {
+            const link = document.createElement('a');
+            link.href = fullUrl;
+            link.download = fileInfo.fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const handleView = () => {
+            window.open(fullUrl, '_blank');
+        };
+
+        return (
+            <div className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300 bg-gray-100">
+                {fileInfo.type === 'image' && (
+                    <Image
+                        src={fullUrl}
+                        alt={`Media ${index + 1}`}
+                        className="w-full h-full object-cover cursor-pointer"
+                        width={96}
+                        height={96}
+                        onClick={handleView}
+                    />
+                )}
+                
+                {fileInfo.type === 'video' && (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-blue-50 cursor-pointer" onClick={handleView}>
+                        <Video className="w-8 h-8 text-blue-600 mb-1" />
+                        <span className="text-xs text-blue-600 text-center px-1">
+                            {fileInfo.extension.toUpperCase()}
+                        </span>
+                    </div>
+                )}
+                
+                {fileInfo.type === 'pdf' && (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 cursor-pointer" onClick={handleView}>
+                        <FileText className="w-8 h-8 text-red-600 mb-1" />
+                        <span className="text-xs text-red-600 text-center px-1">PDF</span>
+                    </div>
+                )}
+                
+                {fileInfo.type === 'other' && (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 cursor-pointer" onClick={handleDownload}>
+                        <Download className="w-8 h-8 text-gray-600 mb-1" />
+                        <span className="text-xs text-gray-600 text-center px-1">
+                            {fileInfo.extension.toUpperCase()}
+                        </span>
+                    </div>
+                )}
+                
+                <button
+                    onClick={() => handleRemovePhoto(index)}
+                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center hover:bg-red-700 transition"
+                    title="Hapus media"
+                >
+                    ✕
+                </button>
+                
+                {/* Action buttons overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 opacity-0 hover:opacity-100 transition-opacity">
+                    <div className="flex justify-between items-center">
+                        <button onClick={handleView} className="hover:text-blue-300" title="Lihat">
+                            👁️
+                        </button>
+                        <button onClick={handleDownload} className="hover:text-green-300" title="Download">
+                            💾
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         onChange((prev) => ({ ...prev, [name]: value }));
@@ -132,16 +228,39 @@ export default function Proses({
         }
     };
 
-    // Upload Foto
-    const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Upload Media
+    const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
-        const files = Array.from(e.target.files).slice(0, MAX_PHOTOS - (data.photos?.length || 0));
+        const files = Array.from(e.target.files).slice(0, MAX_MEDIA - (data.photos?.length || 0));
         if (files.length === 0) return;
+
+        // Validate file types
+        const allowedTypes = [
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+            'video/mp4', 'video/avi', 'video/mov', 'video/mkv', 'video/webm', 'video/3gp',
+            'application/pdf'
+        ];
+
+        const validFiles = files.filter(file => {
+            if (!allowedTypes.includes(file.type)) {
+                alert(`File ${file.name} tidak didukung. Hanya file gambar, video, dan PDF yang diizinkan.`);
+                return false;
+            }
+            // Check file size (max 10MB for videos, 5MB for others)
+            const maxSize = file.type.startsWith('video/') ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert(`File ${file.name} terlalu besar. Maksimal ${file.type.startsWith('video/') ? '10MB untuk video' : '5MB untuk file lainnya'}.`);
+                return false;
+            }
+            return true;
+        });
+
+        if (validFiles.length === 0) return;
 
         setLoading(true);
         try {
             const formDataUpload = new FormData();
-            files.forEach(file => formDataUpload.append("photos", file));
+            validFiles.forEach(file => formDataUpload.append("photos", file));
 
             const res = await axios.post(`${API_URL}/api/upload-tindakan`, formDataUpload, {
                 headers: { "Content-Type": "multipart/form-data" }
@@ -150,10 +269,11 @@ export default function Proses({
             const uploadedPaths: string[] = res.data.paths || [];
             onChange(prev => ({
                 ...prev,
-                photos: [...(prev.photos || []), ...uploadedPaths].slice(0, MAX_PHOTOS)
+                photos: [...(prev.photos || []), ...uploadedPaths].slice(0, MAX_MEDIA)
             }));
         } catch (err) {
-            console.error("❌ Gagal upload foto:", err);
+            console.error("❌ Gagal upload media:", err);
+            alert("Gagal mengunggah media. Silakan coba lagi.");
         }
         setLoading(false);
     };
@@ -424,58 +544,55 @@ export default function Proses({
                 </div>
             </div>
 
-            {/* 📸 Upload Foto */}
-            <label className="col-span-1 font-medium">Foto Pendukung
+            {/* � Upload Media */}
+            <label className="col-span-1 font-medium">Media Pendukung
                 <span className="text-red-500">*</span>
                 <p className="text-gray-500">(Evidence Tindak Lanjut dari SP4N Lapor)</p>
+                <p className="text-xs text-blue-600 mt-1">Foto, Video, PDF</p>
             </label>
             <div className="col-span-3 space-y-2">
                 <div className="flex gap-2 flex-wrap">
-                    {(data.photos || []).map((photo, idx) => (
-                        <div key={idx} className="relative w-24 h-24 rounded-md overflow-hidden border border-yellow-300">
-                            <Image
-                                src={`${API_URL}${photo}`}
-                                alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                width={96}
-                                height={96}
-                            />
-                            <button
-                                onClick={() => handleRemovePhoto(idx)}
-                                className="absolute top-1 right-1 bg-red-600 text-white rounded-full text-xs w-5 h-5"
-                            >
-                                ✕
-                            </button>
-                        </div>
+                    {(data.photos || []).map((media, idx) => (
+                        <MediaPreview key={idx} mediaPath={media} index={idx} />
                     ))}
 
                     {/* Tombol Upload */}
-                    {(data.photos?.length || 0) < MAX_PHOTOS && (
+                    {(data.photos?.length || 0) < MAX_MEDIA && (
                         <div
                             onClick={() => !loading && fileRef.current?.click()}
                             className={`w-24 h-24 border-2 border-yellow-300 bg-yellow-50 border-dashed rounded-md flex items-center justify-center cursor-pointer transition
                         ${loading ? "border-yellow-300 bg-yellow-50" : "hover:border-green-500 hover:bg-green-50"}`}
                         >
                             {loading ? (
-                                <span className="text-xs text-gray-500">Mengunggah...</span>
+                                <div className="flex flex-col items-center text-gray-500 text-xs">
+                                    <svg className="animate-spin h-5 w-5 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Upload...</span>
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center text-gray-500 text-xs">
-                                    <Plus className="w-5 h-5" />
+                                    <Plus className="w-5 h-5 mb-1" />
                                     <span>Tambah</span>
                                 </div>
                             )}
                             <input
                                 type="file"
-                                accept="image/*,application/pdf"
+                                accept="image/*,video/*,application/pdf"
                                 multiple
                                 className="hidden"
                                 ref={fileRef}
-                                onChange={handlePhotoSelect}
+                                onChange={handleMediaSelect}
                             />
                         </div>
                     )}
                 </div>
-                <p className="text-xs text-gray-500">Maksimal {MAX_PHOTOS} foto</p>
+                <div className="text-xs text-gray-500 space-y-1">
+                    <p>• Maksimal {MAX_MEDIA} file</p>
+                    <p>• Format: Gambar (JPG, PNG, GIF, WebP), Video (MP4, AVI, MOV, MKV), PDF</p>
+                    <p>• Ukuran: Max 5MB untuk gambar/PDF, 10MB untuk video</p>
+                </div>
             </div>
 
             {/* Modal Simpan Loading for Kirimkan Tindak Lanjut */}

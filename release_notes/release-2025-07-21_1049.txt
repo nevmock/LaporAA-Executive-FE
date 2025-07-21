@@ -1,0 +1,36 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update package.json, src/app/(dashboard)/dashboard/buat-laporan/components/Page1Cover.tsx, src/app/(dashboard)/dashboard/buat-laporan/components/Page2Summary.tsx
+📅 2025-07-21_1049
+
+📂 Perubahan file:
+package.json
+src/app/(dashboard)/dashboard/buat-laporan/components/Page1Cover.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page2Summary.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page3Chart.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page4Map.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page5Location.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page6Agency.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page7Category.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page8Satisfaction.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/Page9Closing.tsx
+src/app/(dashboard)/dashboard/buat-laporan/components/ReportPageWrapper.tsx
+src/app/(dashboard)/dashboard/buat-laporan/page.tsx
+src/app/(dashboard)/dashboard/buat-laporan/page_clean.tsx
+src/app/(dashboard)/pengaduan/[sessionId]/Laporan.tsx
+src/app/AppShell.tsx
+src/components/dashboard/maps/MapPersebaran.tsx
+src/components/dashboard/maps/MapPersebaranCard.tsx
+src/components/dashboard/widgets/LiveMapUpdates.tsx
+src/components/pengaduan/PhotoDisplay.tsx
+src/components/pengaduan/PhotoModal.tsx
+src/components/pengaduan/laporan/componentsTindakan/proses.tsx
+src/components/pengaduan/laporan/keluhan.tsx
+src/components/pengaduan/laporan/message.tsx
+src/components/pengaduan/laporan/tindakan.tsx
+src/components/pengaduan/tableSection.tsx
+src/components/sidebar.tsx
+src/utils/axiosInstance.ts
+src/utils/urlUtils.ts
+
+🚀 Meluncur

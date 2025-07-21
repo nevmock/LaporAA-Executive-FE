@@ -180,12 +180,43 @@ export function isValidUrl(url: string): boolean {
 
 /**
  * Extract photo path from various photo object formats
+ * Returns empty string for invalid inputs to ensure safe string operations
  */
-export function extractPhotoPath(photo: string | { url?: string; originalUrl?: string; [key: string]: any }): string {
+export function extractPhotoPath(photo: string | { url?: string; originalUrl?: string; [key: string]: any } | null | undefined): string {
+    // Handle null, undefined, or other falsy values
+    if (!photo) {
+        return '';
+    }
+    
+    // Handle string type
     if (typeof photo === 'string') {
         return photo;
-    } else if (typeof photo === 'object' && photo !== null) {
-        return photo.url || photo.originalUrl || '';
     }
+    
+    // Handle object type
+    if (typeof photo === 'object' && photo !== null) {
+        const url = photo.url || photo.originalUrl || '';
+        // Ensure we return a string
+        return typeof url === 'string' ? url : '';
+    }
+    
+    // Handle any other type (numbers, booleans, etc.)
     return '';
+}
+
+/**
+ * Safely validate if a media path is usable
+ * Returns true only if the path is a non-empty string
+ */
+export function isValidMediaPath(mediaPath: any): mediaPath is string {
+    return typeof mediaPath === 'string' && mediaPath.trim() !== '';
+}
+
+/**
+ * Safe extraction and validation of photo path in one function
+ * Returns null if path is invalid, otherwise returns the valid string path
+ */
+export function extractAndValidatePhotoPath(photo: any): string | null {
+    const path = extractPhotoPath(photo);
+    return isValidMediaPath(path) ? path : null;
 }

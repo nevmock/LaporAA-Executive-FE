@@ -9,19 +9,23 @@ import {
     FiInbox,
     FiChevronLeft,
     FiFileText,
+    FiSettings,
 } from "react-icons/fi";
 import { Tooltip } from "./Tooltip";
 
 interface SidebarProps {
     countPending: number;
+    role?: string | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
+const Sidebar: React.FC<SidebarProps> = ({ countPending, role }) => {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(true);
 
-    const isActive = (path: string) =>
-        pathname === path || (pathname && pathname.startsWith(`${path}/`)) || false;
+    const isActive = (path: string) => {
+        // Exact match untuk semua paths - tidak ada partial matching
+        return pathname === path;
+    };
 
     const navItemClass = (active: boolean) =>
         `flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition ${active
@@ -59,8 +63,10 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                     {/* Dashboard */}
                     <Link href="/dashboard" className={navItemClass(isActive("/dashboard"))}>
                         {isCollapsed ? (
-                            <Tooltip text="Dashboard">
-                                <FiHome size={22} />
+                            <Tooltip text="Dashboard" position="right">
+                                <div className="flex items-center justify-center">
+                                    <FiHome size={22} />
+                                </div>
                             </Tooltip>
                         ) : (
                             <>
@@ -73,8 +79,10 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                     {/* Pengaduan */}
                     <Link href="/pengaduan" className={`relative ${navItemClass(isActive("/pengaduan"))}`}>
                         {isCollapsed ? (
-                            <Tooltip text="Pengaduan">
-                                <FiInbox size={22} />
+                            <Tooltip text="Pengaduan" position="right">
+                                <div className="flex items-center justify-center">
+                                    <FiInbox size={22} />
+                                </div>
                             </Tooltip>
                         ) : (
                             <>
@@ -84,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                         )}
                         {countPending > 0 && (
                             <div
-                                className={`absolute -top-3 left-6 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
+                                className={`absolute -top-3 ${isCollapsed ? 'left-4' : 'left-6'} bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md`}
                             >
                                 {countPending}
                             </div>
@@ -94,8 +102,10 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                     {/* Buat Laporan */}
                     <Link href="/dashboard/buat-laporan" className={navItemClass(isActive("/dashboard/buat-laporan"))}>
                         {isCollapsed ? (
-                            <Tooltip text="Buat Laporan">
-                                <FiFileText size={22} />
+                            <Tooltip text="Buat Laporan" position="right">
+                                <div className="flex items-center justify-center">
+                                    <FiFileText size={22} />
+                                </div>
                             </Tooltip>
                         ) : (
                             <>
@@ -104,6 +114,24 @@ const Sidebar: React.FC<SidebarProps> = ({ countPending }) => {
                             </>
                         )}
                     </Link>
+
+                    {/* User Management - SuperAdmin only */}
+                    {role === 'SuperAdmin' && (
+                        <Link href="/user-management" className={navItemClass(isActive("/user-management"))}>
+                            {isCollapsed ? (
+                                <Tooltip text="Pengaturan" position="right">
+                                    <div className="flex items-center justify-center">
+                                        <FiSettings size={22} />
+                                    </div>
+                                </Tooltip>
+                            ) : (
+                                <>
+                                    <FiSettings size={22} />
+                                    <span className="text-sm font-medium">Pengaturan</span>
+                                </>
+                            )}
+                        </Link>
+                    )}
                 </nav>
             </div>
         </div>

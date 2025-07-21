@@ -24,8 +24,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const getPageTitle = () => {
         if (!pathname) return 'Laporan AA';
         
-        if (pathname.includes('/dashboard')) {
+        if (pathname === '/dashboard') {
             return 'Dashboard';
+        } else if (pathname.includes('/dashboard/buat-laporan')) {
+            return 'Buat Laporan';
         } else if (pathname.includes('/pengaduan')) {
             return 'Daftar Pengaduan';
         }
@@ -208,7 +210,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </>
             ) : (
                 <>
-                    <Sidebar countPending={countPending} />
+                    <Sidebar countPending={countPending} role={role} />
                     <main className="flex-1 bg-gray-900 text-white flex flex-col overflow-hidden">
                         {/* TOP NAVBAR */}
                         <TopNavbar 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { FiDownload } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id'; // Import locale Indonesia
@@ -10,9 +10,6 @@ import { useReactToPrint } from "react-to-print";
 
 // Import types
 import { ReportTemplate } from './types/ReportTemplate';
-
-// Import API hooks
-import { useReportData } from './hooks/useReportData';
 
 // Setup dayjs
 dayjs.locale('id'); // Set default locale ke Indonesia
@@ -47,8 +44,14 @@ const FIXED_TEMPLATE = {
         maskotPath: '/LAPOR AA BUPATI.png',
         dinasName: 'Diskominfosantik Kabupaten Bekasi',
         weekInfo: 'Minggu Ke-1 (2-8 Juni)'
+    },
+    summary: {
+        totalReports: 583,
+        resolvedReports: 492,
+        averageResolutionDays: 5,
+        pendingReports: 91,
+        resolutionRate: 84
     }
-    // HAPUS summary dummy data - gunakan data real dari API
 };
 
 // Page configuration untuk export selection
@@ -69,25 +72,6 @@ export default function BuatLaporanPage() {
     const [loading, setLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [loadingMessage, setLoadingMessage] = useState('');
-    const [isPrintMode, setIsPrintMode] = useState(false); // State untuk print mode
-    
-    // Set document title
-    useEffect(() => {
-        document.title = 'LAPOR AA | Buat Laporan';
-        
-        // Cleanup - kembalikan title original saat component unmount
-        return () => {
-            document.title = 'LAPOR AA';
-        };
-    }, []);
-    
-    // API Integration - Fetch real data from backend
-    const {
-        data: reportData,
-        loading: apiLoading,
-        error: apiError,
-        refetch: refetchData
-    } = useReportData(template);
     
     // State untuk track halaman yang akan dieksport
     const [selectedPages, setSelectedPages] = useState<Set<string>>(
@@ -134,25 +118,6 @@ export default function BuatLaporanPage() {
             endDate,
             period: 'Custom' // Always Custom since we removed presets
         }));
-        // Trigger API refetch with new date range
-        refetchData();
-    };
-
-    // Update template dengan data dari API
-    const getUpdatedTemplate = (): ReportTemplate => {
-        if (reportData) {
-            return {
-                ...template,
-                summary: {
-                    totalReports: reportData.summary?.totalReports || 0,
-                    resolvedReports: reportData.summary?.resolvedReports || 0,
-                    pendingReports: reportData.summary?.pendingReports || 0,
-                    resolutionRate: reportData.summary?.resolutionRate || 0,
-                    averageResolutionDays: reportData.summary?.averageResolutionDays || 0
-                }
-            };
-        }
-        return template;
     };
 
     // Helper function untuk format display periode berdasarkan range tanggal
@@ -299,20 +264,6 @@ export default function BuatLaporanPage() {
                     box-sizing: border-box !important;
                 }
                 
-                /* Ensure chart images are displayed properly */
-                img[alt*="Chart"], img[alt*="Grafik"] {
-                    display: block !important;
-                    max-width: 100% !important;
-                    height: auto !important;
-                    object-fit: contain !important;
-                    visibility: visible !important;
-                }
-                
-                /* Hide canvas elements in print mode */
-                canvas {
-                    display: none !important;
-                }
-                
                 /* Remove any extra spacing */
                 div[ref] {
                     margin: 0 !important;
@@ -332,15 +283,6 @@ export default function BuatLaporanPage() {
             // Note: Tanggal tidak diupdate otomatis lagi, 
             // user bisa mengatur manual di pengaturan laporan
             
-            setLoadingProgress(20);
-            setLoadingMessage('Mengkonversi chart menjadi gambar...');
-            
-            // Enable print mode untuk mengkonversi chart ke image
-            setIsPrintMode(true);
-            
-            // Tunggu sebentar agar chart ter-convert ke image
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
             setLoadingProgress(50);
             setLoadingMessage('Membuat PDF...');
             handlePrint();
@@ -355,7 +297,6 @@ export default function BuatLaporanPage() {
                 setLoading(false);
                 setLoadingProgress(0);
                 setLoadingMessage('');
-                setIsPrintMode(false); // Reset print mode
             }, 1000);
         }
     };
@@ -385,72 +326,23 @@ export default function BuatLaporanPage() {
                 </div>
             )}
 
-            {/* API Error Notification */}
-            {apiError && (
-                <div className="fixed top-4 right-4 z-50 max-w-md">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
-                        <div className="flex">
-                            <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="text-sm font-medium text-red-800">
-                                    Gagal Memuat Data
-                                </h3>
-                                <div className="mt-1 text-sm text-red-700">
-                                    {apiError}
-                                </div>
-                                <div className="mt-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            console.log('Manual retry triggered from UI');
-                                            refetchData();
-                                        }}
-                                        className="bg-red-100 text-red-800 px-3 py-1 rounded text-sm hover:bg-red-200 transition-colors"
-                                    >
-                                        Coba Lagi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* API Loading Indicator */}
-            {apiLoading && (
-                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg">
-                        <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
-                            <span className="text-sm text-blue-800">Memuat data laporan...</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="flex h-screen">
                 {/* Sidebar - Settings */}
                 <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
                     {/* Export PDF Button - Paling Atas */}
                     <div className="p-4 border-b border-gray-200">
                         <button
-                            disabled={loading || !isValidDateRange() || getSelectedPagesCount() === 0 || apiLoading || !!apiError}
+                            disabled={loading || !isValidDateRange() || getSelectedPagesCount() === 0}
                             onClick={createPdfFromScreenshots}
                             className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
                         >
                             <FiDownload size={18} />
                             <span>
-                                {loading ? `${loadingProgress}%` : 
-                                 apiLoading ? "Memuat..." : 
-                                 apiError ? "Data Error" : 
-                                 "Export PDF"}
+                                {loading ? `${loadingProgress}%` : "Export PDF"}
                             </span>
                         </button>
                     </div>
+
                     {/* Report Settings */}
                     <div className="p-4 border-b border-gray-200">
                         <h3 className="font-semibold text-gray-900 mb-3">Pengaturan Laporan</h3>
@@ -652,108 +544,51 @@ export default function BuatLaporanPage() {
 
                 {/* Canvas - Content Area */}
                 <div className="flex-1 bg-gray-100 overflow-auto">
-                    {/* Loading indicator untuk API */}
-                    {apiLoading && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div className="bg-white p-6 rounded-lg shadow-lg">
-                                <div className="flex items-center space-x-3">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                    <span className="text-gray-700">Memuat data laporan...</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {/* Error indicator untuk API */}
-                    {apiError && (
-                        <div className="mx-4 my-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center space-x-2">
-                                <div className="text-red-600">⚠️</div>
-                                <div>
-                                    <h4 className="text-red-800 font-medium">Gagal memuat data</h4>
-                                    <p className="text-red-600 text-sm">{apiError}</p>
-                                    <button 
-                                        onClick={refetchData}
-                                        className="mt-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                                    >
-                                        Coba Lagi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
                     <div ref={printRef} className="py-0">
                         {/* Pages - Conditionally rendered based on selection */}
                         {isPageSelected('cover') && (
                             <div ref={coverPageRef} className="mb-0">
-                                <Page1Cover template={getUpdatedTemplate()} />
+                                <Page1Cover template={template} />
                             </div>
                         )}
                         {isPageSelected('summary') && (
                             <div ref={summaryPageRef} className="mb-0">
-                                <Page2Summary 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                    isPrintMode={isPrintMode}
-                                />
+                                <Page2Summary template={template} />
                             </div>
                         )}
                         {isPageSelected('chart') && (
                             <div ref={chartPageRef} className="mb-0">
-                                <Page3Chart 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                    isPrintMode={isPrintMode}
-                                />
+                                <Page3Chart template={template} />
                             </div>
                         )}
                         {isPageSelected('map') && (
                             <div ref={mapPageRef} className="mb-0">
-                                <Page4Map 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                />
+                                <Page4Map template={template} />
                             </div>
                         )}
                         {isPageSelected('location') && (
                             <div ref={locationPageRef} className="mb-0">
-                                <Page5Location 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                    isPrintMode={isPrintMode}
-                                />
+                                <Page5Location template={template} />
                             </div>
                         )}
                         {isPageSelected('agency') && (
                             <div ref={agencyPageRef} className="mb-0">
-                                <Page6Agency 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                    isPrintMode={isPrintMode}
-                                />
+                                <Page6Agency template={template} />
                             </div>
                         )}
                         {isPageSelected('category') && (
                             <div ref={categoryPageRef} className="mb-0">
-                                <Page7Category 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                    isPrintMode={isPrintMode}
-                                />
+                                <Page7Category template={template} />
                             </div>
                         )}
                         {isPageSelected('satisfaction') && (
                             <div ref={satisfactionPageRef} className="mb-0">
-                                <Page8Satisfaction 
-                                    template={getUpdatedTemplate()} 
-                                    reportData={reportData}
-                                />
+                                <Page8Satisfaction template={template} />
                             </div>
                         )}
                         {isPageSelected('closing') && (
                             <div ref={closingPageRef} className="mb-0">
-                                <Page9Closing template={getUpdatedTemplate()} />
+                                <Page9Closing template={template} />
                             </div>
                         )}
                     </div>

@@ -5,7 +5,7 @@ import { FaDownload } from "react-icons/fa";
 import Image from "next/image";
 import Zoom from "react-medium-image-zoom";
 import { PhotoDisplay, VideoDisplay } from "./PhotoDisplay";
-import { constructPhotoUrl, extractPhotoPath } from "../../utils/urlUtils";
+import { constructPhotoUrl, extractAndValidatePhotoPath } from "../../utils/urlUtils";
 
 interface Props {
     photoModal: string[] | any[];  // Support both string and object formats from backend
@@ -83,7 +83,13 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
         }
         
         const newMedia = photoModal[newIndex];
-        const newMediaPath = extractPhotoPath(newMedia);
+        const newMediaPath = extractAndValidatePhotoPath(newMedia);
+        
+        // Skip if media path is invalid
+        if (!newMediaPath) {
+            return; // Skip setting preview for invalid media
+        }
+        
         const newMediaUrl = constructPhotoUrl(newMediaPath);
         const newIsVideo = newMediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
         
@@ -117,10 +123,10 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
             setDownloadingIndex(i);
             
             // Extract media path safely
-            const mediaPath = extractPhotoPath(photoModal[i]);
+            const mediaPath = extractAndValidatePhotoPath(photoModal[i]);
             
-            // Skip media if path is empty
-            if (!mediaPath || mediaPath.trim() === '') {
+            // Skip media if path is invalid
+            if (!mediaPath) {
                 console.warn(`Download skipped for invalid media path at index ${i}:`, photoModal[i]);
                 continue;
             }
@@ -323,10 +329,10 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                 >
                     {photoModal.map((media, index) => {
                         // Extract media path safely - handle both string and object formats
-                        const mediaPath = extractPhotoPath(media);
+                        const mediaPath = extractAndValidatePhotoPath(media);
                         
-                        // Skip media if path is empty
-                        if (!mediaPath || mediaPath.trim() === '') {
+                        // Skip media if path is invalid
+                        if (!mediaPath) {
                             console.warn(`PhotoModal: Invalid media path at index ${index}:`, media);
                             return null;
                         }
