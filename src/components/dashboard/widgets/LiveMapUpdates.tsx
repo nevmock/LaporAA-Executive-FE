@@ -139,7 +139,6 @@ export default function LiveMapUpdates({
     <div className={`w-full h-full ${className}`}>
       {/* Clean map display without live indicators */}
       <MapPersebaran 
-        key={refreshTrigger} 
         filter={timeFilter}
         year={year}
         month={month}

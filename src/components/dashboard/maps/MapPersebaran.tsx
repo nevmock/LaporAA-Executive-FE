@@ -65,7 +65,6 @@ export default function MapPersebaran({
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialSelectedKecamatan);
   const [limitView, setLimitView] = useState(initialLimitView);
   const [showBoundaries, setShowBoundaries] = useState(initialShowBoundaries);
-  const [mapReady, setMapReady] = useState(false);
   const mapParentRef = useRef<HTMLDivElement>(null);
   // Note: isScreenshotLoading removed as it was unused
   const [boundariesData, setBoundariesData] = useState<BoundariesData | null>(null);
@@ -79,7 +78,6 @@ export default function MapPersebaran({
 
   // Ambil data laporan dari backend berdasarkan filter
   const fetchData = useCallback(async () => {
-    setMapReady(false);
     let url = `${API_URL}/dashboard/map?mode=${filter}&year=${year}`;
     if (filter !== 'yearly') url += `&month=${month}`;
     if (filter === 'weekly') url += `&week=${week}`;
@@ -90,8 +88,6 @@ export default function MapPersebaran({
     } catch {
       console.error('❌ Gagal ambil data:');
       setReports([]); // Kosongkan data biar ga freeze
-    } finally {
-      setMapReady(true);
     }
   }, [filter, year, month, week, selectedStatus]);
 
@@ -296,26 +292,12 @@ export default function MapPersebaran({
     <div className="w-full h-full flex flex-col" style={{ height: '100%' }}>
       {/* Map content - all filters now handled by FilterControls in parent */}
       
-      {/* Loading */}
-      {!mapReady ? (
-        <div className="flex items-center justify-center h-full text-gray-600">
-          <div className="flex flex-col items-center gap-2 animate-pulse">
-            <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-            <span className="text-sm">Memuat peta...</span>
-          </div>
-        </div>
-      ) : validReports.length === 0 ? (
-        <div className="h-full" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div className="bg-white border border-gray-300 shadow-md px-4 py-2 rounded text-sm text-gray-700 text-center">
-            Tidak ada laporan ditemukan untuk filter ini.
-          </div>
-        </div>
-      ) : (
-        <div
-          ref={mapParentRef}
-          className="h-full"
-          style={{ position: 'relative' }}
-        >
+      {/* Always show map, even with empty data */}
+      <div
+        ref={mapParentRef}
+        className="h-full"
+        style={{ position: 'relative' }}
+      >
           <MapContainer
             key="map-container"
             center={mapCenter}
@@ -400,7 +382,6 @@ export default function MapPersebaran({
             visible={showBoundaries}
           />
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
 }

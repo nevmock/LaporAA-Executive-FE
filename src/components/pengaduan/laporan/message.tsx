@@ -1253,7 +1253,7 @@ export default function Message({
         // Parse location from message - support multiple formats
         let lat: number | null = null;
         let lng: number | null = null;
-        let locationText = message.replace(/^\[Location\]\s*/, '');
+        const locationText = message.replace(/^\[Location\]\s*/, '');
         
         // Try different location patterns
         const patterns = [

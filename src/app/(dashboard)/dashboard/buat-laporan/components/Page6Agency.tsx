@@ -1,69 +1,233 @@
-import React from 'react';
-import ReportPageWrapper from './ReportPageWrapper';
+import React, { useEffect, useRef, useState } from 'react';
+import * as echarts from 'echarts';
+import ReportContentWrapper from './ReportContentWrapper';
+import { ReportTemplate } from '../types/ReportTemplate';
 
-const Page6Agency: React.FC = () => {
+interface Page6AgencyProps {
+    template?: ReportTemplate;
+    reportData?: any; // API data dari backend
+    isPrintMode?: boolean; // Flag untuk mode print
+}
+
+interface AgencyItem {
+  name: string;
+  count: number;
+}
+
+const Page6Agency: React.FC<Page6AgencyProps> = ({ template, reportData, isPrintMode = false }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartImageUrl, setChartImageUrl] = useState<string>('');
+  
+  // Fallback untuk tanggal jika template tidak tersedia
+  const displayDate = template?.reportGeneratedAt || '25 Juni 2025 | 15.00 WIB';
+
+  // Extract date range dari template atau reportData
+  const startDate = template?.startDate || reportData?.period?.startDate;
+  const endDate = template?.endDate || reportData?.period?.endDate;
+  
+  // Format tanggal untuk display
+  const formatDateRange = () => {
+    if (startDate && endDate) {
+      const start = new Date(startDate).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      const end = new Date(endDate).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long', 
+        year: 'numeric'
+      });
+      return `${start} - ${end}`;
+    }
+    return 'Rentang Waktu Tersebut';
+  };
+
+  // Extract OPD data dari reportData, TIDAK menggunakan data dummy
+  const agencyData = reportData?.opd || [];
+
+  // Filter data yang valid dan sort by total descending
+  const filteredData = agencyData
+    .filter((item: any) => {
+      // Filter out null, undefined, empty string, atau data tidak valid
+      return item && 
+             item.opd && 
+             item.opd.trim() !== '' && 
+             item.opd.toLowerCase() !== 'null' &&
+             item.total !== null && 
+             item.total !== undefined && 
+             !isNaN(item.total) &&
+             item.total > 0; // Hanya ambil yang punya count > 0
+    })
+    .sort((a: any, b: any) => b.total - a.total) // Sort descending untuk Top 3
+    .slice(0, 10)
+    .map((item: any) => ({
+      name: item.opd.trim(), // Trim whitespace
+      count: item.total
+    }));
+
+  // Hitung total OPD yang valid (bukan total laporan)
+  const totalOpd = agencyData.filter((item: any) => {
+    return item && 
+           item.opd && 
+           item.opd.trim() !== '' && 
+           item.opd.toLowerCase() !== 'null';
+  }).length;
+
+  // Untuk chart, kita perlu reverse order agar yang terbesar di atas
+  const topAgencies: AgencyItem[] = [...filteredData].reverse();
+
+  useEffect(() => {
+    if (chartRef.current) {
+      const chart = echarts.init(chartRef.current);
+      
+      const option = {
+        title: {
+          text: `10 OPD dari ${totalOpd} Total OPD pada ${formatDateRange()}`,
+          textStyle: {
+            fontSize: 14,
+            fontWeight: 'bold',
+            color: '#374151'
+          },
+          left: 'left',
+          top: 10
+        },
+        grid: {
+          left: '40%',
+          right: '10%',
+          top: '15%',
+          bottom: '10%',
+          containLabel: false
+        },
+        xAxis: {
+          type: 'value',
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            fontSize: 10,
+            color: '#6B7280'
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: '#E5E7EB',
+              width: 1
+            }
+          }
+        },
+        yAxis: {
+          type: 'category',
+          data: topAgencies.map((item: AgencyItem) => item.name),
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            fontSize: 10,
+            color: '#374151',
+            fontWeight: 'normal',
+            interval: 0,
+            formatter: function(value: string) {
+              // Tidak truncate lagi, tampilkan nama lengkap
+              return value;
+            }
+          }
+        },
+        series: [
+          {
+            type: 'bar',
+            data: topAgencies.map((item: AgencyItem) => item.count),
+            itemStyle: {
+              color: '#22C55E',
+              borderRadius: [0, 4, 4, 0]
+            },
+            barWidth: '60%',
+            label: {
+              show: true,
+              position: 'right',
+              fontSize: 10,
+              color: '#374151',
+              fontWeight: 'bold',
+              formatter: '{c}'
+            }
+          }
+        ],
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          },
+          formatter: function(params: any) {
+            return `${params[0].name}: ${params[0].value} laporan`;
+          }
+        },
+        animation: false,
+        animationDuration: 0
+      };
+
+      chart.setOption(option);
+
+      // Convert chart to image for print mode
+      if (isPrintMode) {
+        setTimeout(() => {
+          try {
+            const imageUrl = chart.getDataURL({
+              type: 'png',
+              pixelRatio: 2,
+              backgroundColor: '#ffffff'
+            });
+            setChartImageUrl(imageUrl);
+          } catch (error) {
+            console.error('Error converting chart to image:', error);
+          }
+        }, 100);
+      }
+
+      // Handle resize
+      const handleResize = () => {
+        chart.resize();
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chart.dispose();
+      };
+    }
+  }, [topAgencies, isPrintMode]);
+
   return (
-    <ReportPageWrapper pageNumber={6}>
-      {/* Page Title */}
-      <div 
-        className="font-bold text-center mb-6"
-        style={{ 
-          fontSize: '28px', 
-          lineHeight: '32px',
-          color: 'rgb(196,32,32)',
-          marginTop: '20px'
-        }}
-      >
-        STATISTIK BERDASARKAN OPD
-      </div>
-
+    <ReportContentWrapper title="Penanganan Berdasarkan Perangkat Daerah" template={template}>
       {/* Content Area */}
-      <div className="grid grid-cols-2 gap-6 h-full">
-        {/* Left Side - Top OPD */}
-        <div>
-          <h3 className="text-lg font-bold mb-4 text-gray-800">Top 10 OPD dengan Laporan Terbanyak</h3>
-          <div className="space-y-2">
-            {Array.from({length: 10}, (_, i) => (
-              <div key={i} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
-                <div className="flex items-center">
-                  <span className="w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center mr-2">
-                    {i + 1}
-                  </span>
-                  <span className="text-xs font-medium">[NAMA OPD {i + 1}]</span>
-                </div>
-                <span className="text-xs font-bold text-green-600">[XXX]</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Side - Chart */}
-        <div>
-          <h3 className="text-lg font-bold mb-4 text-gray-800">Distribusi Laporan per OPD</h3>
-          <div 
-            className="bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-lg"
-            style={{ height: '300px' }}
-          >
-            <div className="text-center text-gray-500">
-              <div className="text-3xl mb-3">🏢</div>
-              <div className="text-lg font-semibold">Chart OPD</div>
-              <div className="text-sm">Horizontal Bar Chart</div>
-            </div>
-          </div>
+      <div className="w-full h-full">
+        {/* Full Width Chart */}
+        <div className="w-full h-full">
+          {isPrintMode && chartImageUrl ? (
+            // Show image in print mode
+            <img 
+              src={chartImageUrl} 
+              alt="Grafik Distribusi OPD"
+              className="w-full h-full object-contain"
+              style={{ minHeight: '400px' }}
+            />
+          ) : (
+            // Show interactive chart in normal mode
+            <div 
+              ref={chartRef}
+              className="w-full h-full"
+              style={{ minHeight: '400px' }}
+            />
+          )}
         </div>
       </div>
-
-      {/* Footer */}
-      <div 
-        className="absolute bottom-6 right-6 text-black font-normal"
-        style={{
-          fontSize: '12px',
-          lineHeight: '14px'
-        }}
-      >
-        *Data Per [TANGGAL] | [WAKTU]
-      </div>
-    </ReportPageWrapper>
+    </ReportContentWrapper>
   );
 };
 

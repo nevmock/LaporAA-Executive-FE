@@ -570,11 +570,11 @@ const TableSection: React.FC<Props> = ({
                                         <td className="px-6 py-1.5">
                                             <div>
                                                 <Link
-                                                href={`/pengaduan/${chat.sessionId}`}
-                                                className="w-[100px] justify-center mb-1 inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap"
-                                            >
-                                                Lihat Detail
-                                            </Link>
+                                                    href={`/pengaduan/${chat.sessionId}`}
+                                                    className="w-[100px] justify-center mb-1 inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap"
+                                                >
+                                                    Lihat Detail
+                                                </Link>
                                             <div
                                                 className="w-[100px] inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-black text-xs font-medium rounded-lg shadow-sm whitespace-nowrap"
                                             >
@@ -784,61 +784,58 @@ const TableSection: React.FC<Props> = ({
                                             <div className="flex justify-center items-center">
                                                 {(() => {
                                                     // ENHANCED media processing for all file types
-                                                    const mediaData = useMemo(() => {
-                                                        // Check if photos exist
-                                                        if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
-                                                            return { hasMedia: false, fileCount: 0, mediaPath: '', fileType: 'none' };
-                                                        }
+                                                    // Check if photos exist
+                                                    if (!chat.photos || !Array.isArray(chat.photos) || chat.photos.length === 0) {
+                                                        return (
+                                                            <div className="relative h-10 w-10 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                                                                <FaFileAlt className="text-gray-400 text-lg" />
+                                                            </div>
+                                                        );
+                                                    }
 
-                                                        const firstMedia = chat.photos[0];
-                                                        const fileCount = chat.photos.length;
+                                                    const firstMedia = chat.photos[0];
+                                                    const fileCount = chat.photos.length;
 
-                                                        // Extract first media path
-                                                        let mediaPath: string = '';
+                                                    // Extract first media path with safety checks
+                                                    let mediaPath: string = '';
+                                                    
+                                                    if (typeof firstMedia === 'string') {
+                                                        mediaPath = firstMedia;
+                                                    } else if (typeof firstMedia === 'object' && firstMedia !== null) {
+                                                        const mediaObj = firstMedia as { url?: string; originalUrl?: string; [key: string]: any };
+                                                        mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                                                    }
+
+                                                    // Detect file type based on extension
+                                                    let fileType = 'unknown';
+                                                    if (mediaPath && typeof mediaPath === 'string') {
+                                                        const extension = mediaPath.toLowerCase().split('.').pop() || '';
                                                         
-                                                        if (typeof firstMedia === 'string') {
-                                                            mediaPath = firstMedia;
-                                                        } else if (typeof firstMedia === 'object' && firstMedia !== null) {
-                                                            const mediaObj = firstMedia as { url?: string; originalUrl?: string; [key: string]: any };
-                                                            mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                                                        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+                                                            fileType = 'image';
+                                                        } else if (['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension)) {
+                                                            fileType = 'video';
+                                                        } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(extension)) {
+                                                            fileType = 'audio';
+                                                        } else if (extension === 'pdf') {
+                                                            fileType = 'pdf';
+                                                        } else if (['doc', 'docx'].includes(extension)) {
+                                                            fileType = 'word';
+                                                        } else if (['xls', 'xlsx', 'csv'].includes(extension)) {
+                                                            fileType = 'excel';
+                                                        } else if (['ppt', 'pptx'].includes(extension)) {
+                                                            fileType = 'powerpoint';
+                                                        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+                                                            fileType = 'archive';
+                                                        } else if (extension) {
+                                                            fileType = 'document';
                                                         }
+                                                    }
 
-                                                        // Detect file type based on extension
-                                                        let fileType = 'unknown';
-                                                        if (mediaPath) {
-                                                            const extension = mediaPath.toLowerCase().split('.').pop() || '';
-                                                            
-                                                            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
-                                                                fileType = 'image';
-                                                            } else if (['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension)) {
-                                                                fileType = 'video';
-                                                            } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(extension)) {
-                                                                fileType = 'audio';
-                                                            } else if (extension === 'pdf') {
-                                                                fileType = 'pdf';
-                                                            } else if (['doc', 'docx'].includes(extension)) {
-                                                                fileType = 'word';
-                                                            } else if (['xls', 'xlsx', 'csv'].includes(extension)) {
-                                                                fileType = 'excel';
-                                                            } else if (['ppt', 'pptx'].includes(extension)) {
-                                                                fileType = 'powerpoint';
-                                                            } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
-                                                                fileType = 'archive';
-                                                            } else if (extension) {
-                                                                fileType = 'document';
-                                                            }
-                                                        }
-
-                                                        return {
-                                                            hasMedia: !!(mediaPath && mediaPath.trim() !== ''),
-                                                            fileCount,
-                                                            mediaPath: mediaPath || '',
-                                                            fileType
-                                                        };
-                                                    }, [chat.photos, chat.sessionId]); // Stable dependencies
+                                                    const hasMedia = !!(mediaPath && typeof mediaPath === 'string' && mediaPath.trim() !== '');
 
                                                     // No media case
-                                                    if (!mediaData.hasMedia) {
+                                                    if (!hasMedia) {
                                                         return (
                                                             <div className="relative h-10 w-10 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
                                                                 <FaFileAlt className="text-gray-400 text-lg" />
@@ -856,23 +853,23 @@ const TableSection: React.FC<Props> = ({
                                                                     userName: chat.user || 'Unknown'
                                                                 });
                                                             }}
-                                                            title={`${mediaData.fileCount} file(s) - Klik untuk lihat semua`}
+                                                            title={`${fileCount} file(s) - Klik untuk lihat semua`}
                                                         >
-                                                            {mediaData.fileType === 'image' ? (
+                                                            {fileType === 'image' ? (
                                                                 <PhotoDisplay
-                                                                    photoPath={mediaData.mediaPath}
+                                                                    photoPath={mediaPath}
                                                                     alt="Media pengaduan"
                                                                     className="h-10 w-10 object-cover rounded border border-gray-300"
                                                                 />
                                                             ) : (
                                                                 <div className="h-10 w-10 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
-                                                                    {getFileIcon(mediaData.mediaPath)}
+                                                                    {getFileIcon(mediaPath)}
                                                                 </div>
                                                             )}
                                                             {/* File count badge */}
-                                                            {mediaData.fileCount > 1 && (
+                                                            {fileCount > 1 && (
                                                                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                                                                    {mediaData.fileCount > 9 ? '9+' : mediaData.fileCount}
+                                                                    {fileCount > 9 ? '9+' : fileCount}
                                                                 </div>
                                                             )}
                                                         </div>

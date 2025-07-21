@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { ModernChartCard, FilterControls } from '../modern';
 import { useAvailablePeriods } from '../../../hooks/useAvailablePeriods';
@@ -19,6 +19,9 @@ const LiveMapUpdates = dynamic(() => import('../widgets/LiveMapUpdates'), {
 });
 
 export default function MapPersebaranCard() {
+    // Ref untuk akses data peta
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    
     // Filter states
     const [timeFilter, setTimeFilter] = useState('monthly');
     const [year, setYear] = useState(new Date().getFullYear());
@@ -109,10 +112,96 @@ export default function MapPersebaranCard() {
         alert('Peta ini menampilkan persebaran geografis laporan pengaduan. Marker menunjukkan lokasi kejadian dengan warna berbeda berdasarkan status laporan. Zoom dan pan untuk melihat area tertentu.');
     };
 
-    // Handle export CSV
-    const handleDownloadCSV = () => {
-        // Export map data to CSV - this would need to be implemented based on map data
-        alert('Export peta akan segera tersedia. Untuk saat ini, gunakan screenshot atau fitur print browser.');
+    // Handle export data to CSV
+    const handleDownloadCSV = async () => {
+        try {
+            // Build API URL berdasarkan filter yang sama dengan peta
+            const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
+            let apiUrl = `${API_URL}/dashboard/map?mode=${timeFilter}&year=${year}`;
+            if (timeFilter !== 'yearly') apiUrl += `&month=${month}`;
+            if (timeFilter === 'weekly') apiUrl += `&week=${week}`;
+            if (selectedStatus !== 'Semua Status') apiUrl += `&status=${encodeURIComponent(selectedStatus)}`;
+            
+            // Fetch data dari API
+            const response = await fetch(apiUrl);
+            const result = await response.json();
+            
+            if (!result.success || !result.data || result.data.length === 0) {
+                alert('Tidak ada data untuk diexport berdasarkan filter yang dipilih.');
+                return;
+            }
+
+            // Convert data ke format CSV
+            const reports = result.data;
+            const csvHeaders = [
+                'ID Laporan',
+                'Tanggal',
+                'Pesan',
+                'Status',
+                'Lokasi',
+                'Latitude',
+                'Longitude',
+                'Nama Pelapor',
+                'Kecamatan'
+            ];
+
+            const csvRows = reports.map((report: any) => [
+                report._id || '',
+                report.timestamp ? new Date(report.timestamp).toLocaleDateString('id-ID') : '',
+                report.message || '',
+                report.tindakan?.status || 'Perlu Verifikasi',
+                report.location?.description || '',
+                report.location?.latitude || '',
+                report.location?.longitude || '',
+                report.user?.name || '',
+                report.location?.kecamatan || ''
+            ]);
+
+            // Generate CSV content
+            const csvContent = [
+                csvHeaders.join(','),
+                ...csvRows.map((row: any[]) => row.map((field: any) => `"${String(field).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+
+            // Generate filename dengan filter info
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            
+            let periodInfo = '';
+            if (timeFilter === 'yearly') {
+                periodInfo = `${year}`;
+            } else if (timeFilter === 'monthly') {
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                periodInfo = `${monthNames[month - 1]}-${year}`;
+            } else if (timeFilter === 'weekly') {
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                periodInfo = `Week${week}-${monthNames[month - 1]}-${year}`;
+            }
+            
+            const statusFilter = selectedStatus !== 'Semua Status' ? `_${selectedStatus.replace(/\s+/g, '-')}` : '';
+            const kecamatanFilter = selectedKecamatan !== 'Semua Kecamatan' ? `_${selectedKecamatan.replace(/\s+/g, '-')}` : '';
+            
+            const filename = `Data-Laporan-Peta_${periodInfo}${statusFilter}${kecamatanFilter}_${timestamp}.csv`;
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(downloadUrl);
+
+            alert(`Data berhasil diexport: ${filename}\nTotal: ${reports.length} laporan`);
+
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            alert('Terjadi kesalahan saat mengexport data. Silakan coba lagi.');
+        }
     };
 
     // Note: handleRefresh function removed as it was unused
@@ -171,40 +260,42 @@ export default function MapPersebaranCard() {
     );
 
     return (
-        <ModernChartCard
-            title="Peta Persebaran Laporan"
-            subtitle="Visualisasi geografis persebaran laporan pengaduan"
-            chartType="bar" // Using bar as placeholder since map is not in chartType options
-            option={{}} // Empty option since this isn't a chart
-            loading={false}
-            error={null}
-            color="green"
-            onDownload={handleDownloadCSV}
-            onInfo={handleInfo}
-            showRefresh={false}
-            showDownload={true}
-            showFullscreen={true}
-            showInfo={true}
-            height={500}
-            className="h-full"
-            filters={filterControls}
-            useInternalFullscreen={true}
-        >
-            {/* Custom content - map instead of chart */}
-            <div className="w-full h-full">
-                <LiveMapUpdates 
-                    className="w-full h-full"
-                    timeFilter={timeFilter}
-                    year={year}
-                    month={month}
-                    week={week}
-                    selectedStatus={selectedStatus}
-                    selectedKecamatan={selectedKecamatan}
-                    limitView={limitView}
-                    showBoundaries={showBoundaries}
-                    setBoundariesLoading={setBoundariesLoading}
-                />
-            </div>
-        </ModernChartCard>
+        <div>
+            <ModernChartCard
+                title="Peta Persebaran Laporan"
+                subtitle="Visualisasi geografis persebaran laporan pengaduan"
+                chartType="bar" // Using bar as placeholder since map is not in chartType options
+                option={{}} // Empty option since this isn't a chart
+                loading={false} // Don't use loading state for map, it blocks the content
+                error={null}
+                color="green"
+                onDownload={handleDownloadCSV}
+                onInfo={handleInfo}
+                showRefresh={false}
+                showDownload={false} // Hide download button
+                showFullscreen={true}
+                showInfo={true}
+                height={500}
+                className="h-full"
+                filters={filterControls}
+                useInternalFullscreen={true}
+            >
+                {/* Custom content - map instead of chart */}
+                <div ref={mapContainerRef} className="w-full h-full" data-map-container>
+                    <LiveMapUpdates 
+                        className="w-full h-full"
+                        timeFilter={timeFilter}
+                        year={year}
+                        month={month}
+                        week={week}
+                        selectedStatus={selectedStatus}
+                        selectedKecamatan={selectedKecamatan}
+                        limitView={limitView}
+                        showBoundaries={showBoundaries}
+                        setBoundariesLoading={setBoundariesLoading}
+                    />
+                </div>
+            </ModernChartCard>
+        </div>
     );
 }

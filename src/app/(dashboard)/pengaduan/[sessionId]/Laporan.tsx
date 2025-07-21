@@ -576,7 +576,7 @@ export default function ChatPage() {
       </main>
       
       {/* CONTAINER 3: ACTION BUTTONS FOOTER */}
-      {activeTab === 'tindakan' && tindakanActionProps && (
+      {activeTab === 'tindakan' && tindakanActionProps && role !== "Bupati" && (
         <footer className="w-full bg-white border-t z-30 px-4 md:px-8 py-3 flex justify-center shadow-lg" style={{ flexShrink: 0 }}>
           <ActionButtons {...tindakanActionProps} />
         </footer>

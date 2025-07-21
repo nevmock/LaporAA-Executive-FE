@@ -10,7 +10,7 @@ import "dayjs/locale/id";
 import { usePhotoDownloader } from "../PhotoDownloader";
 import { RiCloseLine } from "react-icons/ri";
 import { Data } from "../../../lib/types";
-import { constructPhotoUrl, extractPhotoPath } from "../../../utils/urlUtils";
+import { constructPhotoUrl, extractAndValidatePhotoPath } from "../../../utils/urlUtils";
 import { PhotoDisplay, VideoDisplay } from "../PhotoDisplay";
 
 const MapView = dynamic(() => import("./MapViews"), { ssr: false });
@@ -18,14 +18,7 @@ const MapView = dynamic(() => import("./MapViews"), { ssr: false });
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
 
 export default function Keluhan({ sessionId, data: propData }: { sessionId: string; data?: Data }) {
-    // Debug logging untuk props
-    console.info("🔍 [Keluhan] Component rendered with props:", {
-        sessionId,
-        propData,
-        propDataKeys: propData ? Object.keys(propData) : 'null',
-        tindakan: propData?.tindakan,
-        tindakanKeys: propData?.tindakan ? Object.keys(propData.tindakan) : 'null'
-    });
+    // Component now supports dual photo format natively (legacy strings + new objects)
 
     const [data, setData] = useState<Data | null>(propData || null);
     const [showModal, setShowModal] = useState(false);
@@ -78,12 +71,6 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
 
     // Sync state jika propData berubah
     useEffect(() => {
-        // Console log untuk debugging propData
-        console.info("🔍 [Keluhan] PropData received:", propData);
-        console.info("🔍 [Keluhan] PropData tindakan:", propData?.tindakan);
-        console.info("🔍 [Keluhan] PropData tindakan._id:", propData?.tindakan?._id);
-        console.info("🔍 [Keluhan] PropData tindakan.tag:", propData?.tindakan?.tag);
-        
         if (propData) {
             setData(propData);
             setEditedMessage(propData.message || "");
@@ -92,10 +79,8 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             // Initialize tags dari propData.tindakan.tag dengan safety check
             if (propData.tindakan?.tag && Array.isArray(propData.tindakan.tag)) {
                 const extractedTags = normalizeTags(propData.tindakan.tag);
-                console.info("🔍 [Keluhan] Extracted tags:", extractedTags);
                 setTags(extractedTags);
             } else {
-                console.info("🔍 [Keluhan] No tags found or not in array format");
                 setTags([]);
             }
         }
@@ -196,15 +181,11 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
 
     // Load existing tags when data changes - gunakan propData langsung
     useEffect(() => {
-        console.info("🔍 [Keluhan] useEffect propData.tindakan.tag triggered:", propData?.tindakan?.tag);
-        
         if (propData?.tindakan?.tag && Array.isArray(propData.tindakan.tag)) {
             // Extract tags dari propData.tindakan.tag dengan safety check
             const extractedTags = normalizeTags(propData.tindakan.tag);
-            console.info("🔍 [Keluhan] Setting tags from useEffect:", extractedTags);
             setTags(extractedTags);
         } else {
-            console.info("🔍 [Keluhan] Setting empty tags from useEffect");
             setTags([]);
         }
     }, [propData?.tindakan?.tag, normalizeTags]);
@@ -216,10 +197,6 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
         const trimmedTag = tag.trim();
         if (tags.includes(trimmedTag)) return; // Hindari duplikat
         
-        // Gunakan propData untuk mendapatkan tindakan._id
-        console.info("🔍 [Keluhan] addTag - propData.tindakan:", propData?.tindakan);
-        console.info("🔍 [Keluhan] addTag - tindakan._id:", propData?.tindakan?._id);
-        
         if (!propData?.tindakan?._id) {
             console.error("❌ [Keluhan] Data atau Tindakan ID tidak tersedia dari propData, tidak dapat menambahkan tag");
             return;
@@ -229,12 +206,9 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             setIsTagLoading(true);
             
             // Kirim tag ke API menggunakan endpoint tindakan dari propData
-            console.info("🔍 [Keluhan] Sending POST to:", `${API_URL}/tindakan/${propData.tindakan._id}/tag`);
             const response = await axios.post(`${API_URL}/tindakan/${propData.tindakan._id}/tag`, {
                 hash_tag: trimmedTag
             });
-            
-            console.info("✅ [Keluhan] Add tag response:", response.data);
             
             // Update state lokal - pastikan tag selalu string
             const newTags = [...tags, trimmedTag];
@@ -771,20 +745,42 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
             value: data.photos.length > 0 ? (
                 <div className="flex gap-2 flex-wrap">
                     {data.photos.map((media, index) => {
-                        // Handle both string (legacy) and object (new) format
-                        const mediaPath = extractPhotoPath(media);
+                        // Handle both string (legacy) and object (new) format with safe validation
+                        // Using same logic as table section for consistency
+                        if (!media) {
+                            console.warn(`⚠️ Media ${index} is null/undefined`);
+                            return null;
+                        }
+                        
+                        // Extract media path - handle legacy string format properly
+                        let mediaPath: string = '';
+                        
+                        if (typeof media === 'string') {
+                            // Legacy format: direct string path
+                            mediaPath = media;
+                        } else if (typeof media === 'object' && media !== null) {
+                            // New format: object with url/originalUrl properties
+                            const mediaObj = media as { url?: string; originalUrl?: string; [key: string]: any };
+                            mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                        }
 
-                        // Skip if mediaPath is empty
-                        if (!mediaPath || mediaPath.trim() === '') {
+                        // Skip if mediaPath is invalid
+                        if (!mediaPath || typeof mediaPath !== 'string' || mediaPath.trim() === '') {
+                            console.error(`❌ Media ${index} has invalid path:`, { 
+                                originalMedia: media, 
+                                extractedPath: mediaPath,
+                                mediaType: typeof media
+                            });
                             return null;
                         }
 
                         // Build media URL safely
                         const mediaUrl = constructPhotoUrl(mediaPath);
 
-                        // Determine media type
-                        const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
-                        const isImage = !isVideo; // Default to image if not video
+                        // Determine media type using same logic as table section
+                        const extension = mediaPath.toLowerCase().split('.').pop() || '';
+                        const isVideo = ['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension);
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension);
 
                         return (
                             <div key={index} className="relative group">
@@ -909,9 +905,38 @@ export default function Keluhan({ sessionId, data: propData }: { sessionId: stri
                         <div {...handlers}>
                             {(() => {
                                 const currentMedia = data.photos[activePhotoIndex];
-                                const mediaPath = extractPhotoPath(currentMedia);
+                                
+                                // Add safety check for currentMedia
+                                if (!currentMedia) {
+                                    return (
+                                        <div className="flex items-center justify-center h-96 bg-gray-100 text-gray-500">
+                                            <span>Media tidak tersedia</span>
+                                        </div>
+                                    );
+                                }
+                                
+                                // Extract media path using same logic as table section
+                                let mediaPath: string = '';
+                                
+                                if (typeof currentMedia === 'string') {
+                                    mediaPath = currentMedia;
+                                } else if (typeof currentMedia === 'object' && currentMedia !== null) {
+                                    const mediaObj = currentMedia as { url?: string; originalUrl?: string; [key: string]: any };
+                                    mediaPath = mediaObj.url || mediaObj.originalUrl || '';
+                                }
+                                
+                                // Add safety check for mediaPath
+                                if (!mediaPath || typeof mediaPath !== 'string' || mediaPath.trim() === '') {
+                                    return (
+                                        <div className="flex items-center justify-center h-96 bg-gray-100 text-gray-500">
+                                            <span>Path media tidak valid</span>
+                                        </div>
+                                    );
+                                }
+                                
                                 const mediaUrl = constructPhotoUrl(mediaPath);
-                                const isVideo = mediaPath.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/);
+                                const extension = mediaPath.toLowerCase().split('.').pop() || '';
+                                const isVideo = ['mp4', 'avi', 'mov', 'webm', 'mkv', 'wmv', 'flv', '3gp'].includes(extension);
 
                                 if (isVideo) {
                                     return (

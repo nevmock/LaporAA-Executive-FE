@@ -1,11 +1,29 @@
 import React from 'react';
 import ReportPageWrapper from './ReportPageWrapper';
+import { ReportTemplate, generatePeriodDescription } from '../types/ReportTemplate';
 
-const LOGO_SRC = '/LAPOR AA BUPATI.png';   // path logo Bekasi
+const LOGO_SRC = '/kab-bekasi1.png';   // path logo Bekasi
 const MASKOT_SRC = '/LAPOR AA BUPATI.png';      // path foto bupati PNG (tanpa badge)
 
-const Page1Cover: React.FC = () => (
-    <ReportPageWrapper pageNumber={1}>
+interface Page1CoverProps {
+    template?: ReportTemplate;
+}
+
+const Page1Cover: React.FC<Page1CoverProps> = ({ template }) => {
+    // Fallback untuk tanggal jika template tidak tersedia
+    const displayDate = template?.reportGeneratedAt || '25 Juni 2025 | 15.00 WIB';
+    
+    // Generate periode dinamis
+    const periodInfo = template ? 
+        generatePeriodDescription(template.startDate, template.endDate) : 
+        {
+            periodType: 'Periode Mingguan',
+            periodDescription: 'Minggu Ke-1 (2-8 Juni)',
+            weekInfo: 'Juni Tahun 2025'
+        };
+    
+    return (
+        <ReportPageWrapper template={template}>
 
         {/* Wrapper for main content, 2 columns */}
         <div style={{
@@ -13,10 +31,13 @@ const Page1Cover: React.FC = () => (
             flexDirection: 'row',
             width: '100%',
             height: '100%',
-            marginLeft: '20px',       // Hilangkan margin kiri
-            marginRight: '20px',     // Tetap ada margin kanan
-            marginBottom: '20px',
-            marginTop: '40px',
+            marginLeft: '0px',        // Hilangkan margin kiri
+            marginRight: '0px',       // Hilangkan margin kanan juga
+            marginBottom: '0px',      // Hilangkan margin bottom
+            marginTop: '0px',         // Hilangkan margin top
+            paddingLeft: '20px',      // Gunakan padding sebagai gantinya
+            paddingRight: '20px',     // Padding kanan
+            paddingTop: '20px',       // Padding atas minimal
             position: 'relative',
         }}>
             {/* Kiri: Tulisan */}
@@ -60,6 +81,7 @@ const Page1Cover: React.FC = () => (
                             fontWeight: 700,
                             color: '#111',
                             lineHeight: '1',
+                            marginTop: '50px',
                             marginBottom: '10px',
                         }}
                     >
@@ -88,7 +110,7 @@ const Page1Cover: React.FC = () => (
                             color: '#111',
                         }}
                     >
-                        Periode Mingguan
+                        {periodInfo.periodType}
                     </div>
                     <div
                         style={{
@@ -99,7 +121,7 @@ const Page1Cover: React.FC = () => (
                             lineHeight: '1.2',
                         }}
                     >
-                        Minggu Ke-1 (2-8 Juni)
+                        {periodInfo.periodDescription}
                     </div>
                     <div
                         style={{
@@ -109,19 +131,22 @@ const Page1Cover: React.FC = () => (
                             lineHeight: '1.2',
                         }}
                     >
-                        Juni Tahun 2025
+                        {periodInfo.weekInfo}
                     </div>
 
+                    {/* Timestamp positioned at bottom like Page1Cover - outside the main flex container */}
                     <div
                         style={{
-                            marginTop: '100px',
+                            position: 'absolute',
+                            bottom: '40px',
+                            left: '20px',
                             fontWeight: 400,
                             fontSize: '28px',
                             color: '#111',
                             lineHeight: '1.2',
                         }}
                     >
-                        25 Juni 2025 | 15.00 WIB
+                        {displayDate}
                     </div>
                 </div>
             </div>
@@ -143,6 +168,7 @@ const Page1Cover: React.FC = () => (
             </div>
         </div>
     </ReportPageWrapper>
-);
+    );
+};
 
 export default Page1Cover;
