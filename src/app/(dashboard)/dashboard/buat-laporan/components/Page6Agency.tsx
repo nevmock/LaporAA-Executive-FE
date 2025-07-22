@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import ReportContentWrapper from './ReportContentWrapper';
 import { ReportTemplate } from '../types/ReportTemplate';
+import { getOPDShortName } from '../../../../../utils/opdMapping';
 
 interface Page6AgencyProps {
     template?: ReportTemplate;
@@ -11,6 +12,7 @@ interface Page6AgencyProps {
 
 interface AgencyItem {
   name: string;
+  shortName?: string;
   count: number;
 }
 
@@ -62,7 +64,8 @@ const Page6Agency: React.FC<Page6AgencyProps> = ({ template, reportData, isPrint
     .sort((a: any, b: any) => b.total - a.total) // Sort descending untuk Top 3
     .slice(0, 10)
     .map((item: any) => ({
-      name: item.opd.trim(), // Trim whitespace
+      name: item.opd.trim(), // Simpan nama lengkap untuk value
+      shortName: getOPDShortName(item.opd.trim()), // Tambah shortName untuk display
       count: item.total
     }));
 
@@ -121,7 +124,7 @@ const Page6Agency: React.FC<Page6AgencyProps> = ({ template, reportData, isPrint
         },
         yAxis: {
           type: 'category',
-          data: topAgencies.map((item: AgencyItem) => item.name),
+          data: topAgencies.map((item: any) => item.shortName || getOPDShortName(item.name)),
           axisLine: {
             show: false
           },
@@ -134,8 +137,8 @@ const Page6Agency: React.FC<Page6AgencyProps> = ({ template, reportData, isPrint
             fontWeight: 'normal',
             interval: 0,
             formatter: function(value: string) {
-              // Tidak truncate lagi, tampilkan nama lengkap
-              return value;
+              // Truncate jika terlalu panjang untuk chart
+              return value.length > 15 ? value.substring(0, 15) + '...' : value;
             }
           }
         },

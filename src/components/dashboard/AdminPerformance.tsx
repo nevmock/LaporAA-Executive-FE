@@ -17,6 +17,7 @@ import {
   FiX
 } from 'react-icons/fi';
 import { adminPerformanceService, AdminPerformanceDashboard } from '@/services/adminPerformanceService';
+import { getOPDShortName } from '@/utils/opdMapping';
 
 // Type definitions for better type safety
 interface StatusModalState {
@@ -1302,7 +1303,7 @@ const AdminPerformance: React.FC<AdminPerformanceProps> = ({ selectedAdminId }) 
                           <div>Dibuat: {formatDateTime(report.createdAt)}</div>
                         )}
                         {report.opd && Array.isArray(report.opd) && report.opd.length > 0 && (
-                          <div>OPD: {report.opd.join(', ')}</div>
+                          <div>OPD: {report.opd.map(getOPDShortName).join(', ')}</div>
                         )}
                         {typeof report.location === 'object' && report.location?.kecamatan && (
                           <div>Kecamatan: {report.location.kecamatan}</div>

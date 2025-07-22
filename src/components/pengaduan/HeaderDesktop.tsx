@@ -7,6 +7,7 @@ import { FaStar } from "react-icons/fa";
 import { createPortal } from "react-dom";
 import { MdFilterAltOff } from "react-icons/md";
 import { BsFillPersonLinesFill } from "react-icons/bs";
+import { getOPDShortName } from "../../utils/opdMapping";
 
 interface HeaderDesktopProps {
     search: string;
@@ -364,7 +365,7 @@ function ListBoxFilter({
                                     <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: colorMap[selected] }} />
                                 )}
                                 <span className="truncate">
-                                    {selected}
+                                    {isOpdFilter && !selected.startsWith("Semua") ? getOPDShortName(selected) : selected}
                                     {counts && (
                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                             ({(selected && selected.startsWith("Semua"))
@@ -393,7 +394,14 @@ function ListBoxFilter({
                                                     <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: colorMap[option] }} />
                                                 )}
                                                 <span className={`flex-1 ${(isOpdFilter || isSituasiFilter) ? 'whitespace-nowrap' : 'truncate'}`}>
-                                                    {option}
+                                                    {isOpdFilter && !option.startsWith("Semua") ? (
+                                                        <div>
+                                                            <div className="font-medium">{getOPDShortName(option)}</div>
+                                                            <div className="text-xs text-gray-500 truncate">{option}</div>
+                                                        </div>
+                                                    ) : (
+                                                        option
+                                                    )}
                                                     {counts && (
                                                         <span className="ml-1 font-semibold text-blue-600 text-xs">
                                                             ({(option && option.startsWith("Semua"))

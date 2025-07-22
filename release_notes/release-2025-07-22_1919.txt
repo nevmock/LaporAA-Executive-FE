@@ -1,0 +1,20 @@
+🔄 Commit terbaru di branch DEV_Ismail
+
+📝 feat: update package.json, src/app/(dashboard)/dashboard/buat-laporan/components/Page6Agency.tsx, src/components/dashboard/AdminPerformance.tsx
+📅 2025-07-22_1919
+
+📂 Perubahan file:
+package.json
+src/app/(dashboard)/dashboard/buat-laporan/components/Page6Agency.tsx
+src/components/dashboard/AdminPerformance.tsx
+src/components/dashboard/BarWilayahChart.backup.tsx
+src/components/dashboard/charts/BarOpdChart.tsx
+src/components/dashboard/modern/ModernChartCard.tsx
+src/components/pengaduan/HeaderDesktop.tsx
+src/components/pengaduan/HeaderMobile.tsx
+src/components/pengaduan/PhotoModal.tsx
+src/components/pengaduan/laporan/componentsTindakan/opdSelect.tsx
+src/components/pengaduan/tableSection.tsx
+src/components/socket/NotificationDropdown.tsx
+
+🚀 Meluncur

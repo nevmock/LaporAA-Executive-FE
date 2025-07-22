@@ -424,7 +424,10 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                 {isVideo ? (
                                     <div 
                                         className="relative w-full h-full cursor-pointer"
-                                        onClick={() => setPreviewMedia({ mediaPath, mediaUrl, isVideo: true, index })}
+                                        onClick={() => {
+                                            console.log('Setting preview for video:', { mediaPath, mediaUrl, index });
+                                            setPreviewMedia({ mediaPath, mediaUrl, isVideo: true, index });
+                                        }}
                                     >
                                         <VideoDisplay
                                             photoPath={mediaPath}
@@ -440,7 +443,10 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                 ) : (
                                     <div 
                                         className="w-full h-full cursor-pointer"
-                                        onClick={() => setPreviewMedia({ mediaPath, mediaUrl, isVideo: false, index })}
+                                        onClick={() => {
+                                            console.log('Setting preview for image:', { mediaPath, mediaUrl, index });
+                                            setPreviewMedia({ mediaPath, mediaUrl, isVideo: false, index });
+                                        }}
                                     >
                                         <PhotoDisplay
                                             photoPath={mediaPath}
@@ -528,20 +534,25 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                         maxHeight: '95vh',
                                         objectFit: 'contain'
                                     }}
+                                    onError={() => {
+                                        console.error('Failed to load video in preview:', previewMedia.mediaUrl);
+                                        console.error('Original mediaPath:', previewMedia.mediaPath);
+                                    }}
                                 />
                             ) : (
-                                <Zoom>
-                                    <img
-                                        src={previewMedia.mediaUrl}
-                                        alt={`Media ${previewMedia.index + 1}`}
-                                        className="max-w-full max-h-[95vh] object-contain rounded-lg cursor-zoom-in"
-                                        style={{
-                                            maxWidth: '100%',
-                                            maxHeight: '95vh',
-                                            objectFit: 'contain'
-                                        }}
-                                    />
-                                </Zoom>
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Zoom>
+                                        <PhotoDisplay
+                                            photoPath={previewMedia.mediaPath}
+                                            alt={`Media ${previewMedia.index + 1}`}
+                                            className="max-w-full max-h-[95vh] object-contain rounded-lg cursor-zoom-in"
+                                            onError={() => {
+                                                console.error('Failed to load image in preview:', previewMedia.mediaUrl);
+                                                console.error('Original mediaPath:', previewMedia.mediaPath);
+                                            }}
+                                        />
+                                    </Zoom>
+                                </div>
                             )}
                         </div>
 

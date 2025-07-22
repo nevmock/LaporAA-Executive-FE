@@ -24,15 +24,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const socket = useSocket({
-    autoJoinRooms: ['admin', 'system', 'dashboard', 'admins'],
+    autoJoinRooms: ['admin', 'system', 'dashboard'],
     eventHandlers: {
-      'notificationNew': handleNewNotification,
-      'systemAlert': handleSystemAlert,
-      'alertCritical': handleCriticalAlert,
-      'reportStatusUpdate': handleReportStatusUpdate,
-      'newReport': handleNewReport,
-      'newReportCreated': handleNewReportCreated,
-      'adminActivity': handleAdminActivity
+      'newReportCreated': handleNewReportCreated
     }
   });
 
@@ -55,84 +49,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     // Trigger bell animation
     setHasNewNotification(true);
     setTimeout(() => setHasNewNotification(false), 3000); // Reset animation after 3 seconds
-  }
-
-  // Handle new notifications
-  function handleNewNotification(...args: unknown[]) {
-    const data = args[0] as NotificationData;
-    console.log('🔔 New notification:', data);
-    
-    const notification: NotificationData = {
-      id: data.id || Date.now().toString(),
-      title: data.title,
-      message: data.message,
-      type: data.type || 'info',
-      timestamp: new Date(data.timestamp),
-      read: false,
-      priority: data.priority || 'medium',
-      actions: data.actions
-    };
-    
-    setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep max 50 notifications
-  }
-
-  // Handle system alerts
-  function handleSystemAlert(...args: unknown[]) {
-    const data = args[0] as { message: string; [key: string]: unknown };
-    addNotificationInternal({
-      id: `system_${Date.now()}`,
-      title: 'System Alert',
-      message: data.message,
-      type: 'warning',
-      timestamp: new Date(),
-      priority: 'high'
-    });
-  }
-
-  // Handle critical alerts
-  function handleCriticalAlert(...args: unknown[]) {
-    const data = args[0] as { message: string; [key: string]: unknown };
-    addNotificationInternal({
-      id: `critical_${Date.now()}`,
-      title: 'Critical Alert',
-      message: data.message,
-      type: 'error',
-      timestamp: new Date(),
-      priority: 'high'
-    });
-  }
-
-  // Handle report status updates
-  function handleReportStatusUpdate(...args: unknown[]) {
-    const data = args[0] as { reportId: string; newStatus: string; [key: string]: unknown };
-    addNotificationInternal({
-      id: `report_${data.reportId}_${Date.now()}`,
-      title: 'Status Laporan Diperbarui',
-      message: `Laporan ${data.reportId} diubah ke: ${data.newStatus}`,
-      type: 'info',
-      timestamp: new Date(),
-      priority: 'medium'
-    });
-  }
-
-  // Handle new reports
-  function handleNewReport(...args: unknown[]) {
-    const data = args[0] as { userName?: string; subject?: string; message?: string; sessionId?: string; [key: string]: unknown };
-    addNotificationInternal({
-      id: `new_report_${Date.now()}`,
-      title: 'Laporan Baru',
-      message: `Laporan baru dari ${data.userName || 'User'}: ${data.subject || data.message}`,
-      type: 'info',
-      timestamp: new Date(),
-      priority: 'medium',
-      actions: [{
-        id: 'view_report',
-        label: 'Lihat',
-        type: 'button',
-        url: `/pengaduan/${data.sessionId}`,
-        variant: 'primary'
-      }]
-    });
   }
 
   // Handle new report created (from backend real-time service)
@@ -184,16 +100,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       priority: 'high',
       actions: [{
         id: 'view_report',
-        label: 'Lihat Chat',
+        label: 'Lihat Laporan',
         type: 'button',
-        url: `/pengaduan/laporan/message?from=${data.sessionId}`,
+        url: `/pengaduan`,
         variant: 'primary'
-      }, {
-        id: 'view_all_reports',
-        label: 'Semua Laporan',
-        type: 'button',
-        url: '/pengaduan',
-        variant: 'secondary'
       }]
     });
     
@@ -206,19 +116,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         requireInteraction: true
       });
     }
-  }
-
-  // Handle admin activity
-  function handleAdminActivity(...args: unknown[]) {
-    const data = args[0] as { action?: string; adminName?: string; [key: string]: unknown };
-    addNotificationInternal({
-      id: `admin_activity_${Date.now()}`,
-      title: 'Aktivitas Admin',
-      message: `${data.adminName} ${data.action}`,
-      type: 'info',
-      timestamp: new Date(),
-      priority: 'low'
-    });
   }
 
   // Calculate unread count
