@@ -5,6 +5,7 @@ import { useAvailablePeriods } from '../../../hooks/useAvailablePeriods';
 import axios from '../../../utils/axiosInstance';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import { getOPDShortName } from '../../../utils/opdMapping';
 
 // Base URL dari environment variable
 const API_URL = process.env.NEXT_PUBLIC_BE_BASE_URL;
@@ -98,14 +99,18 @@ export default function HorizontalBarPerangkatDaerahChart() {
                 console.info("🔥 Data fetched:", res.data);
                 const resData = res.data || {};
                 const formatted = Object.entries(resData)
-                    .map(([opd, val]) => ({ 
-                        opd: opd.trim() === '' ? 'Tidak Ada OPD' : opd, 
-                        value: Number(val) 
-                    }))
+                    .map(([opd, val]) => {
+                        const cleanOPD = opd.trim() === '' ? 'Tidak Ada OPD' : opd;
+                        return { 
+                            opd: cleanOPD, 
+                            shortName: getOPDShortName(cleanOPD),
+                            value: Number(val) 
+                        };
+                    })
                     .sort((a, b) => b.value - a.value);
 
                 setData({
-                    categories: formatted.map(f => f.opd),
+                    categories: formatted.map(f => f.shortName),
                     totals: formatted.map(f => f.value),
                     fullLabels: formatted.map(f => f.opd),
                 });
@@ -123,8 +128,8 @@ export default function HorizontalBarPerangkatDaerahChart() {
     // Fungsi export ke CSV
     const handleDownloadCSV = () => {
         let csv = 'Perangkat Daerah,Total\n';
-        data.categories.forEach((cat, i) => {
-            csv += `"${cat}",${data.totals[i] ?? 0}\n`;
+        data.fullLabels.forEach((fullName, i) => {
+            csv += `"${fullName}",${data.totals[i] ?? 0}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -255,7 +260,7 @@ export default function HorizontalBarPerangkatDaerahChart() {
     // Handle chart click events for navigation
     const handleChartClick = (params: { dataIndex?: number }) => {
         if (params.dataIndex !== undefined) {
-            const clickedOPD = data.categories[params.dataIndex];
+            const clickedOPD = data.fullLabels[params.dataIndex];
             if (clickedOPD) {
                 sessionStorage.setItem('opdClicked', clickedOPD);
                 window.location.href = '/pengaduan';

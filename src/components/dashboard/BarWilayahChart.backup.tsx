@@ -279,8 +279,16 @@ export default function HorizontalBarWilayahChart() {
                 </select>
             </div>
             {isAllZero ? (
-                <div className="flex items-center justify-center h-[400px] text-gray-400 text-lg font-semibold border border-dashed rounded-xl">
-                    Tidak ada data
+                <div className="flex items-center justify-center h-[400px] border border-dashed rounded-xl">
+                    <div className="text-center">
+                        <div className="text-amber-500 text-4xl mb-4">⚠️</div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            Tidak ada data laporan
+                        </h3>
+                        <p className="text-gray-600">
+                            Tidak ada data untuk periode yang dipilih
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <Chart

@@ -17,6 +17,7 @@ import { Switch } from "@headlessui/react";
 import { Tooltip } from "./Tooltip";
 import { Chat, SortKey, BackendSortKey } from "../../lib/types";
 import { PhotoDisplay } from "./PhotoDisplay";
+import { getOPDShortName } from "../../utils/opdMapping";
 // import { usePhotoDownloader } from "./PhotoDownloader"; // Unused import
 
 // Define type for tags
@@ -748,9 +749,9 @@ const TableSection: React.FC<Props> = ({
                                                             }}
                                                         >
                                                             {Array.isArray(chat.tindakan.opd) && chat.tindakan.opd.length > 1
-                                                                ? `${chat.tindakan.opd[0]?.substring(0, 10) || ""}${(chat.tindakan.opd[0]?.length || 0) > 10 ? '...' : ''} +${chat.tindakan.opd.length - 1} lainnya`
+                                                                ? `${getOPDShortName(chat.tindakan.opd[0])?.substring(0, 10) || ""}${(getOPDShortName(chat.tindakan.opd[0])?.length || 0) > 10 ? '...' : ''} +${chat.tindakan.opd.length - 1} lainnya`
                                                                 : Array.isArray(chat.tindakan.opd) && chat.tindakan.opd.length === 1
-                                                                    ? `${chat.tindakan.opd[0]?.substring(0, 15) || ""}${(chat.tindakan.opd[0]?.length || 0) > 15 ? '...' : ''}`
+                                                                    ? `${getOPDShortName(chat.tindakan.opd[0])?.substring(0, 15) || ""}${(getOPDShortName(chat.tindakan.opd[0])?.length || 0) > 15 ? '...' : ''}`
                                                                     : '-'
                                                             }
                                                         </button>
@@ -768,9 +769,9 @@ const TableSection: React.FC<Props> = ({
                                                                     setOpdModalVisible(true);
                                                                 }}
                                                             >
-                                                                {(chat.tindakan.opd as string).length > 15
-                                                                    ? `${(chat.tindakan.opd as string).substring(0, 15)}...`
-                                                                    : chat.tindakan.opd}
+                                                                {getOPDShortName(chat.tindakan.opd as string).length > 15
+                                                                    ? `${getOPDShortName(chat.tindakan.opd as string).substring(0, 15)}...`
+                                                                    : getOPDShortName(chat.tindakan.opd as string)}
                                                             </button>
                                                         </Tooltip>
                                                     )
@@ -928,7 +929,10 @@ const TableSection: React.FC<Props> = ({
                                             <li key={idx} className="pb-2 border-b border-gray-100 last:border-0">
                                                 <div className="flex">
                                                     <div className="font-semibold mr-2 text-black">{idx + 1}.</div>
-                                                    <div className="text-black">{opd}</div>
+                                                    <div className="text-black">
+                                                        <div className="font-medium">{getOPDShortName(opd)}</div>
+                                                        <div className="text-sm text-gray-600">{opd}</div>
+                                                    </div>
                                                 </div>
                                             </li>
                                         ))}

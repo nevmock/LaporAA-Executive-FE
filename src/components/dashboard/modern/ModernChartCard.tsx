@@ -175,27 +175,25 @@ const ModernChartCard: React.FC<ModernChartCardProps> = ({
     }
   };
 
-  if (error) {
-    return (
-      <div className={`bg-white rounded-xl border ${classes.border} p-6 ${className}`}>
-        <div className="text-center py-8">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Error Loading Chart
-          </h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          {onRefresh && (
-            <button
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Error state component untuk chart area saja
+  const ErrorState = () => (
+    <div className="text-center py-8">
+      <div className="text-amber-500 text-4xl mb-4">⚠️</div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        Error Loading Chart
+      </h3>
+      <p className="text-gray-600 mb-4">{error}</p>
+      {onRefresh && (
+        <button
+          onClick={handleRefresh}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={refreshing}
+        >
+          {refreshing ? 'Refreshing...' : 'Try Again'}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -285,6 +283,14 @@ const ModernChartCard: React.FC<ModernChartCardProps> = ({
                 <p className="text-gray-600">Loading chart data...</p>
               </div>
             </div>
+          ) : error ? (
+            // Show error state dalam chart area saja
+            <div className="h-full" style={{ 
+              height: typeof height === 'number' ? `${height}px` : (height === '100%' ? '400px' : height),
+              minHeight: height === '100%' ? '400px' : (typeof height === 'number' ? `${height}px` : height) 
+            }}>
+              <ErrorState />
+            </div>
           ) : children ? (
             // Render custom content if children provided
             <div className="h-full" style={{ 
@@ -331,6 +337,11 @@ const ModernChartCard: React.FC<ModernChartCardProps> = ({
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading chart data...</p>
               </div>
+            </div>
+          ) : error ? (
+            // Show error state dalam fullscreen modal
+            <div className="h-full w-full bg-white flex items-center justify-center">
+              <ErrorState />
             </div>
           ) : children ? (
             <div className="h-full w-full bg-white">

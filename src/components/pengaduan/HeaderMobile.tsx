@@ -6,6 +6,7 @@ import { Listbox } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
 import { MdFilterAltOff } from "react-icons/md";
 import { BsFillPersonLinesFill } from "react-icons/bs";
+import { getOPDShortName } from "../../utils/opdMapping";
 
 interface HeaderMobileProps {
     search: string;
@@ -64,6 +65,7 @@ function ListBoxFilter({
     situasiCounts,
     className = "",
     zIndex = 1000,
+    isOpdFilter = false,
 }: {
     label: string;
     options: string[];
@@ -75,6 +77,7 @@ function ListBoxFilter({
     situasiCounts?: Record<string, number>;
     className?: string;
     zIndex?: number;
+    isOpdFilter?: boolean;
 }) {
     // Pakai counts yang tersedia
     const counts = statusCounts || opdCounts || situasiCounts;
@@ -123,7 +126,7 @@ function ListBoxFilter({
                                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[selected] }} />
                                 )}
                                 <span className="flex-1 break-words leading-tight">
-                                    {selected}
+                                    {isOpdFilter && !selected.startsWith("Semua") ? getOPDShortName(selected) : selected}
                                     {counts && (
                                         <span className="ml-1 font-bold text-blue-700">
                                             (
@@ -151,7 +154,14 @@ function ListBoxFilter({
                                                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: colorMap[option] }} />
                                                     )}
                                                     <span className="flex-1 break-words leading-tight">
-                                                        {option}
+                                                        {isOpdFilter && !option.startsWith("Semua") ? (
+                                                            <div>
+                                                                <div className="font-medium">{getOPDShortName(option)}</div>
+                                                                <div className="text-xs text-gray-500 truncate">{option}</div>
+                                                            </div>
+                                                        ) : (
+                                                            option
+                                                        )}
                                                         {counts && (
                                                             <span className="ml-1 font-bold text-blue-700">
                                                                 (
@@ -351,6 +361,7 @@ const HeaderMobile: React.FC<HeaderMobileProps> = ({
                                 }, {} as Record<string, number>)}
                                 className="w-full"
                                 zIndex={800}
+                                isOpdFilter={true}
                             />
                             {/* Limit Dropdown */}
                             <ListBoxFilter
