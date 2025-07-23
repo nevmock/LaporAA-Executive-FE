@@ -54,7 +54,7 @@ jobs:
               nevmock/laporaa-fe-dev:latest
 
               
-            echo "🧹 Cleaning up unused Docker resources..."
+              echo "🧹 Cleaning up unused Docker resources..."
             docker system prune -f
 
             echo "✅ Deployment to Development environment completed successfully!"
