@@ -49,6 +49,7 @@ jobs:
             docker run -d \
               --name laporaa-fe-prod \
               --restart unless-stopped \
+              --network laporaa-prod-network \
               -p "${{ secrets.PORT }}":3000 \
               nevmock/laporaa-fe-prod:latest
 
@@ -56,4 +57,3 @@ jobs:
             docker system prune -f
 
             echo "✅ Deployment to Production environment completed successfully!"
-            
