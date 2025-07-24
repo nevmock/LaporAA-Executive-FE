@@ -2,7 +2,7 @@
 
 import React from "react";
 import { FaDownload } from "react-icons/fa";
-import SafeImage from "../common/SafeImage";
+import SmartImage from "../common/SmartImage";
 
 interface Props {
     photoModal: string[];     // Daftar path foto relatif dari backend
@@ -54,6 +54,88 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
         return match ? match[1] : 'jpg';
     };
 
+    // Fungsi untuk mengekstrak nama file dari path
+    const extractFileName = (path: string): string => {
+        const parts = path.split('/');
+        return parts[parts.length - 1];
+    };
+
+    // Fungsi untuk konstruksi URL foto dengan multiple fallbacks
+    const constructPhotoUrl = (photoPath: string): string[] => {
+        if (!baseUrl) {
+            return [photoPath]; // Return original path if no baseUrl
+        }
+
+        const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+        const fileName = extractFileName(photoPath);
+        
+        // Jika sudah URL lengkap, return as is
+        if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+            return [photoPath];
+        }
+
+        // Daftar kemungkinan path yang akan dicoba
+        const possiblePaths = [
+            // Path asli
+            photoPath.startsWith('/') ? photoPath : `/${photoPath}`,
+            
+            // Path dengan uploads prefix jika belum ada
+            photoPath.includes('/uploads/') 
+                ? (photoPath.startsWith('/') ? photoPath : `/${photoPath}`)
+                : `/uploads/${photoPath.replace(/^\//, '')}`,
+            
+            // Path langsung di folder uploads dengan nama file saja
+            `/uploads/${fileName}`,
+            
+            // Kemungkinan sub-folder umum dalam uploads
+            `/uploads/images/${fileName}`,
+            `/uploads/photos/${fileName}`,
+            `/uploads/reports/${fileName}`,
+            `/uploads/pengaduan/${fileName}`,
+            
+            // Kemungkinan dengan struktur tahun/bulan
+            ...((() => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                return [
+                    `/uploads/${year}/${month}/${fileName}`,
+                    `/uploads/${year}/${fileName}`,
+                ];
+            })()),
+            
+            // Fallback ke path original tanpa processing
+            photoPath
+        ];
+
+        // Remove duplicates dan construct full URLs
+        const uniquePaths = [...new Set(possiblePaths)];
+        return uniquePaths.map(path => `${cleanBaseUrl}${path}`);
+    };
+
+    // Fungsi untuk mencoba load gambar dari multiple URLs
+    const tryLoadImage = async (urls: string[]): Promise<string> => {
+        for (const url of urls) {
+            try {
+                const response = await fetch(url, { 
+                    method: 'HEAD',
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+                if (response.ok) {
+                    console.log(`✅ Found image at: ${url}`);
+                    return url;
+                }
+            } catch (error) {
+                console.log(`❌ Failed to load: ${url}`);
+                continue;
+            }
+        }
+        
+        // Jika semua gagal, return URL pertama sebagai fallback
+        console.warn(`⚠️ All URLs failed, using fallback: ${urls[0]}`);
+        return urls[0];
+    };
+
     // Handler untuk menutup modal ketika klik di backdrop
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
@@ -81,7 +163,25 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
             }
             
             setDownloadingIndex(i);
-            const photoUrl = `${baseUrl}${photoModal[i]}`;
+            
+            // Construct photo URL with multiple fallbacks
+            let photoUrl: string;
+            try {
+                const photoPath = photoModal[i];
+                const possibleUrls = constructPhotoUrl(photoPath);
+                photoUrl = await tryLoadImage(possibleUrls);
+            } catch (error) {
+                console.error(`Error constructing URL for photo ${i + 1}:`, error);
+                // Fallback ke konstruksi sederhana
+                const photoPath = photoModal[i];
+                if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+                    photoUrl = photoPath;
+                } else {
+                    const cleanBaseUrl = baseUrl?.replace(/\/$/, '') || '';
+                    const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+                    photoUrl = `${cleanBaseUrl}${cleanPath}`;
+                }
+            }
             
             // Create individual AbortController for timeout management
             const controller = new AbortController();
@@ -159,6 +259,64 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
         setDownloadingAll(false);
         setDownloadingIndex(null);
         setAbortController(null);
+    };
+
+    // Fungsi download individual photo yang menggunakan SmartImage logic
+    const downloadIndividualPhoto = async (photoPath: string, index: number) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        try {
+            // Construct photo URL using the same logic as SmartImage
+            const possibleUrls = constructPhotoUrl(photoPath);
+            const workingUrl = await tryLoadImage(possibleUrls);
+            
+            const response = await fetch(workingUrl, {
+                signal: controller.signal,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Accept': 'image/*,*/*;q=0.8',
+                    'User-Agent': 'Mozilla/5.0 (compatible; LaporAA-App/1.0)',
+                },
+                mode: 'cors',
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                console.warn(`HTTP ${response.status} for photo download, opening in new tab`);
+                window.open(workingUrl, '_blank');
+                return;
+            }
+            
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const fileExtension = getFileExtension(photoPath);
+            const fileName = generateFileName(index, fileExtension);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const isAbortError = error instanceof Error && error.name === 'AbortError';
+            
+            if (isAbortError) {
+                console.error(`Download timeout for photo:`, error);
+                alert(`Download foto timeout setelah 30 detik. Silakan coba lagi.`);
+            } else {
+                console.error(`Error downloading photo:`, error);
+                alert(`Gagal mendownload foto: ${errorMessage}`);
+            }
+        }
     };
 
     return (
@@ -277,72 +435,6 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                     }}
                 >
                     {photoModal.map((url, index) => {
-                        const fullUrl = `${baseUrl}${url}`;
-                        
-                        // Fungsi download untuk foto individual
-                        const downloadSinglePhoto = async () => {
-                            // Create AbortController for timeout management
-                            const controller = new AbortController();
-                            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
-                            
-                            try {
-                                // Fetch gambar sebagai blob dengan timeout
-                                const response = await fetch(fullUrl, {
-                                    signal: controller.signal,
-                                    headers: {
-                                        'Cache-Control': 'no-cache',
-                                        'Accept': 'image/*,*/*;q=0.8',
-                                        'User-Agent': 'Mozilla/5.0 (compatible; LaporAA-App/1.0)',
-                                    },
-                                    mode: 'cors',
-                                });
-                                
-                                clearTimeout(timeoutId);
-                                
-                                if (!response.ok) {
-                                    // Fallback: open in new tab if fetch fails
-                                    console.warn(`HTTP ${response.status} for photo download, opening in new tab`);
-                                    window.open(fullUrl, '_blank');
-                                    return;
-                                }
-                                
-                                const blob = await response.blob();
-                                
-                                // Buat URL object untuk blob
-                                const blobUrl = window.URL.createObjectURL(blob);
-                                
-                                // Generate nama file sesuai format yang diminta
-                                const fileExtension = getFileExtension(url);
-                                const fileName = generateFileName(index, fileExtension);
-                                
-                                // Buat elemen anchor untuk download
-                                const link = document.createElement('a');
-                                link.href = blobUrl;
-                                link.download = fileName;
-                                
-                                // Trigger download
-                                document.body.appendChild(link);
-                                link.click();
-                                
-                                // Cleanup
-                                document.body.removeChild(link);
-                                window.URL.revokeObjectURL(blobUrl);
-                            } catch (error) {
-                                clearTimeout(timeoutId);
-                                
-                                const errorMessage = error instanceof Error ? error.message : String(error);
-                                const isAbortError = error instanceof Error && error.name === 'AbortError';
-                                
-                                if (isAbortError) {
-                                    console.error(`Download timeout for photo:`, error);
-                                    alert(`Download foto timeout setelah 30 detik. Silakan coba lagi.`);
-                                } else {
-                                    console.error(`Error downloading photo:`, error);
-                                    alert(`Gagal mendownload foto: ${errorMessage}`);
-                                }
-                            }
-                        };
-                        
                         return (
                             <div 
                                 key={index}
@@ -356,8 +448,8 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                     backgroundColor: '#f9fafb'
                                 }}
                             >
-                                <SafeImage
-                                    src={fullUrl}
+                                <SmartImage
+                                    src={url}
                                     alt={`Foto ${index + 1}`}
                                     className="h-full w-full object-cover cursor-pointer transition-transform hover:scale-105"
                                     width={300}
@@ -369,7 +461,7 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                         cursor: 'pointer',
                                         transition: 'transform 0.2s ease-in-out'
                                     }}
-                                    onClick={() => window.open(fullUrl, "_blank")}
+                                    onClick={() => window.open(url, "_blank")}
                                     fallbackText="Foto tidak dapat dimuat"
                                     showDirectLink={true}
                                 />
@@ -379,7 +471,8 @@ const PhotoModal: React.FC<Props> = ({ photoModal, onClose, reportInfo }) => {
                                     <button
                                         onClick={async (e) => {
                                             e.stopPropagation();
-                                            await downloadSinglePhoto();
+                                            // Gunakan path asli untuk download
+                                            await downloadIndividualPhoto(url, index);
                                         }}
                                         className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 px-3 py-2 bg-white text-gray-800 text-xs font-medium rounded-lg shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         title="Download foto ini"

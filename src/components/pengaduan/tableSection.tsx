@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import SmartImage from "../common/SmartImage";
 import Image from "next/image";
 import {
     FaStar, FaUser,
@@ -499,7 +500,8 @@ const TableSection: React.FC<Props> = ({
                                                         alt="Spanlapor Icon" 
                                                         width={12} 
                                                         height={12} 
-                                                        className="w-3 h-3 flex-shrink-0 object-contain" 
+                                                        className="w-3 h-3 flex-shrink-0 object-contain"
+                                                        style={{ width: '12px', height: '12px' }}
                                                     />
                                                     <span className="truncate">
                                                         {chat?.tindakan?.trackingId || '-'}
@@ -512,7 +514,8 @@ const TableSection: React.FC<Props> = ({
                                                         alt="Spanlapor Icon" 
                                                         width={12} 
                                                         height={12} 
-                                                        className="w-3 h-3 flex-shrink-0 object-contain opacity-50" 
+                                                        className="w-3 h-3 flex-shrink-0 object-contain opacity-50"
+                                                        style={{ width: '12px', height: '12px' }}
                                                     />
                                                     <span className="truncate">
                                                         {chat?.tindakan?.trackingId || '-'}
@@ -677,30 +680,22 @@ const TableSection: React.FC<Props> = ({
                                                     }
 
                                                     const firstPhoto = chat.photos[0];
-                                                    if (!firstPhoto) {
+                                                    if (!firstPhoto || typeof firstPhoto !== 'string') {
                                                         return <span className="text-gray-400 text-xs">No Photo</span>;
                                                     }
 
-                                                    // Buat URL yang benar
-                                                    let photoUrl: string;
-                                                    if (firstPhoto.startsWith('http')) {
-                                                        // Jika sudah URL lengkap
-                                                        photoUrl = firstPhoto;
-                                                    } else {
-                                                        // Jika path relatif, gabung dengan base URL
-                                                        const cleanPath = firstPhoto.startsWith('/') ? firstPhoto : `/${firstPhoto}`;
-                                                        photoUrl = `${baseUrl}${cleanPath}`;
-                                                    }
-
-                                                    console.log('Photo URL:', photoUrl);
+                                                    console.log('Photo path:', firstPhoto);
 
                                                     return (
-                                                        <Image
-                                                            src={photoUrl}
+                                                        <SmartImage
+                                                            src={firstPhoto}
                                                             alt="Foto pengaduan"
-                                                            className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer"
+                                                            className="h-10 w-10 object-cover rounded border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
                                                             width={40}
                                                             height={40}
+                                                            style={{ width: '40px', height: '40px' }}
+                                                            fallbackText="Error"
+                                                            showDirectLink={false}
                                                             onClick={() => {
                                                                 if (chat.photos.length > 1) {
                                                                     setPhotoModal(chat.photos, {
@@ -708,18 +703,12 @@ const TableSection: React.FC<Props> = ({
                                                                         userName: chat.user || 'Unknown'
                                                                     });
                                                                 } else {
-                                                                    // Untuk foto tunggal, langsung download dengan nama yang benar
-                                                                    downloadSinglePhoto(photoUrl, chat.sessionId, chat.user || 'Unknown', firstPhoto);
+                                                                    // Untuk foto tunggal, buka modal dengan satu foto
+                                                                    setPhotoModal([firstPhoto], {
+                                                                        sessionId: chat.sessionId,
+                                                                        userName: chat.user || 'Unknown'
+                                                                    });
                                                                 }
-                                                            }}
-                                                            onError={(e) => {
-                                                                console.error('Error loading image:', photoUrl);
-                                                                console.error('Photo data:', chat.photos);
-                                                                // Instead of manipulating DOM, show alert directly
-                                                                alert(`Gagal memuat gambar.\nURL: ${photoUrl}\nBase URL: ${baseUrl}\nPhoto Path: ${firstPhoto}\nFull Photos: ${JSON.stringify(chat.photos)}`);
-                                                            }}
-                                                            onLoad={() => {
-                                                                console.log('✅ Image loaded successfully:', photoUrl);
                                                             }}
                                                         />
                                                     );
